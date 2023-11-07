@@ -4,9 +4,11 @@ import { Main } from './src/main'
 import { useFonts } from 'expo-font'
 import { ThemeContext, AppContext } from './src/context'
 import { lightTheme } from './src/theme'
+import { CHAT_TYPES } from './constants'
 
 export default function App() {
   const [theme, setTheme] = useState<string>('light')
+  const [chatType, setChatType] = useState<string>(CHAT_TYPES.gptTurbo)
   const [fontsLoaded] = useFonts({
     'Geist-Regular': require('./assets/fonts/Geist-Regular.otf'),
     'Geist-Light': require('./assets/fonts/Geist-Light.otf'),
@@ -20,7 +22,12 @@ export default function App() {
   })
   if (!fontsLoaded) return null
   return (
-    <AppContext.Provider value={{}}>
+    <AppContext.Provider
+      value={{
+        chatType,
+        setChatType
+      }}
+    >
       <ThemeContext.Provider value={{
         theme: getTheme(theme),
         setTheme

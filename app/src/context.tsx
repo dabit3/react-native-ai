@@ -1,8 +1,13 @@
-import React, { createContext, SetStateAction, Dispatch  } from 'react'
+import { createContext, SetStateAction, Dispatch  } from 'react'
 
 interface IThemeContext {
-  theme: {},
+  theme: any,
   setTheme: Dispatch<SetStateAction<string>>
+}
+
+interface IAppContext {
+  chatType: string
+  setChatType: Dispatch<SetStateAction<string>>
 }
 
 const ThemeContext = createContext<IThemeContext>({
@@ -10,7 +15,10 @@ const ThemeContext = createContext<IThemeContext>({
   setTheme: () => null
 })
 
-const AppContext = createContext({})
+const AppContext = createContext<IAppContext>({
+  chatType: '',
+  setChatType: () => null
+})
 
 export {
   ThemeContext, AppContext

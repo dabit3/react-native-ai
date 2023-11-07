@@ -1,21 +1,26 @@
 import {
   Text, StyleSheet, TouchableOpacity, View
 } from 'react-native'
+import { useContext } from 'react'
 import { Icon } from './Icon'
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppContext, ThemeContext } from '../context'
 
 export function Header() {
-  const styles = getStyles()
+  const { theme } = useContext(ThemeContext)
+  const styles = getStyles(theme)
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Icon size={34} />
-    </SafeAreaView>
+    </View>
   )
 }
 
-function getStyles() {
+function getStyles(theme:any) {
   return StyleSheet.create({
     container: {
+      paddingVertical: 15,
+      backgroundColor: theme.backgroundColor,
       justifyContent: 'center',
       alignItems: 'center',
     }

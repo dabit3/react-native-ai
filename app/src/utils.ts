@@ -1,4 +1,4 @@
-import { DOMAIN } from './constants'
+import { DOMAIN } from '../constants'
 
 export async function getEventSource({
   headers,
@@ -9,10 +9,14 @@ export async function getEventSource({
   body: any,
   type: string
 }) {
-  const es = new EventSource(`${EXPRESS_DOMAIN}/api/chat/${type}`, {
-    headers,
+  const response = await fetch(`${DOMAIN}/api/chat/${type}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...headers
+    },
     method: 'POST',
-    body,
-  })
-  return es
+    body: JSON.stringify(body),
+  });
+  const es = new EventSource(response.url);
+  return es;
 }
