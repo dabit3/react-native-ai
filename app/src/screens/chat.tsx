@@ -171,7 +171,7 @@ export function Chat() {
       keyboardVerticalOffset={110}
     >
       <ScrollView
-        contentContainerStyle={styles.contentContainerStyle}
+        keyboardShouldPersistTaps='handled'
       >
         <FlatList
           data={openaiResponse.messages}
@@ -185,6 +185,7 @@ export function Chat() {
        <TextInput
         style={styles.input}
         onChangeText={v => setInput(v)}
+        placeholder='Message'
        />
        <TouchableHighlight
         underlayColor={'transparent'}
@@ -261,7 +262,7 @@ const getStyles = (theme: any) => StyleSheet.create({
     bullet_list_icon: {
       color: theme.textColor,
       fontSize: 16,
-      fontFamily: 'Inter-Regular'
+      fontFamily: 'Geist-Regular'
     },
     code_inline: {
       backgroundColor: '#312e2e',
@@ -305,10 +306,10 @@ const getStyles = (theme: any) => StyleSheet.create({
   },
   textStyleContainer: {
     borderWidth: 1,
-    borderColor: theme.mainBorderColor,
+    borderColor: theme.borderColor,
     padding: 15,
-    paddingBottom: 10,
-    paddingTop: 3,
+    paddingBottom: 5,
+    paddingTop: 0,
     margin: 10,
     borderRadius: 13
   },
@@ -343,9 +344,6 @@ const getStyles = (theme: any) => StyleSheet.create({
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  contentContainerStyle: {
-    flex: 1
   },
   input: {
     width: '92%',
