@@ -7,7 +7,7 @@
     "build": "npx tsc",
     "start": "node dist/index.js",
     "ngrok": "ngrok http 3050",
-    "dev": "concurrently \"npx tsc --watch\" \"nodemon dist/index.js\"",
+    "dev": "concurrently \"npx tsc --watch\" \"nodemon --exitcrash dist/index.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,6 +16,7 @@
   "dependencies": {
     "@types/express": "^4.17.20",
     "@types/node": "^20.8.10",
+    "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",

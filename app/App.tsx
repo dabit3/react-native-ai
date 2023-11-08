@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native'
 import { Main } from './src/main'
 import { useFonts } from 'expo-font'
 import { ThemeContext, AppContext } from './src/context'
-import { lightTheme } from './src/theme'
+import { lightTheme, darkTheme } from './src/theme'
 import { CHAT_TYPES } from './constants'
 
 export default function App() {

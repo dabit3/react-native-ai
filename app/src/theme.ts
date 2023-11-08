@@ -4,10 +4,12 @@ const colors = {
 }
 
 const lightTheme = {
-  mainTextColor: colors.black,
+  textColor: colors.black,
+  secondaryTextColor: colors.white,
   highlightedTextColor: colors.white,
   backgroundColor: colors.white,
   secondaryBackgroundColor: '#ebebeb',
+  borderColor: 'rgba(0, 0, 0, .2)',
   tintColor: '#0281ff',
 }
 

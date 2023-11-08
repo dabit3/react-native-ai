@@ -6,7 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const chatRouter_1 = __importDefault(require("./chat/chatRouter"));
 require("dotenv/config");
+const body_parser_1 = __importDefault(require("body-parser"));
 const app = (0, express_1.default)();
+app.use(body_parser_1.default.urlencoded({ extended: true }));
+app.use(body_parser_1.default.json());
+app.use(express_1.default.json({ limit: '50mb' }));
 app.get('/', (req, res) => {
     res.send('Hello World!');
 });

@@ -130,7 +130,6 @@ const getStyles = (theme:any) => StyleSheet.create({
     flexDirection: 'row'
   },
   chatTypeText: {
-    color: theme.mainTextColor,
     fontFamily: 'Geist-SemiBold'
   },
   mainText: {

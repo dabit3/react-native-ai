@@ -1,12 +1,12 @@
 import express from 'express'
 import { cohere } from './cohere'
 import { claude } from './claude'
-import { openai } from './openai'
+import { gpt } from './gpt'
 
 const router = express.Router()
 
 router.post('/claude', claude)
-router.get('/cohere', cohere)
-router.get('/openai', openai)
+router.post('/cohere', cohere)
+router.post('/gpt', gpt)
 
 export default router
