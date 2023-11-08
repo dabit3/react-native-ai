@@ -11,7 +11,7 @@ import {
 import { useContext, useState } from 'react'
 import { ThemeContext, AppContext } from '../context'
 
-export function Images() {
+export function Assistant() {
   const { theme } = useContext(ThemeContext)
   const styles = getStyles(theme)
   return (
@@ -23,7 +23,7 @@ export function Images() {
       <View>
         <Text
           style={styles.mainText}
-        >Image</Text>
+        >Assistant</Text>
       </View>
     </KeyboardAvoidingView>
   )

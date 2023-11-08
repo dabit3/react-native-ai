@@ -1,7 +1,7 @@
 import { DOMAIN } from '../constants'
 import EventSource from 'react-native-sse'
 
-export async function getEventSource({
+export function getEventSource({
   headers,
   body,
   type
@@ -10,7 +10,6 @@ export async function getEventSource({
   body: any,
   type: string
 }) {
-  console.log('type:', type)
   const es = new EventSource(`${DOMAIN}/chat/${type}`, {
     headers: {
       'Content-Type': 'application/json',

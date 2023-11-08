@@ -13,7 +13,7 @@ import {
   Share
 } from 'react-native'
 import 'react-native-get-random-values';
-import { useContext, useState } from 'react'
+import { useContext, useState, useRef } from 'react'
 import { ThemeContext, AppContext } from '../context'
 import { getEventSource, getFirstN, getFirstNCharsOrLess, getChatType } from '../utils'
 import { v4 as uuid } from 'uuid'
@@ -28,6 +28,7 @@ import Markdown from '@ronradtke/react-native-markdown-display'
 export function Chat() {
   const [loading, setLoading] = useState(false)
   const [input, setInput] = useState('')
+  const scrollViewRef = useRef<ScrollView>()
 
   // openAI state management
   const [openaiMessages, setOpenaiMessages] = useState<IOpenAIMessages[]>([])
@@ -96,7 +97,8 @@ export function Chat() {
         },
         type: getChatType(chatType),
       }
-      const eventSource = await getEventSource(eventSourceArgs)
+      setInput('')
+      const eventSource = getEventSource(eventSourceArgs)
 
       console.log('aboutto open listener...')
       const listener = (event:any) => {
@@ -106,7 +108,11 @@ export function Chat() {
           setLoading(false)
         } else if (event.type === 'message') {
           if (event.data !== "[DONE]") {
-
+            if (localResponse.length < 850) {
+              scrollViewRef.current?.scrollToEnd({
+                animated: true
+              })
+            }
             localResponse = localResponse + JSON.parse(event.data).content
             openaiArray[openaiArray.length - 1].assistant = localResponse
             setOpenaiResponse(c => ({
@@ -130,14 +136,13 @@ export function Chat() {
       eventSource.addEventListener("open", listener);
       eventSource.addEventListener("message", listener);
       eventSource.addEventListener("error", listener);
-      
     } catch (err) {
-
+      console.log('error in generateOpenaiResponse: ', err)
     }
   }
 
 
-  function renderOpenaiItem({
+  function renderItem({
     item, index
   } : {
     item: any, index: number
@@ -172,10 +177,11 @@ export function Chat() {
     >
       <ScrollView
         keyboardShouldPersistTaps='handled'
+        ref={scrollViewRef}
       >
         <FlatList
           data={openaiResponse.messages}
-          renderItem={renderOpenaiItem}
+          renderItem={renderItem}
           scrollEnabled={false}
         />
       </ScrollView>
@@ -186,6 +192,7 @@ export function Chat() {
         style={styles.input}
         onChangeText={v => setInput(v)}
         placeholder='Message'
+        value={input}
        />
        <TouchableHighlight
         underlayColor={'transparent'}
@@ -300,7 +307,7 @@ const getStyles = (theme: any) => StyleSheet.create({
       paddingHorizontal: 5,
       marginVertical: 5,
     },
-  },
+  } as any,
   promptResponse: {
     marginTop: 10,
   },
@@ -308,8 +315,8 @@ const getStyles = (theme: any) => StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.borderColor,
     padding: 15,
-    paddingBottom: 5,
-    paddingTop: 0,
+    paddingBottom: 6,
+    paddingTop: 5,
     margin: 10,
     borderRadius: 13
   },
@@ -341,6 +348,7 @@ const getStyles = (theme: any) => StyleSheet.create({
   },
   inputContainer: {
     padding: 10,
+    paddingTop: 5,
     display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
