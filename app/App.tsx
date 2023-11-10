@@ -1,10 +1,17 @@
-import { useState } from 'react'
+import 'react-native-gesture-handler'
+import { useState, useRef, useCallback } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { Main } from './src/main'
 import { useFonts } from 'expo-font'
 import { ThemeContext, AppContext } from './src/context'
 import { lightTheme, darkTheme } from './src/theme'
 import { CHAT_TYPES } from './constants'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import {
+  BottomSheetModal,
+  BottomSheetModalProvider,
+} from '@gorhom/bottom-sheet'
+import { View, Button, Text } from 'react-native'
 
 export default function App() {
   const [theme, setTheme] = useState<string>('light')
@@ -20,23 +27,46 @@ export default function App() {
     'Geist-UltraLight': require('./assets/fonts/Geist-UltraLight.otf'),
     'Geist-UltraBlack': require('./assets/fonts/Geist-UltraBlack.otf'),
   })
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  const handlePresentModalPress = useCallback(() => {
+    bottomSheetModalRef.current?.present();
+  }, []);
+  const handleSheetChanges = useCallback((index: number) => {
+    console.log('handleSheetChanges', index);
+  }, []);
+
   if (!fontsLoaded) return null
   return (
-    <AppContext.Provider
-      value={{
-        chatType,
-        setChatType
-      }}
-    >
-      <ThemeContext.Provider value={{
-        theme: getTheme(theme),
-        setTheme
-        }}>
-        <NavigationContainer>
-          <Main />
-        </NavigationContainer>
-      </ThemeContext.Provider>
-    </AppContext.Provider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AppContext.Provider
+        value={{
+          chatType,
+          setChatType,
+          handlePresentModalPress
+        }}
+      >
+        <ThemeContext.Provider value={{
+          theme: getTheme(theme),
+          themeName: theme,
+          setTheme
+          }}>
+          <NavigationContainer>
+            <Main />
+          </NavigationContainer>
+        </ThemeContext.Provider>
+      </AppContext.Provider>
+      <BottomSheetModalProvider>
+       <BottomSheetModal
+          ref={bottomSheetModalRef}
+          snapPoints={['50%']}
+          onChange={handleSheetChanges}
+        >
+          <View>
+            <Text>Awesome 🎉</Text>
+          </View>
+        </BottomSheetModal>
+      </BottomSheetModalProvider>
+    </GestureHandlerRootView>
   )
 }
 
@@ -44,6 +74,8 @@ function getTheme(theme: any) {
   switch (theme) {
     case 'light':
       return lightTheme
+    case 'dark':
+      return darkTheme
     default:
       return lightTheme
   }

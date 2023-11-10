@@ -27,7 +27,7 @@ import {
  ]
 
 export function Settings() {
-  const { theme } = useContext(ThemeContext)
+  const { theme, setTheme, themeName } = useContext(ThemeContext)
   const {
     chatType,
     setChatType,
@@ -54,9 +54,9 @@ export function Settings() {
       >
         <Text
           style={styles.mainText}
-        >Settings</Text>
+        >Chat Model</Text>
       </View>
-      <View>
+      <View style={styles.buttonContainer}>
         {
           models.map((model, index) => {
             return (
@@ -68,7 +68,7 @@ export function Settings() {
                 }}
               >
                 <View
-                  style={{...styles.chatChoiceButton, ...getChatStyle(chatType, model.label, theme)}}
+                  style={{...styles.chatChoiceButton, ...getDynamicViewStyle(chatType, model.label, theme)}}
                 >
                 {
                   renderIcon({
@@ -82,7 +82,7 @@ export function Settings() {
                   })
                 }
                 <Text
-                  style={{...styles.chatTypeText, ...getChatTextStyle(chatType, model.label, theme)}}
+                  style={{...styles.chatTypeText, ...getDynamicTextStyle(chatType, model.label, theme)}}
                 >
                   { model.name }
                 </Text>
@@ -92,11 +92,50 @@ export function Settings() {
           })
         }
       </View>
+      <View
+        style={styles.titleContainer}
+      >
+        <Text
+          style={styles.mainText}
+        >Theme</Text>
+      </View>
+      <TouchableHighlight
+          underlayColor='transparent'
+          onPress={() => {
+            setTheme('light')
+          }}
+        >
+          <View
+            style={{...styles.chatChoiceButton, ...getDynamicViewStyle(themeName,'light', theme)}}
+          >
+          <Text
+            style={{...styles.chatTypeText, ...getDynamicTextStyle(themeName, 'light', theme)}}
+          >
+            Light
+          </Text>
+        </View>
+      </TouchableHighlight>
+      <TouchableHighlight
+          underlayColor='transparent'
+          onPress={() => {
+            setTheme('dark')
+          }}
+        >
+          <View
+            style={{...styles.chatChoiceButton, ...getDynamicViewStyle(themeName,'dark', theme)}}
+          >
+          <Text
+            style={{...styles.chatTypeText, ...getDynamicTextStyle(themeName, 'dark', theme)}}
+          >
+            Dark
+          </Text>
+        </View>
+      </TouchableHighlight>
     </View>
   )
 }
 
-function getChatTextStyle(type:string, baseType:string, theme:any) {
+function getDynamicTextStyle(baseType:string, type:string, theme:any) {
   if (type === baseType) {
     return {
       color: theme.highlightedTextColor,
@@ -105,7 +144,7 @@ function getChatTextStyle(type:string, baseType:string, theme:any) {
 }
 
 
-function getChatStyle(type:string, baseType:string, theme:any) {
+function getDynamicViewStyle(baseType:string, type:string, theme:any) {
   if (type === baseType) {
     return {
       backgroundColor: theme.tintColor
@@ -114,11 +153,14 @@ function getChatStyle(type:string, baseType:string, theme:any) {
 }
 
 const getStyles = (theme:any) => StyleSheet.create({
+  buttonContainer: {
+    marginBottom: 20
+  },
   container: {
     padding: 14,
     flex: 1,
     backgroundColor: theme.backgroundColor,
-    paddingTop: 0,
+    paddingTop: 20,
   },
   titleContainer: {
     paddingVertical: 10,
@@ -130,10 +172,12 @@ const getStyles = (theme:any) => StyleSheet.create({
     flexDirection: 'row'
   },
   chatTypeText: {
-    fontFamily: 'Geist-SemiBold'
+    fontFamily: 'Geist-SemiBold',
+    color: theme.textColor
   },
   mainText: {
     fontFamily: 'Geist-Bold',
-    fontSize: 18
+    fontSize: 18,
+    color: theme.textColor
   },
 })

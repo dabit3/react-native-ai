@@ -28,7 +28,7 @@ import Markdown from '@ronradtke/react-native-markdown-display'
 export function Chat() {
   const [loading, setLoading] = useState(false)
   const [input, setInput] = useState('')
-  const scrollViewRef = useRef<ScrollView>()
+  const scrollViewRef = useRef<ScrollView | null>(null)
 
   // openAI state management
   const [openaiMessages, setOpenaiMessages] = useState<IOpenAIMessages[]>([])
@@ -184,6 +184,11 @@ export function Chat() {
           renderItem={renderItem}
           scrollEnabled={false}
         />
+        {
+          loading && (
+            <ActivityIndicator style={styles.loadingContainer} />
+          )
+        }
       </ScrollView>
       <View
         style={styles.inputContainer}
@@ -192,6 +197,7 @@ export function Chat() {
         style={styles.input}
         onChangeText={v => setInput(v)}
         placeholder='Message'
+        placeholderTextColor={theme.tabBarInactiveTintColor}
         value={input}
        />
        <TouchableHighlight
@@ -216,6 +222,74 @@ export function Chat() {
 }
 
 const getStyles = (theme: any) => StyleSheet.create({
+  loadingContainer: {
+    marginTop: 25
+  },
+  promptResponse: {
+    marginTop: 10,
+  },
+  textStyleContainer: {
+    borderWidth: 1,
+    marginRight: 25,
+    borderColor: theme.borderColor,
+    padding: 15,
+    paddingBottom: 6,
+    paddingTop: 5,
+    margin: 10,
+    borderRadius: 13
+  },
+  promptTextContainer: {
+    flex: 1,
+    alignItems: 'flex-end',
+    marginRight: 15,
+    marginLeft: 24,
+  },
+  promptTextWrapper: {
+    borderRadius: 8,
+    borderTopRightRadius: 0,
+    backgroundColor: theme.tintColor,
+  },
+  promptText: {
+    color: 'white',
+    fontFamily: 'Geist-Regular',
+    paddingVertical: 5,
+    paddingHorizontal: 9,
+    fontSize: 16
+  },
+  chatButtonContainer: {
+    borderRadius: 100,
+    marginLeft: 5
+  },
+  chatButton: {
+    backgroundColor: theme.tintColor,
+    padding: 5,
+    borderRadius: 100
+  },
+  inputContainer: {
+    padding: 10,
+    paddingTop: 5,
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  input: {
+    width: '92%',
+    color: theme.textColor,
+    borderWidth: 1,
+    borderRadius: 50,
+    paddingHorizontal: 13,
+    fontFamily: 'Geist-Regular',
+    padding: 7,
+    borderColor: theme.borderColor
+  },
+  container: {
+    backgroundColor: theme.backgroundColor,
+    flex: 1,
+    paddingTop: 5
+  },
+  mainText: {
+    fontFamily: 'Geist-Regular'
+  },
   markdownStyle: {
     body: {
       color: theme.textColor,
@@ -227,31 +301,38 @@ const getStyles = (theme: any) => StyleSheet.create({
       fontFamily: 'Geist-Regular'
     },
     heading1: {
+      color: theme.textColor,
       fontFamily: 'Geist-SemiBold',
       marginVertical: 5
     },
     heading2: {
+      color: theme.textColor,
       fontFamily: 'Geist-SemiBold',
       marginVertical: 5
     },
     heading3: {
+      color: theme.textColor,
       fontFamily: 'Geist-Medium',
       marginVertical: 5
     },
     heading4: {
+      color: theme.textColor,
       fontFamily: 'Geist-Medium',
       marginVertical: 5
     },
     heading5: {
+      color: theme.textColor,
       fontFamily: 'Geist-Medium',
       marginVertical: 5
     },
     heading6: {
+      color: theme.textColor,
       fontFamily: 'Geist-Medium',
       marginVertical: 5
     },
     list_item: {
       marginTop: 7,
+      color: theme.textColor,
       fontFamily: 'Geist-Regular',
       fontSize: 16,
     },
@@ -308,65 +389,4 @@ const getStyles = (theme: any) => StyleSheet.create({
       marginVertical: 5,
     },
   } as any,
-  promptResponse: {
-    marginTop: 10,
-  },
-  textStyleContainer: {
-    borderWidth: 1,
-    borderColor: theme.borderColor,
-    padding: 15,
-    paddingBottom: 6,
-    paddingTop: 5,
-    margin: 10,
-    borderRadius: 13
-  },
-  promptTextContainer: {
-    flex: 1,
-    alignItems: 'flex-end',
-    marginRight: 15,
-    marginLeft: 24,
-  },
-  promptTextWrapper: {
-    borderRadius: 8,
-    backgroundColor: theme.tintColor,
-  },
-  promptText: {
-    color: theme.secondaryTextColor,
-    fontFamily: 'Geist-Regular',
-    paddingVertical: 5,
-    paddingHorizontal: 9,
-    fontSize: 16
-  },
-  chatButtonContainer: {
-    borderRadius: 100,
-    marginLeft: 5
-  },
-  chatButton: {
-    backgroundColor: theme.tintColor,
-    padding: 5,
-    borderRadius: 100
-  },
-  inputContainer: {
-    padding: 10,
-    paddingTop: 5,
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  input: {
-    width: '92%',
-    borderWidth: 1,
-    borderRadius: 50,
-    paddingHorizontal: 13,
-    fontFamily: 'Geist-Regular',
-    padding: 7,
-    borderColor: theme.borderColor
-  },
-  container: {
-    backgroundColor: theme.backgroundColor,
-    flex: 1
-  },
-  mainText: {
-    fontFamily: 'Geist-Regular'
-  },
 })
