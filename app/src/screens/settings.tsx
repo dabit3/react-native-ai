@@ -2,35 +2,38 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableHighlight,
-  Switch,
-  Image,
-  ScrollView
+  TouchableHighlight
 } from 'react-native'
-import { useContext, useEffect } from 'react'
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useContext } from 'react'
 import { AppContext, ThemeContext } from '../context'
-import FeatherIcon from '@expo/vector-icons/Feather'
 import {
   AnthropicIcon,
   OpenAIIcon,
   CohereIcon,
  } from '../components'
+ import FontAwesome from '@expo/vector-icons/FontAwesome5'
  import { IIconProps } from '../../types'
 
- const models = [
-  { name: 'GPT 4', icon: OpenAIIcon, label: 'gpt' },
-  { name: 'GPT Turbo', icon: OpenAIIcon, label: 'gptTurbo' },
-  { name: 'Claude', icon: AnthropicIcon, label: 'claude' },
-  { name: 'Claude Instant', icon: AnthropicIcon, label: 'claudeInstant' },
-  { name: 'Cohere', icon: CohereIcon, label: 'cohere' } 
- ]
+const models = [
+  { name: 'GPT 4', label: 'gpt' },
+  { name: 'GPT Turbo', label: 'gptTurbo' },
+  { name: 'Claude', label: 'claude' },
+  { name: 'Claude Instant', label: 'claudeInstant' },
+  { name: 'Cohere', label: 'cohere' } 
+]
+
+const imageModels = [
+  { name: 'Fast Image', label: 'fastImage' },
+  { name: 'Remove BG', label: 'removeBg' }
+]
 
 export function Settings() {
   const { theme, setTheme, themeName } = useContext(ThemeContext)
   const {
     chatType,
     setChatType,
+    imageModel,
+    setImageModel
   } = useContext(AppContext)
 
   const styles = getStyles(theme)
@@ -44,15 +47,62 @@ export function Settings() {
     if (type.includes('claude')) {
       return <AnthropicIcon {...props} />
     }
-    return <CohereIcon {...props} />
+    if (type.includes('cohere')) {
+      return <CohereIcon {...props} />
+    }
+    if (type.includes('fastImage')) {
+      return <FontAwesome name="images" />
+    }
+    if (type.includes('removeBg')) {
+      return <FontAwesome name="x-ray" />
+    }
   }
 
   return (
     <View style={styles.container}>
-      <View
+            <View
         style={styles.titleContainer}
       >
         <Text
+            style={styles.mainText}
+        >Theme</Text>
+      </View>
+      <TouchableHighlight
+          underlayColor='transparent'
+          onPress={() => {
+            setTheme('light')
+          }}
+        >
+          <View
+            style={{...styles.chatChoiceButton, ...getDynamicViewStyle(themeName,'light', theme)}}
+          >
+          <Text
+            style={{...styles.chatTypeText, ...getDynamicTextStyle(themeName, 'light', theme)}}
+          >
+            Light
+          </Text>
+        </View>
+      </TouchableHighlight>
+      <TouchableHighlight
+          underlayColor='transparent'
+          onPress={() => {
+            setTheme('dark')
+          }}
+        >
+          <View
+            style={{...styles.chatChoiceButton, ...getDynamicViewStyle(themeName,'dark', theme)}}
+          >
+          <Text
+            style={{...styles.chatTypeText, ...getDynamicTextStyle(themeName, 'dark', theme)}}
+          >
+            Dark
+          </Text>
+        </View>
+      </TouchableHighlight>
+      <View
+        style={styles.titleContainer}
+      >
+      <Text
           style={styles.mainText}
         >Chat Model</Text>
       </View>
@@ -95,42 +145,46 @@ export function Settings() {
       <View
         style={styles.titleContainer}
       >
-        <Text
+      <Text
           style={styles.mainText}
-        >Theme</Text>
+        >Chat Model</Text>
       </View>
-      <TouchableHighlight
-          underlayColor='transparent'
-          onPress={() => {
-            setTheme('light')
-          }}
-        >
-          <View
-            style={{...styles.chatChoiceButton, ...getDynamicViewStyle(themeName,'light', theme)}}
-          >
-          <Text
-            style={{...styles.chatTypeText, ...getDynamicTextStyle(themeName, 'light', theme)}}
-          >
-            Light
-          </Text>
-        </View>
-      </TouchableHighlight>
-      <TouchableHighlight
-          underlayColor='transparent'
-          onPress={() => {
-            setTheme('dark')
-          }}
-        >
-          <View
-            style={{...styles.chatChoiceButton, ...getDynamicViewStyle(themeName,'dark', theme)}}
-          >
-          <Text
-            style={{...styles.chatTypeText, ...getDynamicTextStyle(themeName, 'dark', theme)}}
-          >
-            Dark
-          </Text>
-        </View>
-      </TouchableHighlight>
+      <View style={styles.buttonContainer}>
+        {
+          imageModels.map((model, index) => {
+            return (
+              <TouchableHighlight
+                key={index}
+                underlayColor='transparent'
+                onPress={() => {
+                  setImageModel(model.label)
+                }}
+              >
+                <View
+                  style={{...styles.chatChoiceButton, ...getDynamicViewStyle(chatType, model.label, theme)}}
+                >
+                {
+                  renderIcon({
+                    type: model.label,
+                    props: {
+                      theme,
+                      size: 18,
+                      style: {marginRight: 8},
+                      selected: chatType === model.label
+                    }
+                  })
+                }
+                <Text
+                  style={{...styles.chatTypeText, ...getDynamicTextStyle(chatType, model.label, theme)}}
+                >
+                  { model.name }
+                </Text>
+              </View>
+            </TouchableHighlight>
+            )
+          })
+        }
+      </View>
     </View>
   )
 }

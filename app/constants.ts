@@ -9,3 +9,8 @@ export const CHAT_TYPES = {
   claudeInstant: 'claudeInstant',
   cohere: 'cohere',
 }
+
+export const IMAGE_MODELS = {
+  fastImage: 'fastImage',
+  removeBackground: 'removeBackground'
+}

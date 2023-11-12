@@ -9,12 +9,17 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo/react-native-action-sheet": "^4.0.1",
     "@gorhom/bottom-sheet": "^4",
+    "@react-native-camera-roll/camera-roll": "^6.0.2",
     "@react-navigation/bottom-tabs": "^6.5.11",
     "@react-navigation/native": "^6.1.9",
     "@react-navigation/native-stack": "^6.9.16",
     "@ronradtke/react-native-markdown-display": "^8.0.0",
     "expo": "~49.0.15",
+    "expo-clipboard": "~4.3.1",
+    "expo-file-system": "~15.4.4",
+    "expo-splash-screen": "~0.20.5",
     "expo-status-bar": "~1.6.0",
     "punycode": "^2.3.1",
     "react": "18.2.0",

@@ -1,7 +1,7 @@
 const colors = {
   white: '#fff',
   black: '#000',
-  gray: 'rgba(0, 0, 0, .4)',
+  gray: 'rgba(0, 0, 0, .5)',
   lightWhite: 'rgba(255, 255, 255, .3)',
   blueTintColor: '#0281ff',
 }

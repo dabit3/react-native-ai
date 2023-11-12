@@ -1,15 +1,10 @@
 import { createContext, SetStateAction, Dispatch  } from 'react'
+import { IMAGE_MODELS } from '../constants'
 
 interface IThemeContext {
   theme: any
   setTheme: Dispatch<SetStateAction<string>>
   themeName: string
-}
-
-interface IAppContext {
-  chatType: string
-  setChatType: Dispatch<SetStateAction<string>>,
-  handlePresentModalPress: () => void
 }
 
 const ThemeContext = createContext<IThemeContext>({
@@ -18,10 +13,20 @@ const ThemeContext = createContext<IThemeContext>({
   themeName: ''
 })
 
+interface IAppContext {
+  chatType: string
+  setChatType: Dispatch<SetStateAction<string>>
+  handlePresentModalPress: () => void
+  setImageModel: Dispatch<SetStateAction<string>>
+  imageModel: string
+}
+
 const AppContext = createContext<IAppContext>({
   chatType: '',
   setChatType: () => null,
-  handlePresentModalPress: () => null
+  handlePresentModalPress: () => null,
+  imageModel: IMAGE_MODELS.fastImage,
+  setImageModel: () => null
 })
 
 export {
