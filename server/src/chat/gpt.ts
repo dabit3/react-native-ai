@@ -15,7 +15,7 @@ export const gpt = asyncHandler(async (req: Request, res: Response) => {
     })
     const { model, messages } = req.body
 
-    console.log('model: ', model)
+    console.log('model: ', models[model])
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -67,6 +67,6 @@ export const gpt = asyncHandler(async (req: Request, res: Response) => {
   
     res.write('data: [DONE]\n\n')
   } catch (err) {
-
+    console.log('error: ', err)
   }
 })

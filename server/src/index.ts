@@ -1,5 +1,6 @@
 import express from 'express'
 import chatRouter from './chat/chatRouter'
+import imagesRouter from './images/imagesRouter'
 import 'dotenv/config'
 import bodyParser from 'body-parser'
 
@@ -13,6 +14,7 @@ app.get('/', (req, res) => {
 })
 
 app.use('/chat', chatRouter)
+app.use('/images', imagesRouter)
 
 app.listen(3050, () => {
   console.log('Server started on port 3050')

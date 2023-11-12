@@ -16,6 +16,11 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
+"@fal-ai/serverless-client@^0.5.2":
+  version "0.5.2"
+  resolved "https://registry.yarnpkg.com/@fal-ai/serverless-client/-/serverless-client-0.5.2.tgz#02f05234b92e661c1333ee772f55b1c6d815c16a"
+  integrity sha512-4ClkwkgGjbKtqakRNiYnlnGsYPmXA8Y/PGdAiYsyE/n0DhflPwa9wsTOfw7z5tdYBKMJLAnjPK8cJ/gLPyMqpQ==
+
 "@jridgewell/resolve-uri@^3.0.3":
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/@jridgewell/resolve-uri/-/resolve-uri-3.1.1.tgz#c08679063f279615a3326583ba3a90d1d82cc721"

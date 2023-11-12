@@ -18,7 +18,7 @@ exports.gpt = (0, express_async_handler_1.default)(async (req, res) => {
             'Cache-Control': 'no-cache'
         });
         const { model, messages } = req.body;
-        console.log('model: ', model);
+        console.log('model: ', models[model]);
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -67,5 +67,6 @@ exports.gpt = (0, express_async_handler_1.default)(async (req, res) => {
         res.write('data: [DONE]\n\n');
     }
     catch (err) {
+        console.log('error: ', err);
     }
 });
