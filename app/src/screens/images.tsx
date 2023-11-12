@@ -5,6 +5,7 @@ import {
   KeyboardAvoidingView,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
   TextInput,
   Dimensions,
   Share,
@@ -221,7 +222,7 @@ export function Images({ navigation } : { navigation: any }) {
           }
           {
             images.values.map((v, index) => (
-              <View key={index}>
+              <View key={index} style={styles.imageContainer}>
                 <View style={styles.promptTextContainer}>
                   <TouchableHighlight
                     underlayColor={'transparent'}
@@ -258,7 +259,11 @@ export function Images({ navigation } : { navigation: any }) {
               </View>
             ))
           }
-
+          { loading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator />
+            </View>
+          ) }
         </ScrollView>
         {
         callMade && (
@@ -296,6 +301,9 @@ export function Images({ navigation } : { navigation: any }) {
 }
 
 const getStyles = theme => StyleSheet.create({
+  imageContainer: {
+    marginBottom: 15
+  },
   chatDescription: {
     color: theme.textColor,
     textAlign: 'center',
@@ -318,14 +326,17 @@ const getStyles = theme => StyleSheet.create({
   },
   modelLabelContainer: {
     padding: 9,
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: theme.borderColor,
     paddingLeft: 13,
     borderBottomLeftRadius: 8,
     borderBottomRightRadius: 8,
     marginHorizontal: 5,
   },
   modelLabelText: {
-    color: theme.mutedForeground,
-    fontFamily: 'Geist-Light',
+    color: theme.mutedForegroundColor,
+    fontFamily: 'Geist-Regular',
     fontSize: 13
   },
   imageButtonContainer: {

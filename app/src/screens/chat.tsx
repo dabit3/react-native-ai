@@ -30,6 +30,13 @@ export function Chat() {
   const [input, setInput] = useState('')
   const scrollViewRef = useRef<ScrollView | null>(null)
 
+  // claude state management
+  const [claudeAPIMessages, setClaudeAPIMessages] = useState('')
+  const [claudeResponse, setClaudeResponse] = useState({
+    messages: [],
+    index: uuid(),
+  })
+
   // openAI state management
   const [openaiMessages, setOpenaiMessages] = useState<IOpenAIMessages[]>([])
   const [openaiResponse, setOpenaiResponse] = useState<IOpenAIStateWithIndex>({
@@ -54,7 +61,95 @@ export function Chat() {
   }
 
   async function generateCohereResponse() {}
-  async function generateClaudeResponse() {}
+  async function generateClaudeResponse() {
+    if (!input) return
+    Keyboard.dismiss()
+    let localResponse = ''
+    const claudeInputWithoutFile = `${claudeAPIMessages}\n\nHuman: ${input}\n\nAssistant:`
+    const claudeInputWithFile = `${claudeAPIMessages}\n\nHuman: ${input}`
+
+    let claudeArray = [
+      ...claudeResponse.messages, {
+        user: input,
+      }
+    ]
+
+    setClaudeResponse(c => ({
+      index: c.index,
+      messages: JSON.parse(JSON.stringify(claudeArray))
+    }))
+
+    setLoading(true)
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({
+        animated: true
+      })
+    }, 1)
+    setInput('')
+
+    // const eventSourceArgs = {
+    //   body: {
+    //     messages: messagesRequest,
+    //     model: chatType
+    //   },
+    //   type: getChatType(chatType),
+    // }
+
+    // const es = await getEventSource(eventSourceArgs)
+
+    // const listener = (event) => {
+    //   if (event.type === "open") {
+    //     console.log("Open SSE connection.")
+    //     setLoading(false)
+    //   } else if (event.type === "message") {
+    //     if (event.data !== "[DONE]") {
+    //       if (localResponse.length < 850) {
+    //         scrollViewRef.current?.scrollToEnd({
+    //           animated: true
+    //         })
+    //       }
+    //       const data = event.data
+    //       localResponse = localResponse + JSON.parse(data).completion
+    //       claudeArray[claudeArray.length - 1].assistant = localResponse
+    //       setClaudeResponse(c => ({
+    //         index: c.index,
+    //         messages: JSON.parse(JSON.stringify(claudeArray))
+    //       }))
+    //       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    //     } else {
+    //       setLoading(false)
+    //       setUpdating(false)
+    //       if (chatResultsMode === chatResultsModes.textAndAudio) {
+    //         generateAudio({
+    //           value: localResponse, type: chatType
+    //         })
+    //       }
+    //       setClaudeAPIMessages(
+    //         `${claudeAPIMessages}\n\nHuman: ${input}\n\nAssistant:${getFirstNCharsOrLess(localResponse, 2000)}`
+    //       )
+    //       checkUserInfo()
+    //       es.close()
+    //     }
+    //   } else if (event.type === "error") {
+    //     console.error("Connection error:", event.message)
+    //     setUpdating(false)
+    //     setLoading(false)
+    //   } else if (event.type === "exception") {
+    //     console.error("Error:", event.message, event.error)
+    //     setUpdating(false)
+    //     setLoading(false)
+    //   }
+    // }
+   
+    // es.addEventListener("open", listener);
+    // es.addEventListener("message", listener);
+    // es.addEventListener("error", listener);
+
+    return () => {
+      es.removeAllEventListeners()
+      es.close()
+    }
+  }
 
   async function generateOpenaiResponse() {
     try {
