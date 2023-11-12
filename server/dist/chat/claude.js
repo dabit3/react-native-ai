@@ -5,6 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.claude = void 0;
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
+const models = {
+    claude: 'claude-2.0',
+    claudeInstant: 'claude-instant-1.2'
+};
 exports.claude = (0, express_async_handler_1.default)(async (req, res, next) => {
     try {
         res.writeHead(200, {
@@ -22,7 +26,7 @@ exports.claude = (0, express_async_handler_1.default)(async (req, res, next) => 
                 'x-api-key': process.env.ANTHROPIC_API_KEY || ''
             },
             body: JSON.stringify({
-                model,
+                model: models[model],
                 prompt: messages,
                 "max_tokens_to_sample": 5000,
                 stream: true

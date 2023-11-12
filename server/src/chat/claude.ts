@@ -1,6 +1,18 @@
 import { Request, Response, NextFunction } from "express"
 import asyncHandler from 'express-async-handler'
 
+type ModelName = 'claude-2.0' | 'claude-instant-1.2';
+
+const models: Record<string, ModelName> = {
+  claude: 'claude-2.0',
+  claudeInstant: 'claude-instant-1.2'
+};
+
+interface RequestBody {
+  messages: any;
+  model: ModelName;
+}
+
 export const claude = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   try {
     res.writeHead(200, {
@@ -9,7 +21,7 @@ export const claude = asyncHandler(async (req: Request, res: Response, next: Nex
       'Cache-Control': 'no-cache'
     })
 
-    const { messages, model } = req.body  
+    const { messages, model }: RequestBody = req.body
     const decoder = new TextDecoder()
     const response = await fetch('https://api.anthropic.com/v1/complete', {
       method: 'POST',
@@ -19,7 +31,7 @@ export const claude = asyncHandler(async (req: Request, res: Response, next: Nex
         'x-api-key': process.env.ANTHROPIC_API_KEY || ''
       },
       body: JSON.stringify({
-        model,
+        model: models[model],
         prompt: messages,
         "max_tokens_to_sample": 5000,
         stream: true
