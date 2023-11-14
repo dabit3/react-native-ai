@@ -44,9 +44,17 @@ export function Chat() {
     index: uuid()
   })
 
+  // cohere state management
+  const [cohereResponse, setCohereResponse] = useState({
+    messages: [],
+    index: uuid()
+  })
+
   const { theme } = useContext(ThemeContext)
   const { chatType } = useContext(AppContext)
   const styles = getStyles(theme)
+
+  console.log('chatType: ', chatType)
 
   async function chat() {
     if (!input) return
@@ -60,19 +68,17 @@ export function Chat() {
     }
   }
 
-  async function generateCohereResponse() {}
   async function generateClaudeResponse() {
     if (!input) return
     Keyboard.dismiss()
     let localResponse = ''
-    const claudeInputWithoutFile = `${claudeAPIMessages}\n\nHuman: ${input}\n\nAssistant:`
-    const claudeInputWithFile = `${claudeAPIMessages}\n\nHuman: ${input}`
+    const claudeInput = `${claudeAPIMessages}\n\nHuman: ${input}\n\nAssistant:`
 
     let claudeArray = [
       ...claudeResponse.messages, {
         user: input,
       }
-    ]
+    ] as [{user: string, assistant?: string}]
 
     setClaudeResponse(c => ({
       index: c.index,
@@ -87,68 +93,55 @@ export function Chat() {
     }, 1)
     setInput('')
 
-    // const eventSourceArgs = {
-    //   body: {
-    //     messages: messagesRequest,
-    //     model: chatType
-    //   },
-    //   type: getChatType(chatType),
-    // }
-
-    // const es = await getEventSource(eventSourceArgs)
-
-    // const listener = (event) => {
-    //   if (event.type === "open") {
-    //     console.log("Open SSE connection.")
-    //     setLoading(false)
-    //   } else if (event.type === "message") {
-    //     if (event.data !== "[DONE]") {
-    //       if (localResponse.length < 850) {
-    //         scrollViewRef.current?.scrollToEnd({
-    //           animated: true
-    //         })
-    //       }
-    //       const data = event.data
-    //       localResponse = localResponse + JSON.parse(data).completion
-    //       claudeArray[claudeArray.length - 1].assistant = localResponse
-    //       setClaudeResponse(c => ({
-    //         index: c.index,
-    //         messages: JSON.parse(JSON.stringify(claudeArray))
-    //       }))
-    //       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-    //     } else {
-    //       setLoading(false)
-    //       setUpdating(false)
-    //       if (chatResultsMode === chatResultsModes.textAndAudio) {
-    //         generateAudio({
-    //           value: localResponse, type: chatType
-    //         })
-    //       }
-    //       setClaudeAPIMessages(
-    //         `${claudeAPIMessages}\n\nHuman: ${input}\n\nAssistant:${getFirstNCharsOrLess(localResponse, 2000)}`
-    //       )
-    //       checkUserInfo()
-    //       es.close()
-    //     }
-    //   } else if (event.type === "error") {
-    //     console.error("Connection error:", event.message)
-    //     setUpdating(false)
-    //     setLoading(false)
-    //   } else if (event.type === "exception") {
-    //     console.error("Error:", event.message, event.error)
-    //     setUpdating(false)
-    //     setLoading(false)
-    //   }
-    // }
-   
-    // es.addEventListener("open", listener);
-    // es.addEventListener("message", listener);
-    // es.addEventListener("error", listener);
-
-    return () => {
-      es.removeAllEventListeners()
-      es.close()
+    const eventSourceArgs = {
+      body: {
+        prompt: claudeInput,
+        model: chatType
+      },
+      type: getChatType(chatType),
     }
+
+    const es = await getEventSource(eventSourceArgs)
+
+    const listener = (event) => {
+      if (event.type === "open") {
+        console.log("Open SSE connection.")
+        setLoading(false)
+      } else if (event.type === "message") {
+        if (event.data !== "[DONE]") {
+          if (localResponse.length < 850) {
+            scrollViewRef.current?.scrollToEnd({
+              animated: true
+            })
+          }
+          const data = event.data
+          console.log('data: ', data)
+          localResponse = localResponse + JSON.parse(data).completion
+          claudeArray[claudeArray.length - 1].assistant = localResponse
+          setClaudeResponse(c => ({
+            index: c.index,
+            messages: JSON.parse(JSON.stringify(claudeArray))
+          }))
+        } else {
+          setLoading(false)
+          // set claude api messages to include user's input and assistant's response for future context
+          setClaudeAPIMessages(
+            `${claudeAPIMessages}\n\nHuman: ${input}\n\nAssistant:${getFirstNCharsOrLess(localResponse, 2000)}`
+          )
+          es.close()
+        }
+      } else if (event.type === "error") {
+        console.error("Connection error:", event.message)
+        setLoading(false)
+      } else if (event.type === "exception") {
+        console.error("Error:", event.message, event.error)
+        setLoading(false)
+      }
+    }
+   
+    es.addEventListener("open", listener)
+    es.addEventListener("message", listener)
+    es.addEventListener("error", listener)
   }
 
   async function generateOpenaiResponse() {
@@ -170,7 +163,6 @@ export function Chat() {
       messagesRequest = [...messagesRequest, {role: 'user', content: input}]
       setOpenaiMessages(messagesRequest)
     
-      console.log('messagesRequest: ', messagesRequest)
       // set local openai state to dislay user's most recent question
       let openaiArray = [
         ...openaiResponse.messages,
@@ -236,6 +228,116 @@ export function Chat() {
     }
   }
 
+  async function generateCohereResponse() {
+    try {
+      if (!input) return
+      Keyboard.dismiss()
+      let localResponse = ''
+      let requestInput = input
+
+      let cohereArray = [
+        ...cohereResponse.messages,
+        {
+          user: input,
+          assistant: ''
+        }
+      ]
+
+      setCohereResponse(r => ({
+        index: r.index,
+        messages: JSON.parse(JSON.stringify(cohereArray))
+      }))
+
+      setLoading(true)
+      setInput('')
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({
+          animated: true
+        })
+      }, 1)
+
+
+      const eventSourceArgs = {
+        type: getChatType(chatType),
+        body: {
+          prompt: requestInput,
+          conversationId: cohereResponse.index,
+          model: getChatType(chatType)
+        }
+      }
+
+      const es = await getEventSource(eventSourceArgs)
+
+      const listener = (event) => {
+        if (
+          event.data === "[DONE]"
+        ) {
+          console.log('done ....')
+          return es.close()
+        }
+        if (event.type === "open") {
+          setLoading(false)
+        } else if (event.type === 'message') {
+          try {
+            JSON.parse(event.data)
+            if (event.data !== "[DONE]" || !JSON.parse(event.data).is_finished) {
+              if (localResponse.length < 850) {
+                scrollViewRef.current?.scrollToEnd({
+                  animated: true
+                })
+              }
+              if (JSON.parse(event.data).text) {
+                if (!localResponse && JSON.parse(event.data).text === '\n') return
+                if (
+                  !localResponse && 
+                  JSON.parse(event.data).text.charAt(0) === ' '
+                ) {
+                  localResponse = JSON.parse(event.data).text.substring(1)
+                } else {
+                  localResponse = localResponse + JSON.parse(event.data).text
+                }
+                cohereArray[cohereArray.length - 1].assistant = localResponse
+                setCohereResponse(r => ({
+                  index: r.index,
+                  messages: JSON.parse(JSON.stringify(cohereArray))
+                }))
+              }
+              if (JSON.parse(event.data).is_finished) {
+                setLoading(false)
+                es.close()
+              }
+            } else {
+              setLoading(false)
+              es.close()
+            }
+          } catch (err) {
+            console.log('error parsing data ... ', err)
+            setLoading(false)
+            es.close()
+          }
+        } else if (event.type === "error" || event.type === "exception") {
+          console.error("Connection error:", event.message)
+          setLoading(false)
+          es.close()
+        } else {
+          console.error("Connection error:", event.message)
+          setLoading(false)
+          es.close()
+        }
+      }
+     
+      es.addEventListener("open", listener);
+      es.addEventListener("message", listener);
+      es.addEventListener("error", listener);
+  
+      return () => {
+        es.removeAllEventListeners()
+        es.close()
+      }
+    } catch (err) {
+      console.log('error generating cohere chat...', err)
+    }
+  }
 
   function renderItem({
     item, index
@@ -274,11 +376,33 @@ export function Chat() {
         keyboardShouldPersistTaps='handled'
         ref={scrollViewRef}
       >
-        <FlatList
-          data={openaiResponse.messages}
-          renderItem={renderItem}
-          scrollEnabled={false}
-        />
+        {
+          chatType.includes('gpt') && (
+            <FlatList
+              data={openaiResponse.messages}
+              renderItem={renderItem}
+              scrollEnabled={false}
+            />
+          )
+        }
+        {
+          chatType.includes('claude') && (
+            <FlatList
+              data={claudeResponse.messages}
+              renderItem={renderItem}
+              scrollEnabled={false}
+            />
+          )
+        }
+        {
+          chatType.includes('cohere') && (
+            <FlatList
+              data={cohereResponse.messages}
+              renderItem={renderItem}
+              scrollEnabled={false}
+            />
+          )
+        }
         {
           loading && (
             <ActivityIndicator style={styles.loadingContainer} />
@@ -286,7 +410,7 @@ export function Chat() {
         }
       </ScrollView>
       <View
-        style={styles.inputContainer}
+        style={styles.chatInputContainer}
       >
        <TextInput
         style={styles.input}
@@ -360,12 +484,14 @@ const getStyles = (theme: any) => StyleSheet.create({
     padding: 5,
     borderRadius: 100
   },
-  inputContainer: {
-    padding: 10,
+  chatInputContainer: {
     paddingTop: 5,
-    display: 'flex',
+    borderColor:'white',
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
+    paddingBottom: 5,
+    paddingHorizontal: 10
   },
   input: {
     width: '92%',

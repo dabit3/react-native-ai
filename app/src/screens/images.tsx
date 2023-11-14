@@ -190,7 +190,7 @@ export function Images({ navigation } : { navigation: any }) {
                     onChangeText={onChangeText}
                     style={styles.midInput}
                     placeholder='What do you want to create?'
-                    placeholderTextColor={theme.placeholderTextColor}
+                    placeholderTextColor={theme.mutedForegroundColor}
                     autoCorrect={true}
                   />
                   <TouchableHighlight
@@ -266,35 +266,35 @@ export function Images({ navigation } : { navigation: any }) {
           ) }
         </ScrollView>
         {
-        callMade && (
-          <View style={styles.chatInputContainer}>
-            <TextInput
-              onChangeText={onChangeText}
-              style={styles.input}
-              placeholder='What else do you want to create?'
-              placeholderTextColor={theme.placeholderTextColor}
-              autoCorrect={true}
-            />
-            <TouchableHighlight
-              onPress={generate}
-              underlayColor={'transparent'}
-              onLongPress={
-                () => {
-                  Keyboard.dismiss()
-                  handlePresentModalPress()
+          callMade && (
+            <View style={styles.chatInputContainer}>
+              <TextInput
+                onChangeText={onChangeText}
+                style={styles.input}
+                placeholder='What else do you want to create?'
+                placeholderTextColor={theme.placeholderTextColor}
+                autoCorrect={true}
+              />
+              <TouchableHighlight
+                onPress={generate}
+                underlayColor={'transparent'}
+                onLongPress={
+                  () => {
+                    Keyboard.dismiss()
+                    handlePresentModalPress()
+                  }
                 }
-              }
-            >
-              <View style={styles.buttonStyle}>
-                <Ionicons
-                  name="md-arrow-up"
-                  size={20} color="white"
-                />
-              </View>
-            </TouchableHighlight>
-          </View>
-        )
-      }
+              >
+                <View style={styles.buttonStyle}>
+                  <Ionicons
+                    name="md-arrow-up"
+                    size={20} color="white"
+                  />
+                </View>
+              </TouchableHighlight>
+            </View>
+          )
+        }
       </KeyboardAvoidingView>
     </View>
   )
@@ -414,7 +414,8 @@ const getStyles = theme => StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingBottom: 5
+    paddingBottom: 5,
+    paddingHorizontal: 10
   },
   midChatInputContainer: {
     width: '100%',
@@ -433,21 +434,18 @@ const getStyles = theme => StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 99,
     color: theme.lightWhite,
-    borderColor: theme.lightWhiteBorder,
-    fontFamily: 'Geist-SemiBold',
+    borderColor: theme.borderColor,
+    fontFamily: 'Geist-Medium',
   },
   input: {
-    flex: 1,
-    height: 43,
+    width: '92%',
+    color: theme.textColor,
     borderWidth: 1,
-    borderRadius: 99,
-    color: theme.lightWhite,
-    marginHorizontal: 6,
-    paddingHorizontal: 21,
-    paddingBottom: 3,
-    paddingRight: 45,
-    borderColor: theme.lightWhiteBorder,
-    fontFamily: 'Geist-SemiBold',
+    borderRadius: 50,
+    paddingHorizontal: 13,
+    fontFamily: 'Geist-Regular',
+    padding: 7,
+    borderColor: theme.borderColor
   },
   midButtonStyle: {
     flexDirection: 'row',
@@ -460,13 +458,14 @@ const getStyles = theme => StyleSheet.create({
     alignItems: 'center'
   },
   midButtonText: {
-    color: theme.secondaryTextColor,
+    color: theme.buttonTextColor,
     marginLeft: 10,
     fontFamily: 'Geist-Bold',
     fontSize: 18
   },
   buttonStyle: {
     marginRight: 14,
+    marginLeft: 5,
     padding: 5,
     borderRadius: 99,
     backgroundColor: theme.tintColor

@@ -19,7 +19,8 @@ const models = [
   { name: 'GPT Turbo', label: 'gptTurbo' },
   { name: 'Claude', label: 'claude' },
   { name: 'Claude Instant', label: 'claudeInstant' },
-  { name: 'Cohere', label: 'cohere' } 
+  { name: 'Cohere', label: 'cohere' },
+  { name: 'Cohere Web', label: 'cohereWeb' } 
 ]
 
 const imageModels = [
@@ -32,8 +33,8 @@ export function Settings() {
   const {
     chatType,
     setChatType,
-    imageModel,
-    setImageModel
+    setImageModel,
+    imageModel
   } = useContext(AppContext)
 
   const styles = getStyles(theme)
@@ -51,16 +52,16 @@ export function Settings() {
       return <CohereIcon {...props} />
     }
     if (type.includes('fastImage')) {
-      return <FontAwesome name="images" />
+      return <FontAwesome name="images" {...props} />
     }
     if (type.includes('removeBg')) {
-      return <FontAwesome name="x-ray" />
+      return <FontAwesome name="x-ray" {...props} />
     }
   }
 
   return (
     <View style={styles.container}>
-            <View
+      <View
         style={styles.titleContainer}
       >
         <Text
@@ -161,7 +162,7 @@ export function Settings() {
                 }}
               >
                 <View
-                  style={{...styles.chatChoiceButton, ...getDynamicViewStyle(chatType, model.label, theme)}}
+                  style={{...styles.chatChoiceButton, ...getDynamicViewStyle(imageModel, model.label, theme)}}
                 >
                 {
                   renderIcon({
@@ -170,12 +171,12 @@ export function Settings() {
                       theme,
                       size: 18,
                       style: {marginRight: 8},
-                      selected: chatType === model.label
+                      color: imageModel === model.label ? theme.secondaryTextColor : theme.textColor
                     }
                   })
                 }
                 <Text
-                  style={{...styles.chatTypeText, ...getDynamicTextStyle(chatType, model.label, theme)}}
+                  style={{...styles.chatTypeText, ...getDynamicTextStyle(imageModel, model.label, theme)}}
                 >
                   { model.name }
                 </Text>

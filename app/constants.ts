@@ -8,6 +8,7 @@ export const CHAT_TYPES = {
   claude: 'claude',
   claudeInstant: 'claudeInstant',
   cohere: 'cohere',
+  cohereWeb: 'cohereWeb',
 }
 
 export const IMAGE_MODELS = {

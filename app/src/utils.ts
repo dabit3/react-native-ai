@@ -31,7 +31,7 @@ export function getFirstNCharsOrLess(text:string, numChars:number = 1000) {
 
 export function getFirstN({ messages, size = 10 } : { size?: number, messages: any[] }) {
   if (messages.length > size) {
-    const firstN = []
+    const firstN = new Array()
     for(let i = 0; i < size; i++) {
       firstN.push(messages[i])
     }
