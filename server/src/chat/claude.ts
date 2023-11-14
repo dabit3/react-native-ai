@@ -6,10 +6,10 @@ type ModelName = 'claude-2.0' | 'claude-instant-1.2';
 const models: Record<string, ModelName> = {
   claude: 'claude-2.0',
   claudeInstant: 'claude-instant-1.2'
-};
+}
 
 interface RequestBody {
-  messages: any;
+  prompt: any;
   model: ModelName;
 }
 
@@ -21,7 +21,8 @@ export const claude = asyncHandler(async (req: Request, res: Response, next: Nex
       'Cache-Control': 'no-cache'
     })
 
-    const { messages, model }: RequestBody = req.body
+    const { prompt, model }: RequestBody = req.body
+
     const decoder = new TextDecoder()
     const response = await fetch('https://api.anthropic.com/v1/complete', {
       method: 'POST',
@@ -32,7 +33,7 @@ export const claude = asyncHandler(async (req: Request, res: Response, next: Nex
       },
       body: JSON.stringify({
         model: models[model],
-        prompt: messages,
+        prompt: prompt,
         "max_tokens_to_sample": 5000,
         stream: true
       })
@@ -49,6 +50,7 @@ export const claude = asyncHandler(async (req: Request, res: Response, next: Nex
         }
   
         let chunk = decoder.decode(value)
+        console.log('chunk:', chunk)
         const lines = chunk.split("event: completion")
   
         const parsedLines = lines

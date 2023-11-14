@@ -16,7 +16,7 @@ exports.claude = (0, express_async_handler_1.default)(async (req, res, next) => 
             'Connection': 'keep-alive',
             'Cache-Control': 'no-cache'
         });
-        const { messages, model } = req.body;
+        const { prompt, model } = req.body;
         const decoder = new TextDecoder();
         const response = await fetch('https://api.anthropic.com/v1/complete', {
             method: 'POST',
@@ -27,7 +27,7 @@ exports.claude = (0, express_async_handler_1.default)(async (req, res, next) => 
             },
             body: JSON.stringify({
                 model: models[model],
-                prompt: messages,
+                prompt: prompt,
                 "max_tokens_to_sample": 5000,
                 stream: true
             })
@@ -41,6 +41,7 @@ exports.claude = (0, express_async_handler_1.default)(async (req, res, next) => 
                     break;
                 }
                 let chunk = decoder.decode(value);
+                console.log('chunk:', chunk);
                 const lines = chunk.split("event: completion");
                 const parsedLines = lines
                     .filter(line => line.includes('log_id'))
