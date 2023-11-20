@@ -17,6 +17,7 @@ import { useContext, useState, useRef } from 'react'
 import { ThemeContext, AppContext } from '../context'
 import { getEventSource, getFirstN, getFirstNCharsOrLess, getChatType } from '../utils'
 import { v4 as uuid } from 'uuid'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import FeatherIcon from '@expo/vector-icons/Feather'
 import {
   IOpenAIMessages,
@@ -26,8 +27,9 @@ import {
 import Markdown from '@ronradtke/react-native-markdown-display'
 
 export function Chat() {
-  const [loading, setLoading] = useState(false)
-  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState<boolean>(false)
+  const [input, setInput] = useState<string>('')
+  const [callMade, setCallMade] = useState<boolean>(false)
   const scrollViewRef = useRef<ScrollView | null>(null)
 
   // claude state management
@@ -54,14 +56,13 @@ export function Chat() {
   const { chatType } = useContext(AppContext)
   const styles = getStyles(theme)
 
-  console.log('chatType: ', chatType)
-
   async function chat() {
     if (!input) return
+    setCallMade(true)
     Keyboard.dismiss()
-    if (chatType.includes('claude')) {
+    if (chatType.label.includes('claude')) {
       generateClaudeResponse()
-    } else if (chatType.includes('cohere')) {
+    } else if (chatType.label.includes('cohere')) {
       generateCohereResponse()
     } else {
       generateOpenaiResponse()
@@ -96,7 +97,7 @@ export function Chat() {
     const eventSourceArgs = {
       body: {
         prompt: claudeInput,
-        model: chatType
+        model: chatType.label
       },
       type: getChatType(chatType),
     }
@@ -256,7 +257,6 @@ export function Chat() {
         })
       }, 1)
 
-
       const eventSourceArgs = {
         type: getChatType(chatType),
         body: {
@@ -329,11 +329,6 @@ export function Chat() {
       es.addEventListener("open", listener);
       es.addEventListener("message", listener);
       es.addEventListener("error", listener);
-  
-      return () => {
-        es.removeAllEventListeners()
-        es.close()
-      }
     } catch (err) {
       console.log('error generating cohere chat...', err)
     }
@@ -375,32 +370,72 @@ export function Chat() {
       <ScrollView
         keyboardShouldPersistTaps='handled'
         ref={scrollViewRef}
+        contentContainerStyle={!callMade && styles.scrollContentContainer}
       >
         {
-          chatType.includes('gpt') && (
-            <FlatList
-              data={openaiResponse.messages}
-              renderItem={renderItem}
-              scrollEnabled={false}
-            />
+          !callMade && (
+            <View style={styles.midChatInputWrapper}>
+              <View style={styles.midChatInputContainer}>
+                
+                <TextInput
+                  onChangeText={v => setInput(v)}
+                  style={styles.midInput}
+                  placeholder='Message'
+                  placeholderTextColor={theme.mutedForegroundColor}
+                  autoCorrect={true}
+                />
+                <TouchableHighlight
+                  onPress={chat}
+                  underlayColor={'transparent'}
+                >
+                  <View style={styles.midButtonStyle}>
+                    <Ionicons
+                      name="chatbox-ellipses-outline"
+                      size={22} color="white"
+                    />
+                    <Text style={styles.midButtonText}>
+                      Chat
+                    </Text>
+                  </View>
+                </TouchableHighlight>
+                <Text style={styles.chatDescription}>
+                  Chat with a variety of different language models.
+                </Text>
+              </View>
+            </View>
           )
         }
         {
-          chatType.includes('claude') && (
-            <FlatList
-              data={claudeResponse.messages}
-              renderItem={renderItem}
-              scrollEnabled={false}
-            />
-          )
-        }
-        {
-          chatType.includes('cohere') && (
-            <FlatList
-              data={cohereResponse.messages}
-              renderItem={renderItem}
-              scrollEnabled={false}
-            />
+          callMade && (
+            <>
+            {
+              chatType.label.includes('gpt') && (
+                <FlatList
+                  data={openaiResponse.messages}
+                  renderItem={renderItem}
+                  scrollEnabled={false}
+                />
+              )
+            }
+            {
+              chatType.label.includes('claude') && (
+                <FlatList
+                  data={claudeResponse.messages}
+                  renderItem={renderItem}
+                  scrollEnabled={false}
+                />
+              )
+            }
+            {
+              chatType.label.includes('cohere') && (
+                <FlatList
+                  data={cohereResponse.messages}
+                  renderItem={renderItem}
+                  scrollEnabled={false}
+                />
+              )
+            }
+            </>
           )
         }
         {
@@ -409,38 +444,91 @@ export function Chat() {
           )
         }
       </ScrollView>
-      <View
-        style={styles.chatInputContainer}
-      >
-       <TextInput
-        style={styles.input}
-        onChangeText={v => setInput(v)}
-        placeholder='Message'
-        placeholderTextColor={theme.tabBarInactiveTintColor}
-        value={input}
-       />
-       <TouchableHighlight
-        underlayColor={'transparent'}
-        activeOpacity={0.65}
-        style={styles.chatButtonContainer}
-        onPress={chat}
-       >
-        <View
-          style={styles.chatButton}
-        >
-          <FeatherIcon
-            name='arrow-up'
-            color={theme.highlightedTextColor}
-            size={20}
-          />
-        </View>
-       </TouchableHighlight>
-      </View>
+      {
+        callMade && (
+          <View
+              style={styles.chatInputContainer}
+            >
+            <TextInput
+              style={styles.input}
+              onChangeText={v => setInput(v)}
+              placeholder='Message'
+              placeholderTextColor={theme.tabBarInactiveTintColor}
+              value={input}
+            />
+            <TouchableHighlight
+              underlayColor={'transparent'}
+              activeOpacity={0.65}
+              style={styles.chatButtonContainer}
+              onPress={chat}
+            >
+              <View
+                style={styles.chatButton}
+              >
+                <FeatherIcon
+                  name='arrow-up'
+                  color={theme.highlightedTextColor}
+                  size={20}
+                />
+              </View>
+            </TouchableHighlight>
+          </View>
+        )
+      }
     </KeyboardAvoidingView>
   )
 }
 
 const getStyles = (theme: any) => StyleSheet.create({
+  scrollContentContainer: {
+    flex: 1,
+  },
+  chatDescription: {
+    color: theme.textColor,
+    textAlign: 'center',
+    marginTop: 15,
+    fontSize: 13,
+    paddingHorizontal: 34,
+    opacity: .8,
+    fontFamily: 'Geist-Light'
+  },
+  midInput: {
+    marginBottom: 8,
+    borderWidth: 1,
+    paddingHorizontal: 25,
+    marginHorizontal: 10,
+    paddingVertical: 15,
+    borderRadius: 99,
+    color: theme.lightWhite,
+    borderColor: theme.borderColor,
+    fontFamily: 'Geist-Medium',
+  },
+  midButtonStyle: {
+    flexDirection: 'row',
+    marginHorizontal: 14,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    borderRadius: 99,
+    backgroundColor: theme.tintColor,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  midButtonText: {
+    color: theme.buttonTextColor,
+    marginLeft: 10,
+    fontFamily: 'Geist-Bold',
+    fontSize: 18
+  },
+  midChatInputWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  midChatInputContainer: {
+    width: '100%',
+    paddingTop: 5,
+    paddingBottom: 5
+  },
   loadingContainer: {
     marginTop: 25
   },

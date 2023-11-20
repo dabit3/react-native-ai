@@ -10,23 +10,16 @@ import {
   AnthropicIcon,
   OpenAIIcon,
   CohereIcon,
- } from '../components'
+ } from '../components/index'
  import FontAwesome from '@expo/vector-icons/FontAwesome5'
  import { IIconProps } from '../../types'
-
-const models = [
-  { name: 'GPT 4', label: 'gpt' },
-  { name: 'GPT Turbo', label: 'gptTurbo' },
-  { name: 'Claude', label: 'claude' },
-  { name: 'Claude Instant', label: 'claudeInstant' },
-  { name: 'Cohere', label: 'cohere' },
-  { name: 'Cohere Web', label: 'cohereWeb' } 
-]
+ import { MODELS } from '../../constants'
 
 const imageModels = [
   { name: 'Fast Image', label: 'fastImage' },
   { name: 'Remove BG', label: 'removeBg' }
 ]
+const models = Object.values(MODELS)
 
 export function Settings() {
   const { theme, setTheme, themeName } = useContext(ThemeContext)
@@ -115,11 +108,11 @@ export function Settings() {
                 key={index}
                 underlayColor='transparent'
                 onPress={() => {
-                  setChatType(model.label)
+                  setChatType(model)
                 }}
               >
                 <View
-                  style={{...styles.chatChoiceButton, ...getDynamicViewStyle(chatType, model.label, theme)}}
+                  style={{...styles.chatChoiceButton, ...getDynamicViewStyle(chatType.label, model.label, theme)}}
                 >
                 {
                   renderIcon({
@@ -128,12 +121,12 @@ export function Settings() {
                       theme,
                       size: 18,
                       style: {marginRight: 8},
-                      selected: chatType === model.label
+                      selected: chatType.label === model.label
                     }
                   })
                 }
                 <Text
-                  style={{...styles.chatTypeText, ...getDynamicTextStyle(chatType, model.label, theme)}}
+                  style={{...styles.chatTypeText, ...getDynamicTextStyle(chatType.label, model.label, theme)}}
                 >
                   { model.name }
                 </Text>

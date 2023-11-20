@@ -179,13 +179,7 @@ export function Images({ navigation } : { navigation: any }) {
             !callMade && (
               <View style={styles.midChatInputWrapper}>
                 <View style={styles.midChatInputContainer}>
-                  <View style={styles.iconContainer}>
-                    <Icon
-                      width={50}
-                      height={50}
-                      style={{marginBottom: 10}}
-                    />
-                  </View>
+                  
                   <TextInput
                     onChangeText={onChangeText}
                     style={styles.midInput}
@@ -426,6 +420,16 @@ const getStyles = theme => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  input: {
+    width: '92%',
+    color: theme.textColor,
+    borderWidth: 1,
+    borderRadius: 50,
+    paddingHorizontal: 13,
+    fontFamily: 'Geist-Regular',
+    padding: 7,
+    borderColor: theme.borderColor
+  },
   midInput: {
     marginBottom: 8,
     borderWidth: 1,
@@ -436,16 +440,6 @@ const getStyles = theme => StyleSheet.create({
     color: theme.lightWhite,
     borderColor: theme.borderColor,
     fontFamily: 'Geist-Medium',
-  },
-  input: {
-    width: '92%',
-    color: theme.textColor,
-    borderWidth: 1,
-    borderRadius: 50,
-    paddingHorizontal: 13,
-    fontFamily: 'Geist-Regular',
-    padding: 7,
-    borderColor: theme.borderColor
   },
   midButtonStyle: {
     flexDirection: 'row',

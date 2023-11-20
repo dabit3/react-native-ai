@@ -1,11 +1,7 @@
-import { createContext, SetStateAction, Dispatch  } from 'react'
+import { createContext } from 'react'
 import { IMAGE_MODELS } from '../constants'
-
-interface IThemeContext {
-  theme: any
-  setTheme: Dispatch<SetStateAction<string>>
-  themeName: string
-}
+import { IThemeContext, IAppContext } from '../types'
+import { MODELS } from '../constants'
 
 const ThemeContext = createContext<IThemeContext>({
   theme: {},
@@ -13,16 +9,8 @@ const ThemeContext = createContext<IThemeContext>({
   themeName: ''
 })
 
-interface IAppContext {
-  chatType: string
-  setChatType: Dispatch<SetStateAction<string>>
-  handlePresentModalPress: () => void
-  setImageModel: Dispatch<SetStateAction<string>>
-  imageModel: string
-}
-
 const AppContext = createContext<IAppContext>({
-  chatType: '',
+  chatType: MODELS.gptTurbo,
   setChatType: () => null,
   handlePresentModalPress: () => null,
   imageModel: IMAGE_MODELS.fastImage,

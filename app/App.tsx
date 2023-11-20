@@ -5,13 +5,15 @@ import { Main } from './src/main'
 import { useFonts } from 'expo-font'
 import { ThemeContext, AppContext } from './src/context'
 import { lightTheme, darkTheme } from './src/theme'
-import { CHAT_TYPES, IMAGE_MODELS } from './constants'
+import { IMAGE_MODELS, MODELS } from './constants'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { ChatModelModal } from './src/components/index'
+import { Model } from './types'
 import {
   BottomSheetModal,
   BottomSheetModalProvider,
 } from '@gorhom/bottom-sheet'
-import { View, Text } from 'react-native'
+import { StyleSheet } from 'react-native'
 import LogBox from 'react-native/Libraries/LogBox/LogBox'
 // @ts-ignore
 LogBox.ignoreLogs([
@@ -21,7 +23,7 @@ LogBox.ignoreLogs([
 
 export default function App() {
   const [theme, setTheme] = useState<string>('light')
-  const [chatType, setChatType] = useState<string>(CHAT_TYPES.gptTurbo)
+  const [chatType, setChatType] = useState<Model>(MODELS.gptTurbo)
   const [imageModel, setImageModel] = useState<string>(IMAGE_MODELS.fastImage)
   const [modalVisible, setModalVisible] = useState<boolean>(false)
   const [fontsLoaded] = useFonts({
@@ -37,7 +39,7 @@ export default function App() {
   })
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null)
-  const handlePresentModalPress = useCallback(() => {
+  const handlePresentModalPress = () => {
     if (modalVisible) {
       bottomSheetModalRef.current?.dismiss()
       setModalVisible(false)
@@ -45,11 +47,10 @@ export default function App() {
       bottomSheetModalRef.current?.present()
       setModalVisible(true)
     }
-  
-  }, []);
-  const handleSheetChanges = useCallback((index: number) => {
-    console.log('handleSheetChanges', index);
-  }, []);
+  }
+  console.log('chatType: ', chatType)
+
+  const bottomSheetStyles = getBottomsheetStyles(theme)
 
   if (!fontsLoaded) return null
   return (
@@ -71,22 +72,40 @@ export default function App() {
           <NavigationContainer>
             <Main />
           </NavigationContainer>
+          <BottomSheetModalProvider>
+            <BottomSheetModal
+                handleIndicatorStyle={bottomSheetStyles.handleIndicator}
+                handleStyle={bottomSheetStyles.handle}
+                backgroundStyle={bottomSheetStyles.background}
+                ref={bottomSheetModalRef}
+                snapPoints={['50%']}
+              >
+                <ChatModelModal
+                  handlePresentModalPress={handlePresentModalPress}
+                />
+              </BottomSheetModal>
+            </BottomSheetModalProvider>
         </ThemeContext.Provider>
       </AppContext.Provider>
-      <BottomSheetModalProvider>
-       <BottomSheetModal
-          ref={bottomSheetModalRef}
-          snapPoints={['50%']}
-          onChange={handleSheetChanges}
-        >
-          <View>
-            <Text>Awesome 🎉</Text>
-          </View>
-        </BottomSheetModal>
-      </BottomSheetModalProvider>
     </GestureHandlerRootView>
   )
 }
+
+const getBottomsheetStyles = theme => StyleSheet.create({
+  background: {
+    paddingHorizontal: 24,
+    backgroundColor: theme.backgroundColor
+  },
+  handle: {
+    marginHorizontal: 15,
+    backgroundColor: theme.backgroundColor,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
+  handleIndicator: {
+    backgroundColor: 'rgba(255, 255, 255, .3)'
+  }
+})
 
 function getTheme(theme: any) {
   switch (theme) {

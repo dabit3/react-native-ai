@@ -1,9 +1,9 @@
 import {
-  Text, StyleSheet, TouchableOpacity, View, TouchableHighlight
+  StyleSheet, View, TouchableHighlight
 } from 'react-native'
 import { useContext } from 'react'
 import { Icon } from './Icon'
-import { ThemeContext, AppContext } from '../context'
+import { ThemeContext, AppContext } from '../../src/context'
 import FontAwesome from '@expo/vector-icons/FontAwesome5'
 
 export function Header() {
