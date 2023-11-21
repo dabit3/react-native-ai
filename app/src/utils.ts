@@ -11,6 +11,7 @@ export function getEventSource({
   body: any,
   type: string
 }) {
+  console.log('DOMAIN; ', DOMAIN)
   const es = new EventSource(`${DOMAIN}/chat/${type}`, {
     headers: {
       'Content-Type': 'application/json',

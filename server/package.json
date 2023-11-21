@@ -8,6 +8,7 @@
     "start": "node dist/index.js",
     "ngrok": "ngrok http 3050",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon --exitcrash dist/index.js\"",
+    "ngrokfixed": "ngrok http --domain=f82f850f17ee-443370837071186036.ngrok-free.app 3050",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

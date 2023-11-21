@@ -9,7 +9,7 @@ const models = {
     claude: 'claude-2.0',
     claudeInstant: 'claude-instant-1.2'
 };
-exports.claude = (0, express_async_handler_1.default)(async (req, res, next) => {
+exports.claude = (0, express_async_handler_1.default)(async (req, res) => {
     try {
         res.writeHead(200, {
             'Content-Type': 'text/event-stream',

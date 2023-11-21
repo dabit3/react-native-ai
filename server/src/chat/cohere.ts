@@ -1,7 +1,7 @@
 /*
 *  stream help from  https://www.builder.io/blog/stream-ai-javascript
 */
-import { Request, Response, NextFunction } from "express"
+import { Request, Response } from "express"
 
 type ModelName = 'cohere' | 'cohereWeb';
 

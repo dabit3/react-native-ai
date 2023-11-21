@@ -13,7 +13,7 @@ interface RequestBody {
   model: ModelName;
 }
 
-export const claude = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const claude = asyncHandler(async (req: Request, res: Response) => {
   try {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',

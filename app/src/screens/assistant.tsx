@@ -27,8 +27,9 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { v4 as uuid } from 'uuid'
 import { AppContext, ThemeContext } from '../context'
-import { getEventSource, getChatType } from '../utils'
+import { getChatType } from '../utils'
 import Ionicons from '@expo/vector-icons/Ionicons'
+import { DOMAIN } from '../../constants'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import * as Clipboard from 'expo-clipboard'
@@ -41,12 +42,16 @@ const { height } = Dimensions.get('window')
 export function Assistant({ navigation }) {
   const [loading, setLoading] = useState(false)
   const scrollViewRef = useRef<ScrollView | null>(null)
-  const inputRef = useRef()
-  const [input, setInput] = useState('')
+  const [input, setInput] = useState<string>("what's the capital of france?")
+  const [instructions, setInstructions] = useState<string>('you are a helpful assistant')
   const [file, setFile] = useState<any>(null)
   const { showActionSheetWithOptions } = useActionSheet()
   const [loadingAudio, setLoadingAudio] = useState(false)
   const [updating, setUpdating] = useState()
+
+  const [assistantId, setAssistantId] = useState<string>('')
+  const [threadId, setThreadId] = useState<string>('')
+  const [openaiResponse, setOpenaiResponse] = useState<any>([])
 
   const playingSound = useRef({
     playing: false,
@@ -60,103 +65,175 @@ export function Assistant({ navigation }) {
     setCount(c => c + 1)
   }
 
-  const {
-    chatType
-  } = useContext(AppContext)
   const { theme } = useContext(ThemeContext)
 
   // openAI
-  const [openaiResponse, setOpenaiResponse] = useState({
-    messages: [],
-    index: uuid()
-  })
   
-  function onChangeText(v) {
+  function onChangeInputText(v) {
+    setInput(v)
+  }
+
+  function onChangeInstructionsText(v) {
     setInput(v)
   }
 
   async function clearChat() {
     if (loading) return
     setFile(null)
-    setOpenaiResponse({
-      messages: [],
-      index: uuid()
-    })
   }
 
-  async function chat() {
+  async function createThread() {
     if (!input) return
-    if (!file) return
     generateAssistantResponse()
   }
 
   async function generateAssistantResponse() {
     try {
       Keyboard.dismiss()
-      const fileUpload = file
+
+      let localInput = {
+        type: 'user',
+        value: input
+      } as any
+
+      if (instructions) {
+        localInput.instructions = instructions
+      }
+      setOpenaiResponse([localInput])
   
-      let openaiArray = [
-        ...openaiResponse.messages,
-        {
-          user: input,
-          image: fileUpload,
-          assistant: ''
+      setInput('')
+      setInstructions('')
+      setLoading(true)
+  
+      const body: {
+        input: string,
+        instructions?: string
+      } = {
+        input
+      }
+      if (instructions) {
+        body.instructions = instructions
+      }
+
+      const response = await fetch(`${DOMAIN}/chat/create-assistant`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: {
+          'Content-Type': 'application/json'
         }
-      ]
-      setOpenaiResponse(c => ({
-        index: c.index,
-        messages: JSON.parse(JSON.stringify(openaiArray))
-      }))
+      })
+
+      const {
+        assistantId: _assistantId, threadId: _threadId, runId: _runId
+      } = await response.json()
+    
+      setThreadId(_threadId)
+      setAssistantId(_assistantId)
+      checkThread(_runId, _threadId)
+    } catch (err) {
+      console.log('error calling assistant API:', err)
+      setLoading(false)
+    }
+  }
+
+  async function checkThread(_runId, _threadId) {
+    try {
+      let finished = false
+      while (!finished) {
+        const response = await fetch(`${DOMAIN}/chat/run-status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            thread_id: _threadId,
+            run_id: _runId
+          })
+        }).then(res => res.json())
+        if (response.status === 'completed') {
+          finished = true
+          break
+        } else {
+          await new Promise(resolve => setTimeout(resolve, 250))
+        }
+      }
+
+      const thread = await fetch(`${DOMAIN}/chat/get-thread-messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          thread_id: _threadId
+        })
+      }).then(res => res.json())
+
+      const { data } = thread
+      let localResponse:any = []
+      
+      data.data.forEach((data) => {
+        data.content.forEach(({ text }) => {
+          if (data.role === 'assistant') {
+            localResponse.push({
+              type: 'assistant',
+              value: text.value
+            })
+          } else {
+            localResponse.push({
+              type: 'user',
+              value: text.value
+            })
+          }
+        })
+      })
+      setOpenaiResponse(localResponse.reverse())
+      setLoading(false)
+    } catch (err) {
+      console.log('error: ', err)
+      setLoading(false)
+    }
+  }
+
+  async function addMessageToThread() {
+    try {
+      Keyboard.dismiss()
+
+      let localInput = {
+        type: 'user',
+        value: input
+      } as any
+      setInput('')
+
+      setOpenaiResponse([...openaiResponse, localInput])
   
       setInput('')
       setLoading(true)
   
-      const imageId = uuid()
-
-      const es = await getEventSource({
-        body: {
-          prompt: input
-        },
-        headers: '',
-        type: getChatType(chatType),
-      })
-
-      let localResponse = ''
-
-      const listener = (event) => {
-        if (event.type === "open") {
-          console.log("Open SSE connection.")
-          setLoading(false)
-        } else if (event.type === 'message') {
-          if (event.data !== "[DONE]") {
-            localResponse = localResponse + JSON.parse(event.data).data
-            openaiArray[openaiArray.length - 1].assistant = localResponse
-            setOpenaiResponse(c => ({
-              index: c.index,
-              messages: JSON.parse(JSON.stringify(openaiArray))
-            }))
-          } else {
-            console.log('closing connection ... ')
-            setLoading(false)
-            es.close()
-          }
-        } else if (event.type === "error") {
-          console.error("Connection error:", event.message)
-          setLoading(false)
-          es.close()
-        } else if (event.type === "exception") {
-          console.error("Error:", event.message, event.error)
-          setLoading(false)
-          es.close()
-        }
+      const body: {
+        input: string,
+        thread_id: string,
+        assistant_id: string
+      } = {
+        input,
+        thread_id: threadId,
+        assistant_id: assistantId
       }
 
-      es.addEventListener("open", listener)
-      es.addEventListener("message", listener)
-      es.addEventListener("error", listener)
+      const response = await fetch(`${DOMAIN}/chat/add-message-to-thread`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }).then(res => res.json())
+
+      const {
+        runId: _runId
+      } = await response
+
+      checkThread(_runId, threadId)
     } catch (err) {
-      console.log('error calling Vision API:', err)
-      setLoading(false)
+      console.log('error: ', err)
     }
   }
 
@@ -175,37 +252,36 @@ export function Assistant({ navigation }) {
   }
 
   const styles = getStyleSheet(theme)
-
-  const isStarted = openaiResponse.messages.length 
+  const isStarted = openaiResponse.length 
 
   function renderItem({ item, index }) {
     return (
       <View style={styles.promptResponse} key={index}>
-        <View style={styles.promptTextContainer}>
-          <View style={styles.promptTextWrapper}>
-            <Text style={styles.promptText}>
-              {item.user}
-            </Text>
-          </View>
-        </View>
-        <View style={styles.textStyleContainer}>
-          <Image
-            source={{uri: item.image.uri}}
-            style={styles.image as ImageStyle}
-          />
           {
-            item.assistant && (
-              <>
-              <Markdown
-                style={styles.textStyle as any}
-              >{item.assistant}</Markdown>
-              </>
+            item.type === 'user' && (
+              <View style={styles.promptTextContainer}>
+                <View style={styles.promptTextWrapper}>
+                  <Text style={styles.promptText}>
+                    {item.value}
+                  </Text>
+                </View>
+              </View>
             )
           }
-          </View>
+          {
+            item.type === 'assistant' && (
+              <View style={styles.textStyleContainer}>
+                <Markdown
+                  style={styles.textStyle as any}
+                >{item.value}</Markdown>
+              </View>
+            )
+          }
       </View>
     )
   }
+
+console.log('openaiResponse: ', openaiResponse)
 
   return (
       <KeyboardAvoidingView
@@ -223,31 +299,39 @@ export function Assistant({ navigation }) {
             <View style={styles.midChatInputWrapper}>
               <View style={styles.midChatInputContainer}>
                 <TextInput
-                  onChangeText={onChangeText}
+                  onChangeText={onChangeInputText}
                   style={styles.midInput}
-                  placeholder='What do you want to know about this image?'
+                  placeholder='What would you like to ask?'
                   placeholderTextColor={theme.placeholderTextColor}
                   autoCorrect={true}
+                  value={input}
+                />
+                <TextInput
+                  onChangeText={onChangeInstructionsText}
+                  style={styles.midInput}
+                  placeholder='Assistant instructions (optional)'
+                  placeholderTextColor={theme.placeholderTextColor}
+                  autoCorrect={true}
+                  value={instructions}
                 />
                 <TouchableHighlight
                   underlayColor={'transparent'}
                   onPress={chooseDocument}
                   style={{
                     position: 'absolute',
-                    top: 113,
+                    top: 13,
                     right: 30,
                     padding: 5
                   }}
                 >
                   <MaterialCommunityIcons
-                    style={styles.closeIcon}
                     name="image"
                     color={theme.mainTextColor}
                     size={24}
                   />
                 </TouchableHighlight>
                 <TouchableHighlight
-                  onPress={chat}
+                  onPress={createThread}
                   underlayColor={'transparent'}
                 >
                   <View style={styles.midButtonStyle}>
@@ -261,7 +345,7 @@ export function Assistant({ navigation }) {
                   </View>
                 </TouchableHighlight>
                 <Text style={styles.chatDescription}>
-                  Vision model with GPT-4 level capabilities.
+                  Chat with an assistant (with optional instructions and file interpreter)
                 </Text>
                 {
                   file && (
@@ -272,6 +356,7 @@ export function Assistant({ navigation }) {
                         <TouchableHighlight
                           onPress={() => setFile(null)}
                           style={styles.closeIconContainer}
+                          underlayColor={'transparent'}
                         >
                           <MaterialCommunityIcons
                             style={styles.closeIcon}
@@ -290,7 +375,7 @@ export function Assistant({ navigation }) {
         {
           Boolean(isStarted) && (
             <FlatList
-              data={openaiResponse.messages}
+              data={openaiResponse}
               renderItem={renderItem}
               scrollEnabled={false}
               style={{ paddingTop: 10 }}
@@ -329,11 +414,12 @@ export function Assistant({ navigation }) {
         (Boolean(isStarted)) && (
           <View style={styles.chatInputContainer}>
             <TextInput
-              onChangeText={onChangeText}
+              onChangeText={onChangeInputText}
               style={styles.input}
               placeholder='What do you want to know about this image?'
               placeholderTextColor={theme.placeholderTextColor}
               autoCorrect={true}
+              value={input}
             />
             <TouchableHighlight
               underlayColor={'transparent'}
@@ -351,7 +437,7 @@ export function Assistant({ navigation }) {
               />
             </TouchableHighlight>
             <TouchableHighlight
-              onPress={chat}
+              onPress={addMessageToThread}
               underlayColor={'transparent'}
             >
               <View style={styles.buttonStyle}>
@@ -370,21 +456,22 @@ export function Assistant({ navigation }) {
 
 const getStyleSheet = theme => StyleSheet.create({
   chatDescription: {
-    color: theme.lightTextColor,
+    color: theme.textColor,
     textAlign: 'center',
     marginTop: 15,
     fontSize: 13,
     opacity: .8,
+    paddingHorizontal: 30,
     fontFamily: 'Geist-Light'
   },
   image: {
-    // width: 250,
-    // height: 250,
-    // borderRadius: 8,
-    // marginBottom: 5,
-    // marginTop: 10,
-    // borderWidth:1,
-    // borderColor: theme.borderColor
+    width: 250,
+    height: 250,
+    borderRadius: 8,
+    marginBottom: 5,
+    marginTop: 10,
+    borderWidth:1,
+    borderColor: theme.borderColor
   },
   shareIconWrapper: {
     padding: 5,
@@ -426,7 +513,7 @@ const getStyleSheet = theme => StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 99,
     color: theme.lightWhite,
-    borderColor: theme.lightWhiteBorder,
+    borderColor: theme.borderColor,
     fontFamily: 'Geist-SemiBold',
   },
   midChatInputWrapper: {
@@ -488,13 +575,18 @@ const getStyleSheet = theme => StyleSheet.create({
   },
   closeIconContainer: {
     position: 'absolute',
-    right: -7,
-    top: -7,
+    right: -15,
+    top: -17,
     padding: 10,
-    backgroundColor: 'white',
+    backgroundColor: 'transparent',
     borderRadius: 25,
   },
   closeIcon: {
+    borderWidth: 1,
+    padding: 4,
+    backgroundColor: theme.backgroundColor,
+    borderColor: theme.borderColor,
+    borderRadius: 15
   },
   fileNameContainer: {
     marginHorizontal: 10,
@@ -517,11 +609,6 @@ const getStyleSheet = theme => StyleSheet.create({
   },
   fileName: {
     color: theme.textColor,
-  },
-  chatTypeText: {
-    color: 'rgba(255, 255, 255, .8)',
-    textAlign: 'center',
-    fontFamily: 'Geist-SemiBold'
   },
   chatButtonContainer: {
     backgroundColor: theme.tintColor,
@@ -553,11 +640,11 @@ const getStyleSheet = theme => StyleSheet.create({
   },
   textStyle: {
     body: {
-      color: 'white',
+      color: theme.textColor,
       fontFamily: 'Geist-Regular'
     },
     paragraph: {
-      color: 'white',
+      color: theme.textColor,
       fontSize: 16,
       fontFamily: 'Geist-Regular'
     },
@@ -591,7 +678,7 @@ const getStyleSheet = theme => StyleSheet.create({
       fontSize: 16,
     },
     ordered_list_icon: {
-      color: 'white',
+      color: theme.textColor,
       fontSize: 16,
       fontFamily: 'Geist-Regular'
     },
@@ -602,13 +689,13 @@ const getStyleSheet = theme => StyleSheet.create({
       marginTop: 7
     },
     bullet_list_icon: {
-      color: 'white',
+      color: theme.textColor,
       fontSize: 16,
       fontFamily: 'Geist-Regular'
     },
     code_inline: {
       backgroundColor: '#312e2e',
-      color: 'white',
+      color: theme.textColor,
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, .1)'
     },
@@ -620,7 +707,7 @@ const getStyleSheet = theme => StyleSheet.create({
       marginVertical: 5,
       padding: 10,
       backgroundColor: '#312e2e',
-      color: 'white',
+      color: theme.textColor,
       borderColor: 'rgba(255, 255, 255, .1)'
     },
     tr: {
@@ -652,10 +739,10 @@ const getStyleSheet = theme => StyleSheet.create({
   },
   promptTextWrapper: {
     borderRadius: 8,
-    backgroundColor: theme.backgroundColor
+    backgroundColor: theme.tintColor
   },
   promptText: {
-    color: 'rgba(255, 255, 255, 1)',
+    color: theme.secondaryTextColor,
     fontFamily: 'Geist-Regular',
     paddingVertical: 5,
     paddingHorizontal: 9,

@@ -1,8 +1,7 @@
-import { Request, Response, NextFunction } from "express"
+import { Request, Response } from "express"
 import asyncHandler from 'express-async-handler'
 
 export const gpt = asyncHandler(async (req: Request, res: Response) => {
-  console.log('about to call gpt api ...')
   const models:any = {
     gptTurbo: 'gpt-4-1106-preview',
     gpt: 'gpt-4'
@@ -29,6 +28,7 @@ export const gpt = asyncHandler(async (req: Request, res: Response) => {
     })
     const reader = response.body?.getReader()
     const decoder = new TextDecoder()
+    let brokenLine = ''
     if (reader) {
       while (true) {
         const { done, value } = await reader.read()
@@ -37,16 +37,30 @@ export const gpt = asyncHandler(async (req: Request, res: Response) => {
         }
   
         let chunk = decoder.decode(value)
-  
+        if (brokenLine) {
+          try {
+            const { choices } = JSON.parse(brokenLine)
+            const { delta } = choices[0]
+            const { content } = delta
+            if (content) {
+              res.write(`data: ${JSON.stringify(content)}\n\n`)
+            }
+            brokenLine = ''
+          } catch (err) {} 
+        }
+        
         const lines = chunk.split("data: ")
         const parsedLines = lines
           .filter(line => line !== "" && line !== "[DONE]")
           .filter(l => {
-            try { 
+            try {
               JSON.parse(l)
               return true
             } catch (err) {
               console.log('line thats not json:', l)
+              if (!l.includes('[DONE]'))  {
+                brokenLine = brokenLine + l
+              }
               return false
             } 
           })

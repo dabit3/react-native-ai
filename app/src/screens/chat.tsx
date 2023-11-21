@@ -181,7 +181,7 @@ export function Chat() {
       const eventSourceArgs = {
         body: {
           messages: messagesRequest,
-          model: chatType
+          model: chatType.label
         },
         type: getChatType(chatType),
       }
@@ -201,6 +201,7 @@ export function Chat() {
                 animated: true
               })
             }
+            // if (!JSON.parse(event.data).content) return
             localResponse = localResponse + JSON.parse(event.data).content
             openaiArray[openaiArray.length - 1].assistant = localResponse
             setOpenaiResponse(c => ({
@@ -262,7 +263,7 @@ export function Chat() {
         body: {
           prompt: requestInput,
           conversationId: cohereResponse.index,
-          model: getChatType(chatType)
+          model: chatType.label
         }
       }
 

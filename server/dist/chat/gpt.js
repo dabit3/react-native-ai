@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.gpt = void 0;
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 exports.gpt = (0, express_async_handler_1.default)(async (req, res) => {
-    console.log('about to call gpt api ...');
     const models = {
         gptTurbo: 'gpt-4-1106-preview',
         gpt: 'gpt-4'
@@ -32,6 +31,7 @@ exports.gpt = (0, express_async_handler_1.default)(async (req, res) => {
         });
         const reader = response.body?.getReader();
         const decoder = new TextDecoder();
+        let brokenLine = '';
         if (reader) {
             while (true) {
                 const { done, value } = await reader.read();
@@ -39,6 +39,18 @@ exports.gpt = (0, express_async_handler_1.default)(async (req, res) => {
                     break;
                 }
                 let chunk = decoder.decode(value);
+                if (brokenLine) {
+                    try {
+                        const { choices } = JSON.parse(brokenLine);
+                        const { delta } = choices[0];
+                        const { content } = delta;
+                        if (content) {
+                            res.write(`data: ${JSON.stringify(content)}\n\n`);
+                        }
+                        brokenLine = '';
+                    }
+                    catch (err) { }
+                }
                 const lines = chunk.split("data: ");
                 const parsedLines = lines
                     .filter(line => line !== "" && line !== "[DONE]")
@@ -49,6 +61,9 @@ exports.gpt = (0, express_async_handler_1.default)(async (req, res) => {
                     }
                     catch (err) {
                         console.log('line thats not json:', l);
+                        if (!l.includes('[DONE]')) {
+                            brokenLine = brokenLine + l;
+                        }
                         return false;
                     }
                 })
