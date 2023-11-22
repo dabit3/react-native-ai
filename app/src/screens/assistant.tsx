@@ -19,22 +19,19 @@ import {
 import {
   // Loading,
   // Icon,
-  // PauseAudio,
-  // PlayAudio,
   // ShareIcon,
   // OptionsIcon
 } from '../components'
 import * as ImagePicker from 'expo-image-picker';
 import { v4 as uuid } from 'uuid'
 import { AppContext, ThemeContext } from '../context'
-import { getChatType } from '../utils'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { DOMAIN } from '../../constants'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import * as Clipboard from 'expo-clipboard'
 import { useActionSheet } from '@expo/react-native-action-sheet'
 import Markdown from '@ronradtke/react-native-markdown-display';
+import * as DocumentPicker from 'expo-document-picker';
 // import 'react-native-url-polyfill/auto'
 
 const { height } = Dimensions.get('window')
@@ -234,16 +231,14 @@ export function Assistant({ navigation }) {
       checkThread(_runId, threadId)
     } catch (err) {
       console.log('error: ', err)
+      setLoading(false)
     }
   }
 
   async function chooseDocument() {
     try {
-      let res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 1,
-      })
+      const res = await DocumentPicker.getDocumentAsync()
+      console.log('res: ', res)
       if (!res || !res.assets) return
       setFile(res.assets[0])
     } catch (err) {
