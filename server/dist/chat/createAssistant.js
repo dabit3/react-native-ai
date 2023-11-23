@@ -10,7 +10,7 @@ async function createAssistant(req, res) {
         let threadId;
         let runId;
         const body = {
-            model: 'gpt-4',
+            model: 'gpt-4-1106-preview',
             name: 'RN AI Assistant'
         };
         const headers = {
@@ -22,13 +22,9 @@ async function createAssistant(req, res) {
             body.instructions = instructions;
         }
         if (file) {
-            console.log('file: ', file);
             const response = await (0, saveFileToOpenai_1.saveFileToOpenai)(file);
-            console.log('response: ', response);
-            // const url = await saveToBytescale(file)
-            // console.log('file uploaded to url: ', url)
-            // body.file_ids = file_ids,
-            // body.tools = [{ type: "code_interpreter" }]
+            body.file_ids = [response.id];
+            body.tools = [{ type: "code_interpreter" }, { type: "retrieval" }];
         }
         const assistant = await fetch('https://api.openai.com/v1/assistants', {
             method: 'POST',

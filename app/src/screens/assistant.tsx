@@ -87,7 +87,7 @@ export function Assistant({ navigation }) {
   async function generateAssistantResponse() {
     try {
       Keyboard.dismiss()
-
+      const fileCopy = file
       let localInput = {
         type: 'user',
         value: input
@@ -101,6 +101,7 @@ export function Assistant({ navigation }) {
       setInput('')
       setInstructions('')
       setLoading(true)
+      setFile(null)
   
       const body: {
         input: string,
@@ -112,21 +113,17 @@ export function Assistant({ navigation }) {
         body.instructions = instructions
       }
       let response
-      if (file) {
-        console.log('file about to upload ...')
+      if (fileCopy) {
         const formData = new FormData()
         // @ts-ignore
         formData.append('file', {
-          uri: file.uri.replace('file://', ''),
-          name: file.name,
-          type: file.mimeType
+          uri: fileCopy.uri.replace('file://', ''),
+          name: fileCopy.name,
+          type: fileCopy.mimeType
         })
-
         for (const key in body) {
           formData.append(key, body[key])
         }
-        console.log('formdata:', formData)
-
         response = await fetch(`${DOMAIN}/chat/create-assistant`, {
           method: 'POST',
           body: formData,
@@ -218,7 +215,9 @@ export function Assistant({ navigation }) {
 
   async function addMessageToThread() {
     try {
+      if (!input) return
       Keyboard.dismiss()
+      const fileCopy = file
 
       let localInput = {
         type: 'user',
@@ -238,18 +237,40 @@ export function Assistant({ navigation }) {
         thread_id: threadId,
         assistant_id: assistantId
       }
-
-      const response = await fetch(`${DOMAIN}/chat/add-message-to-thread`, {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: {
-          'Content-Type': 'application/json'
+      let response
+      console.log('fileCopy: ', fileCopy)
+      if (fileCopy) {
+        const formData = new FormData()
+        // @ts-ignore
+        formData.append('file', {
+          uri: fileCopy.uri.replace('file://', ''),
+          name: fileCopy.name,
+          type: fileCopy.mimeType
+        })
+        for (const key in body) {
+          formData.append(key, body[key])
         }
-      }).then(res => res.json())
+        response = await fetch(`${DOMAIN}/chat/add-message-to-thread`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }).then(res => res.json())
+        
+      } else {
+        response = await fetch(`${DOMAIN}/chat/add-message-to-thread`, {
+          method: 'POST',
+          body: JSON.stringify(body),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }).then(res => res.json())
+      }
 
       const {
         runId: _runId
-      } = await response
+      } = response
 
       checkThread(_runId, threadId)
     } catch (err) {
@@ -434,7 +455,7 @@ console.log('openaiResponse: ', openaiResponse)
             <TextInput
               onChangeText={onChangeInputText}
               style={styles.input}
-              placeholder='What do you want to know about this image?'
+              placeholder='What else do you want to know?'
               placeholderTextColor={theme.placeholderTextColor}
               autoCorrect={true}
               value={input}
@@ -448,7 +469,6 @@ console.log('openaiResponse: ', openaiResponse)
               }}
             >
               <MaterialCommunityIcons
-                style={styles.closeIcon}
                 name="image"
                 color={theme.mainTextColor}
                 size={24}
@@ -693,7 +713,7 @@ const getStyleSheet = theme => StyleSheet.create({
     list_item: {
       marginTop: 7,
       fontFamily: 'Geist-Regular',
-      fontSize: 16,
+      fontSize: 16
     },
     ordered_list_icon: {
       color: theme.textColor,
@@ -712,10 +732,10 @@ const getStyleSheet = theme => StyleSheet.create({
       fontFamily: 'Geist-Regular'
     },
     code_inline: {
-      backgroundColor: '#312e2e',
       color: theme.textColor,
       borderWidth: 1,
-      borderColor: 'rgba(255, 255, 255, .1)'
+      borderColor: 'rgba(255, 255, 255, .1)',
+      fontFamily: 'Geist-Light'
     },
     hr: {
       backgroundColor: 'rgba(255, 255, 255, .1)',

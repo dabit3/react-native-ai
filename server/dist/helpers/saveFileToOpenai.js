@@ -5,9 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.saveFileToOpenai = void 0;
 const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 const utils_1 = require("../utils");
 const stream_1 = require("stream");
-const path_1 = __importDefault(require("path"));
 async function saveFileToOpenai(file) {
     const uploadsDir = path_1.default.join(process.cwd(), 'uploads');
     if (!fs_1.default.existsSync(uploadsDir)) {

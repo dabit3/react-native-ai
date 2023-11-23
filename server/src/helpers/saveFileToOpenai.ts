@@ -1,7 +1,7 @@
 import fs from 'fs'
+import path from 'path'
 import { baseHeaders } from '../utils'
 import { Readable } from 'stream'
-import path from 'path'
 
 export async function saveFileToOpenai(file: any) {
   const uploadsDir = path.join(process.cwd(), 'uploads')

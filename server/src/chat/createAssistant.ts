@@ -2,20 +2,12 @@ import { Request, Response } from "express"
 import { saveToBytescale } from "../helpers/saveToBytescale"
 import { saveFileToOpenai } from '../helpers/saveFileToOpenai'
 
-/*
-  instructions,,
-  name,
-  tools: [{ type: "code_interpreter" }],
-  model: "gpt-4",
-  file_ids: []
-*/
-
 interface Body {
   model: string
   name: string
   instructions?: string
-  file?: any
-  tools?: [{ type: string }]
+  file_ids?: [string]
+  tools?: any[]
 }
 
 export async function createAssistant(req: Request, res: Response) {
@@ -27,9 +19,10 @@ export async function createAssistant(req: Request, res: Response) {
     let runId
 
     const body: Body = {
-      model: 'gpt-4',
+      model: 'gpt-4-1106-preview',
       name: 'RN AI Assistant'
     }
+
     const headers = {
       'Content-Type': 'application/json',
       'OpenAI-Beta': 'assistants=v1',
@@ -41,13 +34,9 @@ export async function createAssistant(req: Request, res: Response) {
     }
 
     if (file) {
-      console.log('file: ', file)
       const response = await saveFileToOpenai(file)
-      console.log('response: ', response)
-      // const url = await saveToBytescale(file)
-      // console.log('file uploaded to url: ', url)
-      // body.file_ids = file_ids,
-      // body.tools = [{ type: "code_interpreter" }]
+      body.file_ids = [response.id]
+      body.tools = [{ type: "code_interpreter" }, { type: "retrieval" }]
     }
 
     const assistant = await fetch('https://api.openai.com/v1/assistants', {
