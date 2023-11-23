@@ -111,18 +111,43 @@ export function Assistant({ navigation }) {
       if (instructions) {
         body.instructions = instructions
       }
+      let response
+      if (file) {
+        console.log('file about to upload ...')
+        const formData = new FormData()
+        // @ts-ignore
+        formData.append('file', {
+          uri: file.uri.replace('file://', ''),
+          name: file.name,
+          type: file.mimeType
+        })
 
-      const response = await fetch(`${DOMAIN}/chat/create-assistant`, {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: {
-          'Content-Type': 'application/json'
+        for (const key in body) {
+          formData.append(key, body[key])
         }
-      })
+        console.log('formdata:', formData)
+
+        response = await fetch(`${DOMAIN}/chat/create-assistant`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }).then(res => res.json())
+        
+      } else {
+        response = await fetch(`${DOMAIN}/chat/create-assistant`, {
+          method: 'POST',
+          body: JSON.stringify(body),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }).then(res => res.json())
+      }
 
       const {
         assistantId: _assistantId, threadId: _threadId, runId: _runId
-      } = await response.json()
+      } = await response
     
       setThreadId(_threadId)
       setAssistantId(_assistantId)
@@ -200,9 +225,7 @@ export function Assistant({ navigation }) {
         value: input
       } as any
       setInput('')
-
       setOpenaiResponse([...openaiResponse, localInput])
-  
       setInput('')
       setLoading(true)
   

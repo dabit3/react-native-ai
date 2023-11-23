@@ -1,4 +1,6 @@
 import { Request, Response } from "express"
+import { saveToBytescale } from "../helpers/saveToBytescale"
+import { saveFileToOpenai } from '../helpers/saveFileToOpenai'
 
 /*
   instructions,,
@@ -12,35 +14,40 @@ interface Body {
   model: string
   name: string
   instructions?: string
-  file_ids?: [string]
+  file?: any
   tools?: [{ type: string }]
 }
 
 export async function createAssistant(req: Request, res: Response) {
   try {
-    const { instructions, input, file_ids }  = req.body
+    const { instructions, input }  = req.body
+    const file = req.file
     let assistantId
     let threadId
     let runId
 
-    const body:Body = {
+    const body: Body = {
       model: 'gpt-4',
       name: 'RN AI Assistant'
+    }
+    const headers = {
+      'Content-Type': 'application/json',
+      'OpenAI-Beta': 'assistants=v1',
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
     }
 
     if (instructions) {
       body.instructions = instructions
     }
 
-    if (file_ids) {
-      body.file_ids = file_ids,
-      body.tools = [{ type: "code_interpreter" }]
-    }
-
-    const headers = {
-      'Content-Type': 'application/json',
-      'OpenAI-Beta': 'assistants=v1',
-      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+    if (file) {
+      console.log('file: ', file)
+      const response = await saveFileToOpenai(file)
+      console.log('response: ', response)
+      // const url = await saveToBytescale(file)
+      // console.log('file uploaded to url: ', url)
+      // body.file_ids = file_ids,
+      // body.tools = [{ type: "code_interpreter" }]
     }
 
     const assistant = await fetch('https://api.openai.com/v1/assistants', {

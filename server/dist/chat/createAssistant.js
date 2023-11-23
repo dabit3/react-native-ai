@@ -1,9 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createAssistant = void 0;
+const saveFileToOpenai_1 = require("../helpers/saveFileToOpenai");
 async function createAssistant(req, res) {
     try {
-        const { instructions, input, file_ids } = req.body;
+        const { instructions, input } = req.body;
+        const file = req.file;
         let assistantId;
         let threadId;
         let runId;
@@ -11,18 +13,23 @@ async function createAssistant(req, res) {
             model: 'gpt-4',
             name: 'RN AI Assistant'
         };
-        if (instructions) {
-            body.instructions = instructions;
-        }
-        if (file_ids) {
-            body.file_ids = file_ids,
-                body.tools = [{ type: "code_interpreter" }];
-        }
         const headers = {
             'Content-Type': 'application/json',
             'OpenAI-Beta': 'assistants=v1',
             'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
         };
+        if (instructions) {
+            body.instructions = instructions;
+        }
+        if (file) {
+            console.log('file: ', file);
+            const response = await (0, saveFileToOpenai_1.saveFileToOpenai)(file);
+            console.log('response: ', response);
+            // const url = await saveToBytescale(file)
+            // console.log('file uploaded to url: ', url)
+            // body.file_ids = file_ids,
+            // body.tools = [{ type: "code_interpreter" }]
+        }
         const assistant = await fetch('https://api.openai.com/v1/assistants', {
             method: 'POST',
             body: JSON.stringify(body),

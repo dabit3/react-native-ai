@@ -2,10 +2,11 @@ import express from 'express'
 import chatRouter from './chat/chatRouter'
 import imagesRouter from './images/imagesRouter'
 import fileRouter from './files/fileRouter'
-import 'dotenv/config'
 import bodyParser from 'body-parser'
+import 'dotenv/config'
 
 const app = express()
+
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
 app.use(express.json({limit: '50mb'}))
