@@ -36,21 +36,25 @@ export function Images({ navigation } : { navigation: any }) {
     index: uuid,
     values: []
   })
-
-  const { showActionSheetWithOptions } = useActionSheet()
-
   const {
     handlePresentModalPress,
     closeModal,
     imageModel,
   } = useContext(AppContext)
 
+  const { showActionSheetWithOptions } = useActionSheet()
+
+  const hideInput =
+  imageModel === IMAGE_MODELS.removeBg.label ||
+  imageModel === IMAGE_MODELS.upscale.label
+  const buttonLabel = imageModel === IMAGE_MODELS.removeBg.label ? 'Remove background' : 'Upscale'
+
   async function generate() {
     if (loading) return
-    if (imageModel === IMAGE_MODELS.removeBg.label && !image) {
+    if (hideInput && !image) {
       console.log('no image selected')
       return
-    } else if (imageModel !== IMAGE_MODELS.removeBg.label && !input) {
+    } else if (!hideInput && !input) {
       console.log('no input')
       return
     }
@@ -80,6 +84,7 @@ export function Images({ navigation } : { navigation: any }) {
         prompt: input,
         model: imageModel
       }
+      console.log('imageModel: ', imageModel)
 
       setLoading(true)
       setImage(null)
@@ -87,7 +92,6 @@ export function Images({ navigation } : { navigation: any }) {
 
       if (imageCopy) {
         const formData = new FormData()
-        console.log('imageCopy: ', imageCopy)
         // @ts-ignore
         formData.append('file', {
           uri: imageCopy.uri.replace('file://', ''),
@@ -194,7 +198,6 @@ export function Images({ navigation } : { navigation: any }) {
         allowsEditing: true,
         quality: 1,
       })
-      console.log('res: ', res)
       if (!res || !res.assets) return
       setImage(res.assets[0])
     } catch (err) {
@@ -220,7 +223,7 @@ export function Images({ navigation } : { navigation: any }) {
               <View style={styles.midChatInputWrapper}>
                 <View style={styles.midChatInputContainer}>
                   {
-                    imageModel !== IMAGE_MODELS.removeBg.label && (
+                    !hideInput && (
                       <>
                         <TextInput
                           onChangeText={onChangeText}
@@ -264,7 +267,7 @@ export function Images({ navigation } : { navigation: any }) {
                     )
                   }
                   {
-                    imageModel === IMAGE_MODELS.removeBg.label && (
+                    hideInput && (
                       <TouchableHighlight
                         onPress={image ? generate : chooseImage}
                         underlayColor={'transparent'}
@@ -276,7 +279,7 @@ export function Images({ navigation } : { navigation: any }) {
                           />
                           <Text style={styles.midButtonText}>
                             {
-                              image ? 'Remove background' : 'Choose image'
+                              image ? buttonLabel : 'Choose image'
                             }
                           </Text>
                         </View>
@@ -345,7 +348,7 @@ export function Images({ navigation } : { navigation: any }) {
                           <Text style={
                             styles.modelLabelText
                           }>
-                            created with {v.model}
+                            Created with Fal.ai model {v.model}
                           </Text>
                         </View>
                     </View>
@@ -364,7 +367,7 @@ export function Images({ navigation } : { navigation: any }) {
           callMade && (
             <>
               {
-                imageModel !== IMAGE_MODELS.removeBg.label && (
+                !hideInput && (
                   <View style={styles.chatInputContainer}>
                     <TextInput
                       onChangeText={onChangeText}
@@ -394,7 +397,7 @@ export function Images({ navigation } : { navigation: any }) {
                 )
               }
               {
-                imageModel === IMAGE_MODELS.removeBg.label && (
+                hideInput && (
                   <TouchableHighlight
                     onPress={image ? generate : chooseImage}
                     underlayColor={'transparent'}
@@ -406,7 +409,7 @@ export function Images({ navigation } : { navigation: any }) {
                       />
                       <Text style={styles.midButtonText}>
                         {
-                          image ? 'Remove background' : 'Choose image'
+                          image ? buttonLabel : 'Choose image'
                         }
                       </Text>
                     </View>

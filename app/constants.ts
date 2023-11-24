@@ -17,5 +17,7 @@ export const MODELS = {
 
 export const IMAGE_MODELS = {
   fastImage: { name: 'Fast Image', label: 'fastImage' },
-  removeBg:  { name: 'Remove Background', label: 'removeBg' }
+  stableDiffusionXL: { name: 'Stable Diffusion XL', label: 'stableDiffusionXL' },
+  removeBg:  { name: 'Remove Background', label: 'removeBg' },
+  upscale: { name: 'Upscale', label: 'upscale' }
 }

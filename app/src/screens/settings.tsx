@@ -2,7 +2,8 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableHighlight
+  TouchableHighlight,
+  ScrollView
 } from 'react-native'
 import { useContext } from 'react'
 import { AppContext, ThemeContext } from '../context'
@@ -55,10 +56,14 @@ export function Settings() {
     if (type.includes('removeBg')) {
       return <FontAwesome name="x-ray" {...props} />
     }
+    return <FontAwesome name="images" {...props} />
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
       <View
         style={styles.titleContainer}
       >
@@ -141,7 +146,7 @@ export function Settings() {
       >
       <Text
           style={styles.mainText}
-        >Chat Model</Text>
+        >Image Model</Text>
       </View>
       <View style={styles.buttonContainer}>
         {
@@ -179,7 +184,7 @@ export function Settings() {
           })
         }
       </View>
-    </View>
+    </ScrollView>
   )
 }
 
@@ -209,6 +214,9 @@ const getStyles = (theme:any) => StyleSheet.create({
     flex: 1,
     backgroundColor: theme.backgroundColor,
     paddingTop: 20,
+  },
+  contentContainer: {
+    paddingBottom: 40
   },
   titleContainer: {
     paddingVertical: 10,
