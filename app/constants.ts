@@ -19,5 +19,45 @@ export const IMAGE_MODELS = {
   fastImage: { name: 'Fast Image', label: 'fastImage' },
   stableDiffusionXL: { name: 'Stable Diffusion XL', label: 'stableDiffusionXL' },
   removeBg:  { name: 'Remove Background', label: 'removeBg' },
-  upscale: { name: 'Upscale', label: 'upscale' }
+  upscale: { name: 'Upscale', label: 'upscale' },
+  illusionDiffusion: { name: 'Illusion Diffusion', label: 'illusionDiffusion' },
+}
+
+export const ILLUSION_DIFFUSION_IMAGES = {
+  tinyCheckers: {
+    label: 'tinyCheckers',
+    image: 'https://storage.googleapis.com/falserverless/illusion-examples/ultra_checkers.png',
+  },
+  smallSquares: {
+    label: "smallSquares",
+    image: 'https://storage.googleapis.com/falserverless/illusion-examples/checkers_mid.jpg'
+  },
+  mediumSquares: {
+    label: "mediumSquares",
+    image: 'https://storage.googleapis.com/falserverless/illusion-examples/pattern.png',
+  },
+  largeSquares: {
+    label: 'largeSquares',
+    image: 'https://storage.googleapis.com/falserverless/illusion-examples/checkers.png',
+  },
+  funky: {
+    label: 'funky',
+    image:  'https://storage.googleapis.com/falserverless/illusion-examples/funky.jpeg',
+  },
+  stairs: {
+    label: 'stairs',
+    image: 'https://storage.googleapis.com/falserverless/illusion-examples/cubes.jpeg',
+  },
+  turkeyFlag: {
+    label: 'turkeyFlag',
+    image: 'https://storage.googleapis.com/falserverless/illusion-examples/turkey-flag.png'
+  },
+  indiaFlag: {
+    label: 'indiaFlag',
+    image: 'https://storage.googleapis.com/falserverless/illusion-examples/india-flag.png'
+  },
+  usaFlag: {
+    label: 'usaFlag',
+    image: 'https://storage.googleapis.com/falserverless/illusion-examples/usa-flag.png'
+  }
 }

@@ -12,7 +12,7 @@ import {
   Image
 } from 'react-native'
 import { useState, useRef, useContext } from 'react'
-import { DOMAIN, IMAGE_MODELS } from '../../constants'
+import { DOMAIN, IMAGE_MODELS, ILLUSION_DIFFUSION_IMAGES } from '../../constants'
 import { v4 as uuid } from 'uuid'
 import { ThemeContext, AppContext } from '../context'
 import Ionicons from '@expo/vector-icons/Ionicons'
@@ -40,6 +40,7 @@ export function Images({ navigation } : { navigation: any }) {
     handlePresentModalPress,
     closeModal,
     imageModel,
+    illusionImage
   } = useContext(AppContext)
 
   const { showActionSheetWithOptions } = useActionSheet()
@@ -83,8 +84,7 @@ export function Images({ navigation } : { navigation: any }) {
       const body = {
         prompt: input,
         model: imageModel
-      }
-      console.log('imageModel: ', imageModel)
+      } as any
 
       setLoading(true)
       setImage(null)
@@ -110,6 +110,10 @@ export function Images({ navigation } : { navigation: any }) {
           }
         }).then(res => res.json())
       } else {
+        if (imageModel === IMAGE_MODELS.illusionDiffusion.label) {
+          body.baseImage = ILLUSION_DIFFUSION_IMAGES[illusionImage].image
+        }
+
         response = await fetch(`${DOMAIN}/images/fal`, {
           method: "POST",
           headers: {
@@ -154,7 +158,6 @@ export function Images({ navigation } : { navigation: any }) {
   }
 
   async function showClipboardActionsheet(d) {
-    console.log('showClipboardActionsheet')
     closeModal()
     const cancelButtonIndex = 2
     showActionSheetWithOptions({
@@ -603,7 +606,7 @@ const getStyles = theme => StyleSheet.create({
     marginHorizontal: 10,
     paddingVertical: 15,
     borderRadius: 99,
-    color: theme.lightWhite,
+    color: theme.textColor,
     borderColor: theme.borderColor,
     fontFamily: 'Geist-Medium',
   },

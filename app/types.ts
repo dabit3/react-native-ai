@@ -39,5 +39,7 @@ export interface IAppContext {
   handlePresentModalPress: () => void
   setImageModel: Dispatch<SetStateAction<string>>
   imageModel: string,
-  closeModal: () => void
+  closeModal: () => void,
+  illusionImage: string,
+  setIllusionImage: Dispatch<SetStateAction<string>>,
 }

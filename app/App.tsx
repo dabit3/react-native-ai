@@ -4,9 +4,8 @@ import { NavigationContainer } from '@react-navigation/native'
 import { Main } from './src/main'
 import { useFonts } from 'expo-font'
 import { ThemeContext, AppContext } from './src/context'
-import { lightTheme, darkTheme } from './src/theme'
 import * as themes from './src/theme'
-import { IMAGE_MODELS, MODELS } from './constants'
+import { IMAGE_MODELS, MODELS, ILLUSION_DIFFUSION_IMAGES } from './constants'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { ChatModelModal } from './src/components/index'
 import { Model } from './types'
@@ -29,6 +28,7 @@ export default function App() {
   const [chatType, setChatType] = useState<Model>(MODELS.gptTurbo)
   const [imageModel, setImageModel] = useState<string>(IMAGE_MODELS.fastImage.label)
   const [modalVisible, setModalVisible] = useState<boolean>(false)
+  const [illusionImage, setIllusionImage] = useState<string>(ILLUSION_DIFFUSION_IMAGES.mediumSquares.label)
   const [fontsLoaded] = useFonts({
     'Geist-Regular': require('./assets/fonts/Geist-Regular.otf'),
     'Geist-Light': require('./assets/fonts/Geist-Light.otf'),
@@ -68,7 +68,9 @@ export default function App() {
           handlePresentModalPress,
           imageModel,
           setImageModel,
-          closeModal
+          closeModal,
+          illusionImage,
+          setIllusionImage
         }}
       >
         <ThemeContext.Provider value={{
