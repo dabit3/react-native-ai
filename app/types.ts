@@ -38,5 +38,6 @@ export interface IAppContext {
   setChatType: Dispatch<SetStateAction<Model>>
   handlePresentModalPress: () => void
   setImageModel: Dispatch<SetStateAction<string>>
-  imageModel: string
+  imageModel: string,
+  closeModal: () => void
 }

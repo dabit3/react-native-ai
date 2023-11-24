@@ -8,21 +8,18 @@ import {
   ActivityIndicator,
   TextInput,
   Dimensions,
-  Share,
   Keyboard,
   Image
 } from 'react-native'
-import { useState, useEffect, useRef, useContext } from 'react'
-import {
-  Icon
-} from '../components'
-import { DOMAIN } from '../../constants'
-import { IMAGE_MODELS } from '../../constants'
+import { useState, useRef, useContext } from 'react'
+import { DOMAIN, IMAGE_MODELS } from '../../constants'
 import { v4 as uuid } from 'uuid'
 import { ThemeContext, AppContext } from '../context'
 import Ionicons from '@expo/vector-icons/Ionicons'
+import MaterialIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import * as FileSystem from 'expo-file-system';
 import { useActionSheet } from '@expo/react-native-action-sheet'
+import * as ImagePicker from 'expo-image-picker';
 import * as Clipboard from 'expo-clipboard'
 
 const { width } = Dimensions.get('window')
@@ -34,6 +31,7 @@ export function Images({ navigation } : { navigation: any }) {
   const [input, setInput] = useState('')
   const scrollViewRef = useRef<ScrollView | null>(null)
   const [loading, setLoading] = useState(false)
+  const [image, setImage] = useState<any>(null)
   const [images, setImages] = useState<any>({
     index: uuid,
     values: []
@@ -43,20 +41,22 @@ export function Images({ navigation } : { navigation: any }) {
 
   const {
     handlePresentModalPress,
-    imageModel
+    closeModal,
+    imageModel,
   } = useContext(AppContext)
-
 
   async function generate() {
     if (loading) return
-    if (!input) return
+    if (imageModel === IMAGE_MODELS.removeBg.label && !image) {
+      console.log('no image selected')
+      return
+    } else if (imageModel !== IMAGE_MODELS.removeBg.label && !input) {
+      console.log('no input')
+      return
+    }
     Keyboard.dismiss()
-    setLoading(true)
-    const currentModel = imageModel
-
-    console.log('currentModel:', currentModel)
-    console.log('input:', input)
-
+    const imageCopy = image
+    const currentModel = IMAGE_MODELS[imageModel].name
     try {
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({
@@ -73,22 +73,49 @@ export function Images({ navigation } : { navigation: any }) {
         index: images.index,
         values: JSON.parse(JSON.stringify(imagesArray))
       }))
+
+      let response
+
+      const body = {
+        prompt: input,
+        model: imageModel
+      }
+
+      setLoading(true)
+      setImage(null)
       setInput('')
 
-      const response = await fetch(`${DOMAIN}/images/fal`, {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          prompt: input,
-          model: imageModel
+      if (imageCopy) {
+        const formData = new FormData()
+        console.log('imageCopy: ', imageCopy)
+        // @ts-ignore
+        formData.append('file', {
+          uri: imageCopy.uri.replace('file://', ''),
+          name: uuid(),
+          type: imageCopy.mimeType
         })
-      })
-      const json = await response.json()
+        for (const key in body) {
+          formData.append(key, body[key])
+        }
 
-      if (json.image) {
-        imagesArray[imagesArray.length - 1].image = json.image
+        response = await fetch(`${DOMAIN}/images/fal`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }).then(res => res.json())
+      } else {
+        response = await fetch(`${DOMAIN}/images/fal`, {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        }).then(res => res.json())
+      }
+      if (response.image) {
+        imagesArray[imagesArray.length - 1].image = response.image
         imagesArray[imagesArray.length - 1].model = currentModel
         setImages(i => ({
           index: i.index,
@@ -102,14 +129,13 @@ export function Images({ navigation } : { navigation: any }) {
         }, 50)
       } else {
         setLoading(false)
-        console.log('error generating image ...', json)
+        console.log('error generating image ...', response)
       }
     } catch (err) {
       setLoading(false)
       console.log('error generating image ...', err)
     }
   }
-
 
   async function copyToClipboard(text:string) {
     await Clipboard.setStringAsync(text)
@@ -124,19 +150,20 @@ export function Images({ navigation } : { navigation: any }) {
   }
 
   async function showClipboardActionsheet(d) {
-    handlePresentModalPress()
-    const cancelButtonIndex = 3
+    console.log('showClipboardActionsheet')
+    closeModal()
+    const cancelButtonIndex = 2
     showActionSheetWithOptions({
       options: ['Save image', 'Clear prompts', 'cancel'],
       cancelButtonIndex
     }, selectedIndex => {
       if (selectedIndex === Number(0)) {
+        console.log('saving image ...')
         downloadImageToDevice(d.image)
       }
       if (selectedIndex === Number(1)) {
         clearPrompts()
       }
-
     })
   }
 
@@ -146,10 +173,8 @@ export function Images({ navigation } : { navigation: any }) {
         url,
         FileSystem.documentDirectory + uuid() + '.png',
       )
-      
       try {
         const data = await downloadResumable.downloadAsync();
-        console.log('Finished downloading ', data)
       } catch (e) {
         console.error(e);
       }
@@ -160,6 +185,21 @@ export function Images({ navigation } : { navigation: any }) {
 
   function onChangeText(val: string) {
     setInput(val)
+  }
+
+  async function chooseImage() {
+    try {
+      let res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 1,
+      })
+      console.log('res: ', res)
+      if (!res || !res.assets) return
+      setImage(res.assets[0])
+    } catch (err) {
+      console.log('error:', err)
+    }
   }
 
   return (
@@ -179,34 +219,91 @@ export function Images({ navigation } : { navigation: any }) {
             !callMade && (
               <View style={styles.midChatInputWrapper}>
                 <View style={styles.midChatInputContainer}>
-                  
-                  <TextInput
-                    onChangeText={onChangeText}
-                    style={styles.midInput}
-                    placeholder='What do you want to create?'
-                    placeholderTextColor={theme.mutedForegroundColor}
-                    autoCorrect={true}
-                  />
-                  <TouchableHighlight
-                    onPress={generate}
-                    underlayColor={'transparent'}
-                    onLongPress={
-                      () => {
-                        Keyboard.dismiss()
-                        handlePresentModalPress()
-                      }
-                    }
-                  >
-                    <View style={styles.midButtonStyle}>
-                      <Ionicons
-                        name="images-outline"
-                        size={22} color="white"
-                      />
-                      <Text style={styles.midButtonText}>
-                        Create
-                      </Text>
-                    </View>
-                  </TouchableHighlight>
+                  {
+                    imageModel !== IMAGE_MODELS.removeBg.label && (
+                      <>
+                        <TextInput
+                          onChangeText={onChangeText}
+                          style={styles.midInput}
+                          placeholder='What do you want to create?'
+                          placeholderTextColor={theme.mutedForegroundColor}
+                          autoCorrect={true}
+                        />
+                        <TouchableHighlight
+                          underlayColor={'transparent'}
+                          onPress={chooseImage}
+                          style={styles.imagePickerButton}
+                        >
+                          <MaterialIcons
+                            name="image-outline"
+                            color={theme.mainTextColor}
+                            size={24}
+                          />
+                        </TouchableHighlight>
+                        <TouchableHighlight
+                          onPress={generate}
+                          underlayColor={'transparent'}
+                          onLongPress={
+                            () => {
+                              Keyboard.dismiss()
+                              handlePresentModalPress()
+                            }
+                          }
+                        >
+                          <View style={styles.midButtonStyle}>
+                            <Ionicons
+                              name="images-outline"
+                              size={22} color="white"
+                            />
+                            <Text style={styles.midButtonText}>
+                              Create
+                            </Text>
+                          </View>
+                        </TouchableHighlight>
+                      </>
+                    )
+                  }
+                  {
+                    imageModel === IMAGE_MODELS.removeBg.label && (
+                      <TouchableHighlight
+                        onPress={image ? generate : chooseImage}
+                        underlayColor={'transparent'}
+                      >
+                        <View style={styles.midButtonStyle}>
+                          <Ionicons
+                            name="images-outline"
+                            size={22} color="white"
+                          />
+                          <Text style={styles.midButtonText}>
+                            {
+                              image ? 'Remove background' : 'Choose image'
+                            }
+                          </Text>
+                        </View>
+                      </TouchableHighlight>
+                    )
+                  }
+                  {
+                  image && (
+                      <View style={styles.midFileNameContainer}>
+                        <Text style={styles.fileName}>
+                          {image.name || 'Image from Camera Roll'}
+                        </Text>
+                        <TouchableHighlight
+                          onPress={() => setImage(null)}
+                          style={styles.closeIconContainer}
+                          underlayColor={'transparent'}
+                        >
+                          <MaterialIcons
+                            style={styles.closeIcon}
+                            name="close"
+                            color={theme.settingsButtonBackgroundColor}
+                            size={14}
+                          />
+                        </TouchableHighlight>
+                      </View>
+                    )
+                  }
                   <Text style={styles.chatDescription}>
                     Generate images and art using natural language. Choose from a variety of models.
                   </Text>
@@ -217,17 +314,21 @@ export function Images({ navigation } : { navigation: any }) {
           {
             images.values.map((v, index) => (
               <View key={index} style={styles.imageContainer}>
-                <View style={styles.promptTextContainer}>
-                  <TouchableHighlight
-                    underlayColor={'transparent'}
-                  >
-                    <View style={styles.promptTextWrapper}>
-                      <Text style={styles.promptText}>
-                        {v.user}
-                      </Text>
+                {
+                  v.user && (
+                    <View style={styles.promptTextContainer}>
+                      <TouchableHighlight
+                        underlayColor={'transparent'}
+                      >
+                        <View style={styles.promptTextWrapper}>
+                          <Text style={styles.promptText}>
+                            {v.user}
+                          </Text>
+                        </View>
+                      </TouchableHighlight>
                     </View>
-                  </TouchableHighlight>
-                </View>
+                  )
+                }
                 {
                   v.image && (
                     <View>
@@ -261,32 +362,58 @@ export function Images({ navigation } : { navigation: any }) {
         </ScrollView>
         {
           callMade && (
-            <View style={styles.chatInputContainer}>
-              <TextInput
-                onChangeText={onChangeText}
-                style={styles.input}
-                placeholder='What else do you want to create?'
-                placeholderTextColor={theme.placeholderTextColor}
-                autoCorrect={true}
-              />
-              <TouchableHighlight
-                onPress={generate}
-                underlayColor={'transparent'}
-                onLongPress={
-                  () => {
-                    Keyboard.dismiss()
-                    handlePresentModalPress()
-                  }
-                }
-              >
-                <View style={styles.buttonStyle}>
-                  <Ionicons
-                    name="md-arrow-up"
-                    size={20} color="white"
-                  />
-                </View>
-              </TouchableHighlight>
-            </View>
+            <>
+              {
+                imageModel !== IMAGE_MODELS.removeBg.label && (
+                  <View style={styles.chatInputContainer}>
+                    <TextInput
+                      onChangeText={onChangeText}
+                      style={styles.input}
+                      placeholder='What else do you want to create?'
+                      placeholderTextColor={theme.placeholderTextColor}
+                      autoCorrect={true}
+                    />
+                    <TouchableHighlight
+                      onPress={generate}
+                      underlayColor={'transparent'}
+                      onLongPress={
+                        () => {
+                          Keyboard.dismiss()
+                          handlePresentModalPress()
+                        }
+                      }
+                    >
+                      <View style={styles.buttonStyle}>
+                        <Ionicons
+                          name="md-arrow-up"
+                          size={20} color="white"
+                        />
+                      </View>
+                    </TouchableHighlight>
+                  </View>
+                )
+              }
+              {
+                imageModel === IMAGE_MODELS.removeBg.label && (
+                  <TouchableHighlight
+                    onPress={image ? generate : chooseImage}
+                    underlayColor={'transparent'}
+                  >
+                    <View style={styles.bottomButtonStyle}>
+                      <Ionicons
+                        name="images-outline"
+                        size={22} color="white"
+                      />
+                      <Text style={styles.midButtonText}>
+                        {
+                          image ? 'Remove background' : 'Choose image'
+                        }
+                      </Text>
+                    </View>
+                  </TouchableHighlight>
+                )
+              }
+            </>
           )
         }
       </KeyboardAvoidingView>
@@ -295,6 +422,40 @@ export function Images({ navigation } : { navigation: any }) {
 }
 
 const getStyles = theme => StyleSheet.create({
+  closeIcon: {
+    borderWidth: 1,
+    padding: 4,
+    backgroundColor: theme.backgroundColor,
+    borderColor: theme.borderColor,
+    borderRadius: 15
+  },
+  closeIconContainer: {
+    position: 'absolute',
+    right: -15,
+    top: -17,
+    padding: 10,
+    backgroundColor: 'transparent',
+    borderRadius: 25,
+  },
+  fileName: {
+    color: theme.textColor,
+  },
+  midFileNameContainer: {
+    marginTop: 20,
+    marginHorizontal: 10,
+    marginRight: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: theme.borderColor,
+    borderRadius: 7,
+  },
+  imagePickerButton: {
+    padding: 10,
+    position: 'absolute',
+    right: 25,
+    top: 7
+  },
   imageContainer: {
     marginBottom: 15
   },
@@ -397,11 +558,6 @@ const getStyles = theme => StyleSheet.create({
   scrollContainer: {
     paddingTop: 10
   },
-  midChatInputWrapper: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   chatInputContainer: {
     paddingTop: 5,
     borderColor:'white',
@@ -411,10 +567,42 @@ const getStyles = theme => StyleSheet.create({
     paddingBottom: 5,
     paddingHorizontal: 10
   },
+  midButtonStyle: {
+    flexDirection: 'row',
+    marginHorizontal: 14,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    borderRadius: 99,
+    backgroundColor: theme.tintColor,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  midButtonText: {
+    color: theme.buttonTextColor,
+    marginLeft: 10,
+    fontFamily: 'Geist-Bold',
+    fontSize: 18
+  },
+  midChatInputWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   midChatInputContainer: {
     width: '100%',
     paddingTop: 5,
     paddingBottom: 5
+  },
+  midInput: {
+    marginBottom: 8,
+    borderWidth: 1,
+    paddingHorizontal: 25,
+    marginHorizontal: 10,
+    paddingVertical: 15,
+    borderRadius: 99,
+    color: theme.lightWhite,
+    borderColor: theme.borderColor,
+    fontFamily: 'Geist-Medium',
   },
   iconContainer: {
     justifyContent: 'center',
@@ -430,28 +618,18 @@ const getStyles = theme => StyleSheet.create({
     padding: 7,
     borderColor: theme.borderColor
   },
-  midInput: {
-    marginBottom: 8,
-    borderWidth: 1,
-    paddingHorizontal: 25,
-    marginHorizontal: 10,
-    paddingVertical: 15,
-    borderRadius: 99,
-    color: theme.lightWhite,
-    borderColor: theme.borderColor,
-    fontFamily: 'Geist-Medium',
-  },
-  midButtonStyle: {
+  bottomButtonStyle: {
+    marginVertical: 5,
     flexDirection: 'row',
-    marginHorizontal: 14,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderRadius: 99,
+    marginHorizontal: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 7,
+    borderRadius: 4,
     backgroundColor: theme.tintColor,
     justifyContent: 'center',
     alignItems: 'center'
   },
-  midButtonText: {
+  bottomButtonText: {
     color: theme.buttonTextColor,
     marginLeft: 10,
     fontFamily: 'Geist-Bold',

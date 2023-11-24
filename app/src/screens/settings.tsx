@@ -13,13 +13,18 @@ import {
  } from '../components/index'
  import FontAwesome from '@expo/vector-icons/FontAwesome5'
  import { IIconProps } from '../../types'
- import { MODELS } from '../../constants'
+ import { MODELS, IMAGE_MODELS } from '../../constants'
+ import * as themes from '../theme'
 
-const imageModels = [
-  { name: 'Fast Image', label: 'fastImage' },
-  { name: 'Remove BG', label: 'removeBg' }
-]
 const models = Object.values(MODELS)
+const imageModels = Object.values(IMAGE_MODELS)
+
+const _themes = Object.values(themes).map(v => {
+  return {
+    name: v.name,
+    label: v.label
+  }
+})
 
 export function Settings() {
   const { theme, setTheme, themeName } = useContext(ThemeContext)
@@ -61,38 +66,33 @@ export function Settings() {
             style={styles.mainText}
         >Theme</Text>
       </View>
-      <TouchableHighlight
-          underlayColor='transparent'
-          onPress={() => {
-            setTheme('light')
-          }}
-        >
-          <View
-            style={{...styles.chatChoiceButton, ...getDynamicViewStyle(themeName,'light', theme)}}
+      {
+        _themes.map((value, index) => (
+          <TouchableHighlight
+            key={index}
+            underlayColor='transparent'
+            onPress={() => {
+              setTheme(value.label)
+            }}
           >
-          <Text
-            style={{...styles.chatTypeText, ...getDynamicTextStyle(themeName, 'light', theme)}}
-          >
-            Light
-          </Text>
-        </View>
-      </TouchableHighlight>
-      <TouchableHighlight
-          underlayColor='transparent'
-          onPress={() => {
-            setTheme('dark')
-          }}
-        >
-          <View
-            style={{...styles.chatChoiceButton, ...getDynamicViewStyle(themeName,'dark', theme)}}
-          >
-          <Text
-            style={{...styles.chatTypeText, ...getDynamicTextStyle(themeName, 'dark', theme)}}
-          >
-            Dark
-          </Text>
-        </View>
-      </TouchableHighlight>
+            <View
+              style={{
+                ...styles.chatChoiceButton,
+                ...getDynamicViewStyle(themeName, value.label, theme)
+              }}
+            >
+            <Text
+              style={{
+                ...styles.chatTypeText,
+                ...getDynamicTextStyle(themeName, value.label, theme)
+              }}
+            >
+              {value.name}
+            </Text>
+          </View>
+        </TouchableHighlight>
+        ))
+      }
       <View
         style={styles.titleContainer}
       >

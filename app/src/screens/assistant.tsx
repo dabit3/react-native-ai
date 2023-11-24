@@ -10,62 +10,30 @@ import {
   ScrollView,
   Dimensions,
   Keyboard,
-  Image,
-  ActivityIndicator,
-  ImageStyle,
-  ViewStyle,
-  Share
+  ActivityIndicator
 } from 'react-native'
-import {
-  // Loading,
-  // Icon,
-  // ShareIcon,
-  // OptionsIcon
-} from '../components'
-import * as ImagePicker from 'expo-image-picker';
-import { v4 as uuid } from 'uuid'
-import { AppContext, ThemeContext } from '../context'
+import { ThemeContext } from '../context'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { DOMAIN } from '../../constants'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
-import * as Clipboard from 'expo-clipboard'
-import { useActionSheet } from '@expo/react-native-action-sheet'
 import Markdown from '@ronradtke/react-native-markdown-display';
 import * as DocumentPicker from 'expo-document-picker';
-// import 'react-native-url-polyfill/auto'
 
 const { height } = Dimensions.get('window')
 
 export function Assistant({ navigation }) {
   const [loading, setLoading] = useState(false)
   const scrollViewRef = useRef<ScrollView | null>(null)
-  const [input, setInput] = useState<string>("what's the capital of france?")
-  const [instructions, setInstructions] = useState<string>('you are a helpful assistant')
+  const [input, setInput] = useState<string>("")
+  const [instructions, setInstructions] = useState<string>("")
   const [file, setFile] = useState<any>(null)
-  const { showActionSheetWithOptions } = useActionSheet()
-  const [loadingAudio, setLoadingAudio] = useState(false)
-  const [updating, setUpdating] = useState()
 
   const [assistantId, setAssistantId] = useState<string>('')
   const [threadId, setThreadId] = useState<string>('')
   const [openaiResponse, setOpenaiResponse] = useState<any>([])
 
-  const playingSound = useRef({
-    playing: false,
-    paused: false,
-    sound: null
-  })
-  const [count, setCount] = useState(0)
-
-  function setPlayingSound(sound) {
-    playingSound.current = sound
-    setCount(c => c + 1)
-  }
-
   const { theme } = useContext(ThemeContext)
 
-  // openAI
-  
   function onChangeInputText(v) {
     setInput(v)
   }
@@ -227,6 +195,7 @@ export function Assistant({ navigation }) {
       setOpenaiResponse([...openaiResponse, localInput])
       setInput('')
       setLoading(true)
+      setFile(null)
   
       const body: {
         input: string,
@@ -238,7 +207,6 @@ export function Assistant({ navigation }) {
         assistant_id: assistantId
       }
       let response
-      console.log('fileCopy: ', fileCopy)
       if (fileCopy) {
         const formData = new FormData()
         // @ts-ignore
@@ -257,7 +225,6 @@ export function Assistant({ navigation }) {
             'Content-Type': 'multipart/form-data'
           }
         }).then(res => res.json())
-        
       } else {
         response = await fetch(`${DOMAIN}/chat/add-message-to-thread`, {
           method: 'POST',
@@ -320,7 +287,6 @@ export function Assistant({ navigation }) {
     )
   }
 
-console.log('openaiResponse: ', openaiResponse)
 
   return (
       <KeyboardAvoidingView
@@ -364,7 +330,7 @@ console.log('openaiResponse: ', openaiResponse)
                   }}
                 >
                   <MaterialCommunityIcons
-                    name="image"
+                    name="file-outline"
                     color={theme.mainTextColor}
                     size={24}
                   />
@@ -375,7 +341,7 @@ console.log('openaiResponse: ', openaiResponse)
                 >
                   <View style={styles.midButtonStyle}>
                     <Ionicons
-                      name="chatbubbles-outline"
+                      name="chatbox-ellipses-outline"
                       size={22} color="white"
                     />
                     <Text style={styles.midButtonText}>
@@ -383,14 +349,11 @@ console.log('openaiResponse: ', openaiResponse)
                     </Text>
                   </View>
                 </TouchableHighlight>
-                <Text style={styles.chatDescription}>
-                  Chat with an assistant (with optional instructions and file interpreter)
-                </Text>
                 {
                   file && (
                       <View style={styles.midFileNameContainer}>
                         <Text style={styles.fileName}>
-                          {file.name || 'Image from Camera Roll'}
+                          {file.name || 'File from device'}
                         </Text>
                         <TouchableHighlight
                           onPress={() => setFile(null)}
@@ -407,6 +370,9 @@ console.log('openaiResponse: ', openaiResponse)
                       </View>
                     )
                   }
+                  <Text style={styles.chatDescription}>
+                    Chat with an assistant (with optional instructions and file interpreter)
+                  </Text>
               </View>
             </View>
           )
@@ -433,11 +399,12 @@ console.log('openaiResponse: ', openaiResponse)
        Boolean(isStarted) && file && (
           <View style={styles.fileNameContainer}>
             <Text style={styles.fileName}>
-              {file.name || 'Image from Camera Roll'}
+              {file.name || 'File from device'}
             </Text>
             <TouchableHighlight
               onPress={() => setFile(null)}
               style={styles.closeIconContainer}
+              underlayColor={'transparent'}
             >
               <MaterialCommunityIcons
                 style={styles.closeIcon}
@@ -469,7 +436,7 @@ console.log('openaiResponse: ', openaiResponse)
               }}
             >
               <MaterialCommunityIcons
-                name="image"
+                name="file-outline"
                 color={theme.mainTextColor}
                 size={24}
               />
@@ -550,7 +517,7 @@ const getStyleSheet = theme => StyleSheet.create({
     marginHorizontal: 10,
     paddingVertical: 15,
     borderRadius: 99,
-    color: theme.lightWhite,
+    color: theme.textColor,
     borderColor: theme.borderColor,
     fontFamily: 'Geist-SemiBold',
   },
@@ -577,7 +544,7 @@ const getStyleSheet = theme => StyleSheet.create({
   midButtonText: {
     color: theme.buttonTextColor,
     marginLeft: 10,
-    fontFamily: 'Geist-Regular',
+    fontFamily: 'Geist-Bold',
     fontSize: 18
   },
   soundPlaybackLabel: {

@@ -5,16 +5,19 @@ import { Main } from './src/main'
 import { useFonts } from 'expo-font'
 import { ThemeContext, AppContext } from './src/context'
 import { lightTheme, darkTheme } from './src/theme'
+import * as themes from './src/theme'
 import { IMAGE_MODELS, MODELS } from './constants'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { ChatModelModal } from './src/components/index'
 import { Model } from './types'
+import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import {
   BottomSheetModal,
   BottomSheetModalProvider,
 } from '@gorhom/bottom-sheet'
 import { StyleSheet } from 'react-native'
 import LogBox from 'react-native/Libraries/LogBox/LogBox'
+
 // @ts-ignore
 LogBox.ignoreLogs([
   'Key "cancelled" in the image picker result is deprecated and will be removed in SDK 48, use "canceled" instead',
@@ -24,7 +27,7 @@ LogBox.ignoreLogs([
 export default function App() {
   const [theme, setTheme] = useState<string>('light')
   const [chatType, setChatType] = useState<Model>(MODELS.gptTurbo)
-  const [imageModel, setImageModel] = useState<string>(IMAGE_MODELS.fastImage)
+  const [imageModel, setImageModel] = useState<string>(IMAGE_MODELS.fastImage.label)
   const [modalVisible, setModalVisible] = useState<boolean>(false)
   const [fontsLoaded] = useFonts({
     'Geist-Regular': require('./assets/fonts/Geist-Regular.otf'),
@@ -39,7 +42,11 @@ export default function App() {
   })
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null)
-  const handlePresentModalPress = () => {
+  function closeModal() {
+    bottomSheetModalRef.current?.dismiss()
+    setModalVisible(false)
+  }
+  function handlePresentModalPress() {
     if (modalVisible) {
       bottomSheetModalRef.current?.dismiss()
       setModalVisible(false)
@@ -48,7 +55,6 @@ export default function App() {
       setModalVisible(true)
     }
   }
-  console.log('chatType: ', chatType)
 
   const bottomSheetStyles = getBottomsheetStyles(theme)
 
@@ -61,7 +67,8 @@ export default function App() {
           setChatType,
           handlePresentModalPress,
           imageModel,
-          setImageModel
+          setImageModel,
+          closeModal
         }}
       >
         <ThemeContext.Provider value={{
@@ -69,9 +76,11 @@ export default function App() {
           themeName: theme,
           setTheme
           }}>
-          <NavigationContainer>
-            <Main />
-          </NavigationContainer>
+          <ActionSheetProvider>
+            <NavigationContainer>
+              <Main />
+            </NavigationContainer>
+          </ActionSheetProvider>
           <BottomSheetModalProvider>
             <BottomSheetModal
                 handleIndicatorStyle={bottomSheetStyles.handleIndicator}
@@ -108,12 +117,11 @@ const getBottomsheetStyles = theme => StyleSheet.create({
 })
 
 function getTheme(theme: any) {
-  switch (theme) {
-    case 'light':
-      return lightTheme
-    case 'dark':
-      return darkTheme
-    default:
-      return lightTheme
-  }
+  let current
+  Object.keys(themes).forEach(_theme => {
+    if (_theme.includes(theme)) {
+      current = themes[_theme]
+    }
+  })
+  return current
 }

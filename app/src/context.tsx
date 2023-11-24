@@ -13,8 +13,9 @@ const AppContext = createContext<IAppContext>({
   chatType: MODELS.gptTurbo,
   setChatType: () => null,
   handlePresentModalPress: () => null,
-  imageModel: IMAGE_MODELS.fastImage,
-  setImageModel: () => null
+  imageModel: IMAGE_MODELS.fastImage.name,
+  setImageModel: () => null,
+  closeModal: () => null
 })
 
 export {

@@ -13,20 +13,16 @@ export async function saveToBytescale(file: any) {
   const dataURI = `data:${mimeType};base64,${fileBase64}`
   var buf = Buffer.from(dataURI.replace(/^data:image\/\w+;base64,/, ""),'base64')
   try {
-    uploadManager
-    .upload({
-      data: buf,
-      mime: file.mimetype,
-      originalFileName: file.originalname
+    const upload = await uploadManager
+      .upload({
+        data: buf,
+        mime: file.mimetype,
+        originalFileName: file.originalname
     })
-    .then(
-      ({ fileUrl, filePath }) => {
-        console.log(`File uploaded to: ${fileUrl}`)
-        console.log('filePath: ', filePath)
-        return fileUrl
-      },
-      error => console.error(`Error: ${error.message}`, error)
-    )
+    const { fileUrl, filePath } = upload
+    console.log(`File uploaded to: ${fileUrl}`)
+    console.log('filePath: ', filePath)
+    return fileUrl
   } catch (err) {
     console.log('error uploading file: ', err)
   }

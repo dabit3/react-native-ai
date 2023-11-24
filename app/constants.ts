@@ -16,6 +16,6 @@ export const MODELS = {
 }
 
 export const IMAGE_MODELS = {
-  fastImage: 'fastImage',
-  removeBackground: 'removeBackground'
+  fastImage: { name: 'Fast Image', label: 'fastImage' },
+  removeBg:  { name: 'Remove Background', label: 'removeBg' }
 }

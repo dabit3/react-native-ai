@@ -116,7 +116,6 @@ export function Chat() {
             })
           }
           const data = event.data
-          console.log('data: ', data)
           localResponse = localResponse + JSON.parse(data).completion
           claudeArray[claudeArray.length - 1].assistant = localResponse
           setClaudeResponse(c => ({
@@ -125,7 +124,6 @@ export function Chat() {
           }))
         } else {
           setLoading(false)
-          // set claude api messages to include user's input and assistant's response for future context
           setClaudeAPIMessages(
             `${claudeAPIMessages}\n\nHuman: ${input}\n\nAssistant:${getFirstNCharsOrLess(localResponse, 2000)}`
           )
@@ -139,7 +137,6 @@ export function Chat() {
         setLoading(false)
       }
     }
-   
     es.addEventListener("open", listener)
     es.addEventListener("message", listener)
     es.addEventListener("error", listener)

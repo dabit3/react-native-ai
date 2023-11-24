@@ -7,6 +7,8 @@ const colors = {
 }
 
 const lightTheme = {
+  name: 'Light',
+  label: 'light',
   textColor: colors.black,
   secondaryTextColor: colors.white,
   mutedForegroundColor: colors.gray,
@@ -22,11 +24,14 @@ const lightTheme = {
 }
 
 const darkTheme = {
+  name: 'Dark',
+  label: 'dark',
   textColor: colors.white,
   secondaryTextColor: colors.black,
   mutedForegroundColor: colors.lightWhite,
   highlightedTextColor: colors.black,
   backgroundColor: colors.black,
+  placeholderTextColor: colors.lightWhite,
   laceholderTextColor: colors.lightWhite,
   secondaryBackgroundColor: '#171717',
   borderColor: 'rgba(255, 255, 255, .2)',
@@ -36,7 +41,15 @@ const darkTheme = {
   tabBarInactiveTintColor: colors.lightWhite,
 }
 
+const hackerNews = {
+  ...lightTheme,
+  name: 'Hacker News',
+  label: 'hackerNews',
+  backgroundColor: '#e4e4e4',
+  tintColor: '#ed702d',
+}
+
 
 export {
-  lightTheme, darkTheme
+  lightTheme, darkTheme, hackerNews
 }
