@@ -1,4 +1,4 @@
-import { useState, useContext, useRef, useEffect } from 'react'
+import { useState, useContext, useRef } from 'react'
 import {
   View,
   Text,
@@ -18,21 +18,23 @@ import { DOMAIN } from '../../constants'
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import Markdown from '@ronradtke/react-native-markdown-display';
 import * as DocumentPicker from 'expo-document-picker';
+import * as Clipboard from 'expo-clipboard'
+import { useActionSheet } from '@expo/react-native-action-sheet'
 
 const { height } = Dimensions.get('window')
 
-export function Assistant({ navigation }) {
+export function Assistant() {
   const [loading, setLoading] = useState(false)
   const scrollViewRef = useRef<ScrollView | null>(null)
   const [input, setInput] = useState<string>("")
   const [instructions, setInstructions] = useState<string>("")
   const [file, setFile] = useState<any>(null)
-
   const [assistantId, setAssistantId] = useState<string>('')
   const [threadId, setThreadId] = useState<string>('')
   const [openaiResponse, setOpenaiResponse] = useState<any>([])
 
   const { theme } = useContext(ThemeContext)
+  const { showActionSheetWithOptions } = useActionSheet()
 
   function onChangeInputText(v) {
     setInput(v)
@@ -45,6 +47,30 @@ export function Assistant({ navigation }) {
   async function clearChat() {
     if (loading) return
     setFile(null)
+    setOpenaiResponse([])
+    setInput('')
+    setInstructions('')
+    setAssistantId('')
+    setThreadId('')
+  }
+
+  async function copyToClipboard(text) {
+    await Clipboard.setStringAsync(text)
+  }
+
+  async function showClipboardActionsheet(text) {
+    const cancelButtonIndex = 2
+    showActionSheetWithOptions({
+      options: ['Copy to clipboard', 'Clear chat', 'cancel'],
+      cancelButtonIndex
+    }, selectedIndex => {
+      if (selectedIndex === Number(0)) {
+        copyToClipboard(text)
+      }
+      if (selectedIndex === 1) {
+        clearChat()
+      }
+    })
   }
 
   async function createThread() {
@@ -181,6 +207,8 @@ export function Assistant({ navigation }) {
     }
   }
 
+  
+
   async function addMessageToThread() {
     try {
       if (!input) return
@@ -278,8 +306,20 @@ export function Assistant({ navigation }) {
             item.type === 'assistant' && (
               <View style={styles.textStyleContainer}>
                 <Markdown
-                  style={styles.textStyle as any}
+                  style={styles.textStyle}
                 >{item.value}</Markdown>
+              <TouchableHighlight
+                onPress={() => showClipboardActionsheet(item.assistant)}
+                underlayColor={'transparent'}
+              >
+                <View style={styles.optionsIconWrapper}>
+                  <Ionicons
+                    name="apps"
+                    size={20}
+                    color={theme.textColor}
+                  />
+                </View>
+              </TouchableHighlight>
               </View>
             )
           }
@@ -331,7 +371,7 @@ export function Assistant({ navigation }) {
                 >
                   <MaterialCommunityIcons
                     name="file-outline"
-                    color={theme.mainTextColor}
+                    color={theme.textColor}
                     size={24}
                   />
                 </TouchableHighlight>
@@ -437,7 +477,7 @@ export function Assistant({ navigation }) {
             >
               <MaterialCommunityIcons
                 name="file-outline"
-                color={theme.mainTextColor}
+                color={theme.textColor}
                 size={24}
               />
             </TouchableHighlight>
@@ -486,8 +526,7 @@ const getStyleSheet = theme => StyleSheet.create({
   optionsIconWrapper: {
     padding: 10,
     paddingTop: 9,
-    justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'flex-end'
   },
   optionIconsContainer: {
     flexDirection: 'row',
@@ -545,7 +584,7 @@ const getStyleSheet = theme => StyleSheet.create({
     color: theme.buttonTextColor,
     marginLeft: 10,
     fontFamily: 'Geist-Bold',
-    fontSize: 18
+    fontSize: 16
   },
   soundPlaybackLabel: {
     color: theme.textColor,
@@ -734,7 +773,7 @@ const getStyleSheet = theme => StyleSheet.create({
       paddingHorizontal: 5,
       marginVertical: 5,
     },
-  },
+  } as any,
   promptTextContainer: {
     flex: 1,
     alignItems: 'flex-end',

@@ -8,7 +8,9 @@ import FontAwesome from '@expo/vector-icons/FontAwesome5'
 
 export function Header() {
   const { theme } = useContext(ThemeContext)
-  const { handlePresentModalPress } = useContext(AppContext)
+  const {
+    handlePresentModalPress
+  } = useContext(AppContext)
   const styles = getStyles(theme)
 
   return (

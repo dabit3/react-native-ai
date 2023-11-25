@@ -21,16 +21,17 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import FeatherIcon from '@expo/vector-icons/Feather'
 import {
   IOpenAIMessages,
-  IOpenAIUserHistory,
   IOpenAIStateWithIndex
 } from '../../types'
+import * as Clipboard from 'expo-clipboard'
+import { useActionSheet } from '@expo/react-native-action-sheet'
 import Markdown from '@ronradtke/react-native-markdown-display'
 
 export function Chat() {
   const [loading, setLoading] = useState<boolean>(false)
   const [input, setInput] = useState<string>('')
-  const [callMade, setCallMade] = useState<boolean>(false)
   const scrollViewRef = useRef<ScrollView | null>(null)
+  const { showActionSheetWithOptions } = useActionSheet()
 
   // claude state management
   const [claudeAPIMessages, setClaudeAPIMessages] = useState('')
@@ -58,7 +59,6 @@ export function Chat() {
 
   async function chat() {
     if (!input) return
-    setCallMade(true)
     Keyboard.dismiss()
     if (chatType.label.includes('claude')) {
       generateClaudeResponse()
@@ -332,6 +332,47 @@ export function Chat() {
     }
   }
 
+  async function copyToClipboard(text) {
+    await Clipboard.setStringAsync(text)
+  }
+
+  async function showClipboardActionsheet(text) {
+    const cancelButtonIndex = 2
+    showActionSheetWithOptions({
+      options: ['Copy to clipboard', 'Clear chat', 'cancel'],
+      cancelButtonIndex
+    }, selectedIndex => {
+      if (selectedIndex === Number(0)) {
+        copyToClipboard(text)
+      }
+      if (selectedIndex === 1) {
+        clearChat()
+      }
+    })
+  }
+
+  async function clearChat() {
+    if (loading) return
+    if (chatType.label.includes('claude')) {
+      setClaudeResponse({
+        messages: [],
+        index: uuid()
+      })
+      setClaudeAPIMessages('')
+    } else if (chatType.label.includes('cohere')) {
+      setCohereResponse({
+        messages: [],
+        index: uuid()
+      })
+    } else {
+      setOpenaiResponse({
+        messages: [],
+        index: uuid()
+      })
+      setOpenaiMessages([])
+    }
+  }
+
   function renderItem({
     item, index
   } : {
@@ -352,12 +393,34 @@ export function Chat() {
             <Markdown
               style={styles.markdownStyle as any}
             >{item.assistant}</Markdown>
+            <TouchableHighlight
+              onPress={() => showClipboardActionsheet(item.assistant)}
+              underlayColor={'transparent'}
+            >
+              <View style={styles.optionsIconWrapper}>
+                <Ionicons
+                  name="apps"
+                  size={20}
+                  color={theme.textColor}
+                />
+              </View>
+            </TouchableHighlight>
           </View>
         )
       }
       </View>
     )
   }
+
+  const callMade = (() => {
+    if (chatType.label.includes('claude')) {
+      return claudeResponse.messages.length > 0
+    }
+    if (chatType.label.includes('cohere')) {
+      return cohereResponse.messages.length > 0
+    }
+    return openaiResponse.messages.length > 0
+  })()
 
   return (
     <KeyboardAvoidingView
@@ -392,7 +455,7 @@ export function Chat() {
                       size={22} color={theme.buttonTextColor}
                     />
                     <Text style={styles.midButtonText}>
-                      Chat
+                      Start {chatType.name} Chat
                     </Text>
                   </View>
                 </TouchableHighlight>
@@ -478,6 +541,11 @@ export function Chat() {
 }
 
 const getStyles = (theme: any) => StyleSheet.create({
+  optionsIconWrapper: {
+    padding: 10,
+    paddingTop: 9,
+    alignItems: 'flex-end'
+  },
   scrollContentContainer: {
     flex: 1,
   },
@@ -515,7 +583,7 @@ const getStyles = (theme: any) => StyleSheet.create({
     color: theme.buttonTextColor,
     marginLeft: 10,
     fontFamily: 'Geist-Bold',
-    fontSize: 18
+    fontSize: 16
   },
   midChatInputWrapper: {
     flex: 1,

@@ -4,6 +4,7 @@ const colors = {
   gray: 'rgba(0, 0, 0, .5)',
   lightWhite: 'rgba(255, 255, 255, .5)',
   blueTintColor: '#0281ff',
+  lightPink: '#F7B5CD'
 }
 
 const lightTheme = {
@@ -49,6 +50,16 @@ const hackerNews = {
   tintColor: '#ed702d',
 }
 
+const miami = {
+  ...darkTheme,
+  name: 'Miami',
+  label: 'miami',
+  backgroundColor: '#231F20',
+  tintColor: colors.lightPink,
+  buttonTextColor: '#231F20',
+  tabBarActiveTintColor: colors.lightPink
+}
+
 export {
-  lightTheme, darkTheme, hackerNews
+  lightTheme, darkTheme, hackerNews, miami
 }

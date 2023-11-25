@@ -5,10 +5,6 @@ import { Chat, Images, Settings, Assistant } from './screens'
 import { Header } from './components'
 import FeatherIcon from '@expo/vector-icons/Feather'
 import {
-  BottomSheetModal,
-  BottomSheetModalProvider,
-} from '@gorhom/bottom-sheet'
-import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context'
@@ -48,7 +44,7 @@ function MainComponent() {
           }}
         />
         <Tab.Screen
-          name="Assistant"
+          name="OpenAI Assistant"
           component={Assistant}
           options={{
             header: () => <Header />,

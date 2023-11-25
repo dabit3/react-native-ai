@@ -553,7 +553,7 @@ const getStyles = theme => StyleSheet.create({
     backgroundColor: theme.tintColor,
   },
   promptText: {
-    color: 'rgba(255, 255, 255, 1)',
+    color: theme.secondaryTextColor,
     fontFamily: 'Geist-Regular',
     paddingVertical: 5,
     paddingHorizontal: 9,
@@ -592,7 +592,7 @@ const getStyles = theme => StyleSheet.create({
     color: theme.buttonTextColor,
     marginLeft: 10,
     fontFamily: 'Geist-Bold',
-    fontSize: 18
+    fontSize: 16
   },
   midChatInputWrapper: {
     flex: 1,
