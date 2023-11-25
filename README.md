@@ -4,8 +4,8 @@ Full stack mobile framework for building AI apps supporring image processing, re
 
 ## Features
 
-- LLM support for OpenAI ChatGPT, Anthropic Claude, Cohere and Cohere Web
-- Image processing with ByteScale
+- LLM support for [OpenAI](https://openai.com/) ChatGPT, [Anthropic](https://anthropic.com) Claude, [Cohere](https://cohere.com/) and Cohere Web
+- Image processing with [ByteScale](https://bytescale.com/)
 - Real-time / streaming responses from all providers
 - An array of image models provided by [Fal.ai](https://www.fal.ai/)
 - OpenAI Assistants including code interpreter and retrieval
