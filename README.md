@@ -1,6 +1,6 @@
 # React Native AI
 
-Full stack mobile framework for building AI apps supporring image processing, real-time / streaming text and chat UIs, and image uploads with multiple service providers.
+Full stack mobile framework for building AI apps supporting image processing, real-time / streaming text and chat UIs, and image uploads with multiple service providers.
 
 ![React Native AI](rnaiheader.png)
 
