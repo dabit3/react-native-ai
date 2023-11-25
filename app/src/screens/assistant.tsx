@@ -342,7 +342,7 @@ export function Assistant({ navigation }) {
                   <View style={styles.midButtonStyle}>
                     <Ionicons
                       name="chatbox-ellipses-outline"
-                      size={22} color="white"
+                      size={22} color={theme.buttonTextColor}
                     />
                     <Text style={styles.midButtonText}>
                       Chat
@@ -448,7 +448,7 @@ export function Assistant({ navigation }) {
               <View style={styles.buttonStyle}>
                 <Ionicons
                   name="md-arrow-up"
-                  size={20} color="white"
+                  size={20} color={theme.buttonTextColor}
                 />
               </View>
             </TouchableHighlight>
@@ -765,7 +765,7 @@ const getStyleSheet = theme => StyleSheet.create({
   },
   chatInputContainer: {
     paddingTop: 5,
-    borderColor:'white',
+    borderColor: theme.borderColor,
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
@@ -780,7 +780,7 @@ const getStyleSheet = theme => StyleSheet.create({
     height: 43,
     borderWidth: 1,
     borderRadius: 99,
-    color: theme.lightWhite,
+    color: theme.textColor,
     marginHorizontal: 6,
     paddingHorizontal: 21,
     paddingBottom: 3,

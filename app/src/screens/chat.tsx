@@ -389,7 +389,7 @@ export function Chat() {
                   <View style={styles.midButtonStyle}>
                     <Ionicons
                       name="chatbox-ellipses-outline"
-                      size={22} color="white"
+                      size={22} color={theme.buttonTextColor}
                     />
                     <Text style={styles.midButtonText}>
                       Chat
@@ -497,7 +497,7 @@ const getStyles = (theme: any) => StyleSheet.create({
     marginHorizontal: 10,
     paddingVertical: 15,
     borderRadius: 99,
-    color: theme.lightWhite,
+    color: theme.textColor,
     borderColor: theme.borderColor,
     fontFamily: 'Geist-Medium',
   },
@@ -555,7 +555,7 @@ const getStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.tintColor,
   },
   promptText: {
-    color: 'white',
+    color: theme.secondaryTextColor,
     fontFamily: 'Geist-Regular',
     paddingVertical: 5,
     paddingHorizontal: 9,
@@ -572,7 +572,7 @@ const getStyles = (theme: any) => StyleSheet.create({
   },
   chatInputContainer: {
     paddingTop: 5,
-    borderColor:'white',
+    borderColor: theme.textColor,
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
@@ -672,8 +672,8 @@ const getStyles = (theme: any) => StyleSheet.create({
     fence: {
       marginVertical: 5,
       padding: 10,
-      backgroundColor: '#312e2e',
-      color: 'white',
+      backgroundColor: theme.backgroundColor,
+      color: theme.textColor,
       borderColor: 'rgba(255, 255, 255, .1)'
     },
     tr: {

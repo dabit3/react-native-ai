@@ -24,7 +24,12 @@ import * as Clipboard from 'expo-clipboard'
 
 const { width } = Dimensions.get('window')
 
-export function Images({ navigation } : { navigation: any }) {
+type ImagesState = {
+  index: typeof uuid,
+  values: any[]
+}
+
+export function Images() {
   const [callMade, setCallMade] = useState(false)
   const { theme } = useContext(ThemeContext)
   const styles = getStyles(theme)
@@ -32,7 +37,7 @@ export function Images({ navigation } : { navigation: any }) {
   const scrollViewRef = useRef<ScrollView | null>(null)
   const [loading, setLoading] = useState(false)
   const [image, setImage] = useState<any>(null)
-  const [images, setImages] = useState<any>({
+  const [images, setImages] = useState<ImagesState>({
     index: uuid,
     values: []
   })
@@ -235,7 +240,7 @@ export function Images({ navigation } : { navigation: any }) {
                           placeholderTextColor={theme.mutedForegroundColor}
                           autoCorrect={true}
                         />
-                        <TouchableHighlight
+                        {/* <TouchableHighlight
                           underlayColor={'transparent'}
                           onPress={chooseImage}
                           style={styles.imagePickerButton}
@@ -245,7 +250,7 @@ export function Images({ navigation } : { navigation: any }) {
                             color={theme.mainTextColor}
                             size={24}
                           />
-                        </TouchableHighlight>
+                        </TouchableHighlight> */}
                         <TouchableHighlight
                           onPress={generate}
                           underlayColor={'transparent'}
@@ -259,7 +264,7 @@ export function Images({ navigation } : { navigation: any }) {
                           <View style={styles.midButtonStyle}>
                             <Ionicons
                               name="images-outline"
-                              size={22} color="white"
+                              size={22} color={theme.buttonTextColor}
                             />
                             <Text style={styles.midButtonText}>
                               Create
@@ -278,7 +283,7 @@ export function Images({ navigation } : { navigation: any }) {
                         <View style={styles.midButtonStyle}>
                           <Ionicons
                             name="images-outline"
-                            size={22} color="white"
+                            size={22} color={theme.buttonTextColor}
                           />
                           <Text style={styles.midButtonText}>
                             {
@@ -392,7 +397,7 @@ export function Images({ navigation } : { navigation: any }) {
                       <View style={styles.buttonStyle}>
                         <Ionicons
                           name="md-arrow-up"
-                          size={20} color="white"
+                          size={20} color={theme.buttonTextColor}
                         />
                       </View>
                     </TouchableHighlight>
@@ -408,7 +413,7 @@ export function Images({ navigation } : { navigation: any }) {
                     <View style={styles.bottomButtonStyle}>
                       <Ionicons
                         name="images-outline"
-                        size={22} color="white"
+                        size={22} color={theme.buttonTextColor}
                       />
                       <Text style={styles.midButtonText}>
                         {
@@ -545,7 +550,7 @@ const getStyles = theme => StyleSheet.create({
   },
   promptTextWrapper: {
     borderRadius: 6,
-    backgroundColor: '#0381ff',
+    backgroundColor: theme.tintColor,
   },
   promptText: {
     color: 'rgba(255, 255, 255, 1)',
@@ -566,7 +571,7 @@ const getStyles = theme => StyleSheet.create({
   },
   chatInputContainer: {
     paddingTop: 5,
-    borderColor:'white',
+    borderColor: theme.borderColor,
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',

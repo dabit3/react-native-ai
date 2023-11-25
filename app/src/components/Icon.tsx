@@ -1,4 +1,4 @@
-import Svg, { G, Path, Circle, Rect } from 'react-native-svg';
+import Svg, { Path, G } from 'react-native-svg';
 
 export function Icon({
   size = 100,
@@ -7,10 +7,15 @@ export function Icon({
 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 1200 1200" {...props}>
-      <G>
-        <Path fill={fill} d="m498.46 410.29h421.25l-378.27 655.16h142.4l378.16-655.16 71.254-123.3h-706.03z"/>
-        <Path fill={fill} d="m726.83 439.5-210.62 364.81-378.25-655.19-71.195 123.32 378.3 655.08 71.148 123.36 353.02-611.45z"/>
-        <Path fill={fill} d="m587.34 622.67-210.62-364.81 756.53 0.011719-71.195-123.32-898.87 0.023437 353.02 611.45z"/>
+       <G>
+        <Path fill={fill} d="m632.62 175.12 236.62 744h216.75z"/>
+        <Path fill={fill} d="m609.38 163.88v755.25h240.38z"/>
+        <Path fill={fill} d="m590.62 919.12v-755.25l-240.38 755.25z"/>
+        <Path fill={fill} d="m114 919.12h216.75l236.62-744z"/>
+        <Path fill={fill} d="m106.88 937.88h221.25v98.25h-221.25z"/>
+        <Path fill={fill} d="m346.88 937.88h243.75v93.75h-243.75z"/>
+        <Path fill={fill} d="m609.38 937.88h243.75v93.75h-243.75z"/>
+        <Path fill={fill} d="m871.88 937.88h221.25v98.25h-221.25z"/>
       </G>
     </Svg>
   )

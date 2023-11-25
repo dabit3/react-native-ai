@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { Main } from './src/main'
 import { useFonts } from 'expo-font'
@@ -9,7 +9,8 @@ import { IMAGE_MODELS, MODELS, ILLUSION_DIFFUSION_IMAGES } from './constants'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { ChatModelModal } from './src/components/index'
 import { Model } from './types'
-import { ActionSheetProvider } from '@expo/react-native-action-sheet';
+import { ActionSheetProvider } from '@expo/react-native-action-sheet'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
   BottomSheetModal,
   BottomSheetModalProvider,
@@ -41,11 +42,29 @@ export default function App() {
     'Geist-UltraBlack': require('./assets/fonts/Geist-UltraBlack.otf')
   })
 
+  useEffect(() => {
+    configureStorage()
+  }, [])
+
+  async function configureStorage() {
+    try {
+      const _theme = await AsyncStorage.getItem('rnai-theme')
+      if (_theme) setTheme(_theme)
+      const _chatType = await AsyncStorage.getItem('rnai-chatType')
+      if (_chatType) setChatType(JSON.parse(_chatType))
+      const _imageModel = await AsyncStorage.getItem('rnai-imageModel')
+      if (_imageModel) setImageModel(_imageModel)
+    } catch (err) {
+      console.log('error configuring storage', err)
+    }
+  }
+
   const bottomSheetModalRef = useRef<BottomSheetModal>(null)
   function closeModal() {
     bottomSheetModalRef.current?.dismiss()
     setModalVisible(false)
   }
+
   function handlePresentModalPress() {
     if (modalVisible) {
       bottomSheetModalRef.current?.dismiss()
@@ -56,6 +75,21 @@ export default function App() {
     }
   }
 
+  function _setChatType(type) {
+    setChatType(type)
+    AsyncStorage.setItem('rnai-chatType', JSON.stringify(type))
+  }
+
+  function _setImageModel(model) {
+    setImageModel(model)
+    AsyncStorage.setItem('rnai-imageModel', model)
+  }
+
+  function _setTheme(theme) {
+    setTheme(theme)
+    AsyncStorage.setItem('rnai-theme', theme)
+  }
+
   const bottomSheetStyles = getBottomsheetStyles(theme)
 
   if (!fontsLoaded) return null
@@ -64,10 +98,10 @@ export default function App() {
       <AppContext.Provider
         value={{
           chatType,
-          setChatType,
+          setChatType: _setChatType,
           handlePresentModalPress,
           imageModel,
-          setImageModel,
+          setImageModel: _setImageModel,
           closeModal,
           illusionImage,
           setIllusionImage
@@ -76,7 +110,7 @@ export default function App() {
         <ThemeContext.Provider value={{
           theme: getTheme(theme),
           themeName: theme,
-          setTheme
+          setTheme: _setTheme
           }}>
           <ActionSheetProvider>
             <NavigationContainer>
@@ -90,6 +124,11 @@ export default function App() {
                 backgroundStyle={bottomSheetStyles.background}
                 ref={bottomSheetModalRef}
                 snapPoints={['50%']}
+                onChange={
+                  (index) => {
+                    if (index === -1) setModalVisible(false)
+                  }
+                }
               >
                 <ChatModelModal
                   handlePresentModalPress={handlePresentModalPress}

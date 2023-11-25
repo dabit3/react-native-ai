@@ -11,6 +11,7 @@
   "dependencies": {
     "@expo/react-native-action-sheet": "^4.0.1",
     "@gorhom/bottom-sheet": "^4",
+    "@react-native-async-storage/async-storage": "1.18.2",
     "@react-native-camera-roll/camera-roll": "^6.0.2",
     "@react-navigation/bottom-tabs": "^6.5.11",
     "@react-navigation/native": "^6.1.9",

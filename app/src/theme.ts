@@ -49,7 +49,6 @@ const hackerNews = {
   tintColor: '#ed702d',
 }
 
-
 export {
   lightTheme, darkTheme, hackerNews
 }

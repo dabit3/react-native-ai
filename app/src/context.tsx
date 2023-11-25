@@ -11,12 +11,12 @@ const ThemeContext = createContext<IThemeContext>({
 
 const AppContext = createContext<IAppContext>({
   chatType: MODELS.gptTurbo,
+  imageModel: IMAGE_MODELS.fastImage.label,
+  illusionImage: ILLUSION_DIFFUSION_IMAGES.tinyCheckers.label,
   setChatType: () => null,
   handlePresentModalPress: () => null,
-  imageModel: IMAGE_MODELS.fastImage.name,
   setImageModel: () => null,
   closeModal: () => null,
-  illusionImage: ILLUSION_DIFFUSION_IMAGES.tinyCheckers.label,
   setIllusionImage: () => null
 })
 
