@@ -14,7 +14,7 @@ Full stack framework for building cross-platform mobile AI apps supporting LLM r
 - Theming (comes out of the box with 5 themes) - easily add additional themes with just a few lines of code.
 - Image processing with [ByteScale](https://bytescale.com/)
 
-![React Native AI Preview](https://arweave.net/GMEzUNXNlMfJNQJdIvJ_uiLnDltzkbDMV3ZmgaIQRXw)
+![React Native AI Preview](https://arweave.net/DIlLBJdjrDj_G0v1sp76mm7kUuMAnV7jHkihGQuHZO4)
 
 ## Usage
 
