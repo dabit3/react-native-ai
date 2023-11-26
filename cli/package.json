@@ -1,13 +1,13 @@
 {
   "name": "rn-ai",
-  "version": "0.0.6",
-  "description": "Create a social app with a single command.",
+  "version": "0.0.9",
+  "description": "Full stack mobile framework for building cross-platform mobile AI apps supporting image processing, real-time / streaming text and chat UIs, and image uploads with multiple service providers.",
   "type": "module",
   "bin": "cli.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["Lens Protocol"],
+  "keywords": ["AI", "OpenAI", "Anthropic", "LLM"],
   "author": "Nader Dabit",
   "license": "ISC",
   "dependencies": {

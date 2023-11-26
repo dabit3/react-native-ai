@@ -157,48 +157,50 @@ FAL_API_KEY="${fal_api_key}"
 
     process.chdir(path.join(process.cwd(), `${appName}/server`))
     spinner.text = ''
-    let startCommand = ''
+    let serverStartCommand = ''
 
     if (isBunInstalled()) {
       spinner.text = 'Installing server dependencies'
       await execaCommand('bun install').pipeStdout(process.stdout)
       spinner.text = ''
-      startCommand = 'bun dev'
+      serverStartCommand = 'bun dev'
       console.log('\n')
     } else if (isYarnInstalled()) {
       await execaCommand('yarn').pipeStdout(process.stdout)
-      startCommand = 'yarn dev'
+      serverStartCommand = 'yarn dev'
     } else {
       spinner.text = 'Installing server dependencies'
       await execa('npm', ['install', '--verbose']).pipeStdout(process.stdout)
       spinner.text = ''
-      startCommand = 'npm run dev'
+      serverStartCommand = 'npm run dev'
     }
     
     process.chdir('../')
     process.chdir(path.join(process.cwd(), `app`))
 
     spinner.text = ''
-    startCommand = ''
+    let appStartCommand = ''
 
     if (isBunInstalled()) {
       spinner.text = 'Installing app dependencies'
       await execaCommand('bun install').pipeStdout(process.stdout)
       spinner.text = ''
-      startCommand = 'bun dev'
+      appStartCommand = 'bun start'
       console.log('\n')
     } else if (isYarnInstalled()) {
       await execaCommand('yarn').pipeStdout(process.stdout)
-      startCommand = 'yarn dev'
+      appStartCommand = 'yarn start'
     } else {
       spinner.text = 'Installing app dependencies'
       await execa('npm', ['install', '--verbose']).pipeStdout(process.stdout)
       spinner.text = ''
-      startCommand = 'npm run dev'
+      appStartCommand = 'npm start'
     }
     spinner.stop() 
+    process.chdir('../')
     log(`${green.bold('Success!')} Created ${appName} at ${process.cwd()} \n`)
-    log(`To get started, change into the new directory and run ${chalk.cyan(startCommand)}`)
+    log(`To get started, change into the server directory and run ${chalk.cyan(serverStartCommand)}\n`)
+    log(`In a separate terminal, change into the app directory and run ${chalk.cyan(appStartCommand)}`)
   } catch (err) {
     console.log('eror:', err)
     log('\n')
