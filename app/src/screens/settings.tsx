@@ -45,7 +45,6 @@ export function Settings() {
   function renderIcon({
     type, props
   }: IIconProps) {
-    console.log('type: ', type)
     if (type.includes('gpt')) {
       return <OpenAIIcon {...props} />
     }

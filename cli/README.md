@@ -2,7 +2,7 @@
 
 Full stack mobile framework for building cross-platform mobile AI apps supporting LLM real-time / streaming text and chat UIs, image services and natural langauge to images with multiple models, and image processing.
 
-![React Native AI](https://raw.githubusercontent.com/dabit3/react-native-ai/main/rnaiheader.png?token=GHSAT0AAAAAACBYUBA6SWS42HLQGMVX6J7UZLDIQQQ)
+![React Native AI](https://arweave.net/GSflqAZCEwg8n6svAGR_d8rYa3ApbDIwF6Nbo-IFTQg)
 
 ## Features
 
@@ -14,7 +14,7 @@ Full stack mobile framework for building cross-platform mobile AI apps supportin
 - Theming (comes out of the box with 4 themes) - easily add additional themes with just a few lines of code.
 - Image processing with [ByteScale](https://bytescale.com/)
 
-![React Native AI Preview](https://raw.githubusercontent.com/dabit3/react-native-ai/main/screenzzz.png?token=GHSAT0AAAAAACBYUBA6Y53GTKQE3JVD4BK4ZLDIRHA)
+![React Native AI Preview](https://arweave.net/RSIu1_xuQakuD68d7YRpMPYNWuRWRiZRCW02_BTOg3I)
 
 ## Usage
 
