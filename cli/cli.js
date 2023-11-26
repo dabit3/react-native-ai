@@ -178,8 +178,6 @@ FAL_API_KEY="${fal_api_key}"
     process.chdir('../')
     process.chdir(path.join(process.cwd(), `app`))
 
-    console.log('cwd:', process.cwd())
-
     spinner.text = ''
     startCommand = ''
 
