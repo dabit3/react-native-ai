@@ -14,3 +14,28 @@ Full stack mobile framework for building AI apps supporting image processing, re
 - Server proxy to easily enable authentication and authorization with auth provider of choice.
 - Theming (comes out of the box with 3 themes) - easily add additional themes with just a few lines of code.
 
+## Usage
+
+Generate a new project by running:
+
+```sh
+npx rn-ai
+```
+
+Next, either configure your environment variables with the CLI, or do so later.
+
+### Running the app
+
+Change into the app directory and run:
+
+```sh
+npm start
+```
+
+### Running the server
+
+Change into the server directory and run:
+
+```sh
+npm run dev
+```
