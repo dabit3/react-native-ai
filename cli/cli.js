@@ -77,11 +77,21 @@ async function main() {
       ]
     })
   
+    let clientEnvs = `
+EXPO_PUBLIC_ENV="DEVELOPMENT"
+
+# Your development URL (localhost or ngrok)
+EXPO_PUBLIC_DEV_API_URL="http://localhost:3050"
+
+# Your production URL
+EXPO_PUBLIC_PROD_API_URL="https://staging.example.com"
+`
+
     let envs = `
 # environment, either PRODUCTION or DEVELOPMENT
 ENVIRONMENT="PRODUCTION"
 
-# ByteScale
+# ByteScale secret
 BYTESCALE_API_KEY=""
 
 # OpenAI
@@ -154,6 +164,7 @@ FAL_API_KEY="${fal_api_key}"
     packageJson = JSON.stringify(packageObj2, null, 2)
     fs.writeFileSync(`${appName}/app/package.json`, packageJson2)
     fs.writeFileSync(`${appName}/server/.env`, envs)
+    fs.writeFileSync(`${appName}/app/.env`, clientEnvs)
 
     process.chdir(path.join(process.cwd(), `${appName}/server`))
     spinner.text = ''

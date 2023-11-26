@@ -239,18 +239,8 @@ export function Images() {
                           placeholder='What do you want to create?'
                           placeholderTextColor={theme.mutedForegroundColor}
                           autoCorrect={true}
+                          value={input}
                         />
-                        {/* <TouchableHighlight
-                          underlayColor={'transparent'}
-                          onPress={chooseImage}
-                          style={styles.imagePickerButton}
-                        >
-                          <MaterialIcons
-                            name="image-outline"
-                            color={theme.mainTextColor}
-                            size={24}
-                          />
-                        </TouchableHighlight> */}
                         <TouchableHighlight
                           onPress={generate}
                           underlayColor={'transparent'}
@@ -383,6 +373,7 @@ export function Images() {
                       placeholder='What else do you want to create?'
                       placeholderTextColor={theme.placeholderTextColor}
                       autoCorrect={true}
+                      value={input}
                     />
                     <TouchableHighlight
                       onPress={generate}
@@ -461,12 +452,6 @@ const getStyles = theme => StyleSheet.create({
     borderColor: theme.borderColor,
     borderRadius: 7,
   },
-  imagePickerButton: {
-    padding: 10,
-    position: 'absolute',
-    right: 25,
-    top: 7
-  },
   imageContainer: {
     marginBottom: 15
   },
@@ -478,17 +463,6 @@ const getStyles = theme => StyleSheet.create({
     paddingHorizontal: 34,
     opacity: .8,
     fontFamily: 'Geist-Light'
-  },
-  shareIconWrapper: {
-    padding: 5,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  optionsIconWrapper: {
-    padding: 10,
-    paddingTop: 9,
-    justifyContent: 'center',
-    alignItems: 'center'
   },
   modelLabelContainer: {
     padding: 9,
@@ -504,27 +478,6 @@ const getStyles = theme => StyleSheet.create({
     color: theme.mutedForegroundColor,
     fontFamily: 'Geist-Regular',
     fontSize: 13
-  },
-  imageButtonContainer: {
-    backgroundColor: theme.secondaryBackgroundColor,
-    padding: 11
-  },
-  imageTypeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  progressBarContainer: {
-    marginVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  optionIconsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: 25,
-    paddingRight: 10,
-    marginTop: 5
   },
   loadingContainer: {
     marginVertical: 25,
@@ -641,12 +594,6 @@ const getStyles = theme => StyleSheet.create({
     backgroundColor: theme.tintColor,
     justifyContent: 'center',
     alignItems: 'center'
-  },
-  bottomButtonText: {
-    color: theme.buttonTextColor,
-    marginLeft: 10,
-    fontFamily: 'Geist-Bold',
-    fontSize: 18
   },
   buttonStyle: {
     marginRight: 14,

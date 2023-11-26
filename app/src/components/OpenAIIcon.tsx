@@ -12,7 +12,7 @@ export function OpenAIIcon({
   selected,
   ...props
 }: IOpenAIIcon) {
-  const fill = selected ? theme.secondaryBackgroundColor : theme.textColor
+  const fill = selected ? theme.secondaryTextColor : theme.textColor
   return (
     <Svg
       {...props}

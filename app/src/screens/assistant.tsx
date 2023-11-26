@@ -403,7 +403,7 @@ export function Assistant() {
                           <MaterialCommunityIcons
                             style={styles.closeIcon}
                             name="close"
-                            color={theme.settingsButtonBackgroundColor}
+                            color={theme.textColor}
                             size={14}
                           />
                         </TouchableHighlight>
@@ -518,31 +518,16 @@ const getStyleSheet = theme => StyleSheet.create({
     borderWidth:1,
     borderColor: theme.borderColor
   },
-  shareIconWrapper: {
-    padding: 5,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
   optionsIconWrapper: {
     padding: 10,
     paddingTop: 9,
     alignItems: 'flex-end'
-  },
-  optionIconsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    paddingTop: 20,
   },
   loadingContainer: {
     marginVertical: 25,
     justifyContent: 'center',
     flexDirection: 'row',
     alignItems: 'center'
-  },
-  loadingAudioText: {
-    color: theme.mainTextColor,
-    marginRight: 10,
-    fontFamily: 'Geist-SemiBold'
   },
   iconContainer: {
     justifyContent: 'center',
@@ -584,37 +569,6 @@ const getStyleSheet = theme => StyleSheet.create({
     marginLeft: 10,
     fontFamily: 'Geist-Bold',
     fontSize: 16
-  },
-  soundPlaybackLabel: {
-    color: theme.textColor,
-    fontFamily: 'Geist-SemiBold',
-    marginRight: 10
-  },
-  soundPlaybackContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.borderColor,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    marginBottom: 10,
-    fontSize: 17,
-    marginHorizontal: 10,
-    borderRadius: 13
-  },
-  soundPauseContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.borderColor,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    fontSize: 17,
-    margin: 10,
-    marginTop: 0,
-    borderRadius: 13
   },
   closeIconContainer: {
     position: 'absolute',
@@ -734,7 +688,8 @@ const getStyleSheet = theme => StyleSheet.create({
       fontFamily: 'Geist-Regular'
     },
     code_inline: {
-      color: theme.textColor,
+      color: theme.secondaryTextColor,
+      backgroundColor: theme.secondaryBackgroundColor,
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, .1)',
       fontFamily: 'Geist-Light'
@@ -746,8 +701,8 @@ const getStyleSheet = theme => StyleSheet.create({
     fence: {
       marginVertical: 5,
       padding: 10,
-      backgroundColor: '#312e2e',
-      color: theme.textColor,
+      color: theme.secondaryTextColor,
+      backgroundColor: theme.secondaryBackgroundColor,
       borderColor: 'rgba(255, 255, 255, .1)'
     },
     tr: {

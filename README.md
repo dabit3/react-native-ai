@@ -7,9 +7,9 @@ Full stack mobile framework for building cross-platform mobile AI apps supportin
 ## Features
 
 - LLM support for [OpenAI](https://openai.com/) ChatGPT, [Anthropic](https://anthropic.com) Claude, [Cohere](https://cohere.com/) and Cohere Web
+- An array of image models provided by [Fal.ai](https://www.fal.ai/)
 - Image processing with [ByteScale](https://bytescale.com/)
 - Real-time / streaming responses from all providers
-- An array of image models provided by [Fal.ai](https://www.fal.ai/)
 - OpenAI Assistants including code interpreter and retrieval
 - Server proxy to easily enable authentication and authorization with auth provider of choice.
 - Theming (comes out of the box with 4 themes) - easily add additional themes with just a few lines of code.

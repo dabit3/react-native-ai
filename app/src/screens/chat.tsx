@@ -657,9 +657,6 @@ const getStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.backgroundColor,
     flex: 1
   },
-  mainText: {
-    fontFamily: 'Geist-Regular'
-  },
   markdownStyle: {
     body: {
       color: theme.textColor,
@@ -723,10 +720,11 @@ const getStyles = (theme: any) => StyleSheet.create({
       fontFamily: 'Geist-Regular'
     },
     code_inline: {
-      backgroundColor: '#312e2e',
-      color: theme.textColor,
+      color: theme.secondaryTextColor,
+      backgroundColor: theme.secondaryBackgroundColor,
       borderWidth: 1,
-      borderColor: 'rgba(255, 255, 255, .1)'
+      borderColor: 'rgba(255, 255, 255, .1)',
+      fontFamily: 'Geist-Light'
     },
     hr: {
       backgroundColor: 'rgba(255, 255, 255, .1)',
@@ -735,8 +733,8 @@ const getStyles = (theme: any) => StyleSheet.create({
     fence: {
       marginVertical: 5,
       padding: 10,
-      backgroundColor: theme.backgroundColor,
-      color: theme.textColor,
+      color: theme.secondaryTextColor,
+      backgroundColor: theme.secondaryBackgroundColor,
       borderColor: 'rgba(255, 255, 255, .1)'
     },
     tr: {
