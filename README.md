@@ -11,7 +11,7 @@ Full stack framework for building cross-platform mobile AI apps supporting LLM r
 - Real-time / streaming responses from all providers
 - OpenAI Assistants including code interpreter and retrieval
 - Server proxy to easily enable authentication and authorization with auth provider of choice.
-- Theming (comes out of the box with 4 themes) - easily add additional themes with just a few lines of code.
+- Theming (comes out of the box with 5 themes) - easily add additional themes with just a few lines of code.
 - Image processing with [ByteScale](https://bytescale.com/)
 
 ![React Native AI Preview](screenzzz.png)
@@ -40,6 +40,32 @@ Change into the server directory and run:
 
 ```sh
 npm run dev
+```
+
+## Theming
+
+To add a new theme, open `app/src/theme.ts` and add a new theme with the following configuration:
+
+```ts
+const christmas = {
+  // extend an esisting theme or start from scratch
+  ...lightTheme,
+  name: 'Christmas',
+  label: 'christmas',
+  tintColor: '#ff0000',
+  textColor: '#378b29',
+  tabBarActiveTintColor: '#378b29',
+  tabBarInactiveTintColor: '#ff0000',
+  placeholderTextColor: '#378b29',
+}
+```
+
+At the bottom of the file, export the new theme:
+
+```ts
+export {
+  lightTheme, darkTheme, hackerNews, miami, vercel
+}
 ```
 
 ## Configuring LLM Models

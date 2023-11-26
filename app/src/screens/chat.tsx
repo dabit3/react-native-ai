@@ -439,7 +439,7 @@ export function Chat() {
                   onChangeText={v => setInput(v)}
                   style={styles.midInput}
                   placeholder='Message'
-                  placeholderTextColor={theme.mutedForegroundColor}
+                  placeholderTextColor={theme.placeholderTextColor}
                   autoCorrect={true}
                 />
                 <TouchableHighlight
@@ -511,7 +511,7 @@ export function Chat() {
               style={styles.input}
               onChangeText={v => setInput(v)}
               placeholder='Message'
-              placeholderTextColor={theme.tabBarInactiveTintColor}
+              placeholderTextColor={theme.placeholderTextColor}
               value={input}
             />
             <TouchableHighlight

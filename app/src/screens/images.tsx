@@ -237,7 +237,7 @@ export function Images() {
                           onChangeText={onChangeText}
                           style={styles.midInput}
                           placeholder='What do you want to create?'
-                          placeholderTextColor={theme.mutedForegroundColor}
+                          placeholderTextColor={theme.placeholderTextColor}
                           autoCorrect={true}
                           value={input}
                         />

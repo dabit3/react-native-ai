@@ -60,6 +60,18 @@ const miami = {
   tabBarActiveTintColor: colors.lightPink
 }
 
+const vercel = {
+  ...darkTheme,
+  name: 'Vercel',
+  label: 'vercel',
+  backgroundColor: 'black',
+  tintColor: '#171717',
+  buttonTextColor: 'white',
+  tabBarActiveTintColor: 'white',
+  secondaryTextColor: 'white',
+  highlightedTextColor: 'white'
+}
+
 export {
-  lightTheme, darkTheme, hackerNews, miami
+  lightTheme, darkTheme, hackerNews, miami, vercel
 }

@@ -11,7 +11,7 @@ Full stack framework for building cross-platform mobile AI apps supporting LLM r
 - Real-time / streaming responses from all providers
 - OpenAI Assistants including code interpreter and retrieval
 - Server proxy to easily enable authentication and authorization with auth provider of choice.
-- Theming (comes out of the box with 4 themes) - easily add additional themes with just a few lines of code.
+- Theming (comes out of the box with 5 themes) - easily add additional themes with just a few lines of code.
 - Image processing with [ByteScale](https://bytescale.com/)
 
 ![React Native AI Preview](https://arweave.net/RSIu1_xuQakuD68d7YRpMPYNWuRWRiZRCW02_BTOg3I)
