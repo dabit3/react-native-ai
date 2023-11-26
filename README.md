@@ -1,6 +1,6 @@
 # React Native AI
 
-Full stack mobile framework for building AI apps supporting image processing, real-time / streaming text and chat UIs, and image uploads with multiple service providers.
+Full stack mobile framework for building cross-platform mobile AI apps supporting image processing, real-time / streaming text and chat UIs, and image uploads with multiple service providers.
 
 ![React Native AI](rnaiheader.png)
 
@@ -12,7 +12,7 @@ Full stack mobile framework for building AI apps supporting image processing, re
 - An array of image models provided by [Fal.ai](https://www.fal.ai/)
 - OpenAI Assistants including code interpreter and retrieval
 - Server proxy to easily enable authentication and authorization with auth provider of choice.
-- Theming (comes out of the box with 3 themes) - easily add additional themes with just a few lines of code.
+- Theming (comes out of the box with 4 themes) - easily add additional themes with just a few lines of code.
 
 ## Usage
 
