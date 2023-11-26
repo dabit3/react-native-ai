@@ -381,12 +381,12 @@ export function Chat() {
     return (
       <View style={styles.promptResponse} key={index}>
         <View style={styles.promptTextContainer}>
-        <View style={styles.promptTextWrapper}>
-          <Text style={styles.promptText}>
-            {item.user}
-          </Text>
+          <View style={styles.promptTextWrapper}>
+            <Text style={styles.promptText}>
+              {item.user}
+            </Text>
+          </View>
         </View>
-      </View>
       {
         item.assistant && (
           <View style={styles.textStyleContainer}>
@@ -520,16 +520,14 @@ export function Chat() {
             <TouchableHighlight
               underlayColor={'transparent'}
               activeOpacity={0.65}
-              style={styles.chatButtonContainer}
               onPress={chat}
             >
               <View
                 style={styles.chatButton}
               >
-                <FeatherIcon
-                  name='arrow-up'
-                  color={theme.highlightedTextColor}
-                  size={20}
+                <Ionicons
+                  name="md-arrow-up"
+                  size={20} color={theme.buttonTextColor}
                 />
               </View>
             </TouchableHighlight>
@@ -629,38 +627,35 @@ const getStyles = (theme: any) => StyleSheet.create({
     paddingHorizontal: 9,
     fontSize: 16
   },
-  chatButtonContainer: {
-    borderRadius: 100,
-    marginLeft: 5
-  },
   chatButton: {
-    backgroundColor: theme.tintColor,
+    marginRight: 14,
     padding: 5,
-    borderRadius: 100
+    borderRadius: 99,
+    backgroundColor: theme.tintColor
   },
   chatInputContainer: {
     paddingTop: 5,
-    borderColor: theme.textColor,
+    borderColor: theme.borderColor,
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingBottom: 5,
-    paddingHorizontal: 10
+    paddingBottom: 5
   },
   input: {
-    width: '92%',
-    color: theme.textColor,
+    flex: 1,
     borderWidth: 1,
-    borderRadius: 50,
-    paddingHorizontal: 13,
-    fontFamily: 'Geist-Regular',
-    padding: 7,
-    borderColor: theme.borderColor
+    borderRadius: 99,
+    color: theme.textColor,
+    marginHorizontal: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 21,
+    paddingRight: 39,
+    borderColor: theme.borderColor,
+    fontFamily: 'Geist-SemiBold',
   },
   container: {
     backgroundColor: theme.backgroundColor,
-    flex: 1,
-    paddingTop: 5
+    flex: 1
   },
   mainText: {
     fontFamily: 'Geist-Regular'

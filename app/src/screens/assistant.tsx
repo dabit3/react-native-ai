@@ -423,7 +423,6 @@ export function Assistant() {
               data={openaiResponse}
               renderItem={renderItem}
               scrollEnabled={false}
-              style={{ paddingTop: 10 }}
             />
           )
         }
@@ -449,7 +448,7 @@ export function Assistant() {
               <MaterialCommunityIcons
                 style={styles.closeIcon}
                 name="close"
-                color={theme.settingsButtonBackgroundColor}
+                color={theme.tintColor}
                 size={14}
               />
             </TouchableHighlight>
@@ -472,20 +471,21 @@ export function Assistant() {
               onPress={chooseDocument}
               style={{
                 position: 'absolute',
-                right: 65
+                right: 65,
+                padding: 5
               }}
             >
               <MaterialCommunityIcons
                 name="file-outline"
                 color={theme.textColor}
-                size={24}
+                size={22}
               />
             </TouchableHighlight>
             <TouchableHighlight
               onPress={addMessageToThread}
               underlayColor={'transparent'}
             >
-              <View style={styles.buttonStyle}>
+              <View style={styles.chatButton}>
                 <Ionicons
                   name="md-arrow-up"
                   size={20} color={theme.buttonTextColor}
@@ -567,8 +567,7 @@ const getStyleSheet = theme => StyleSheet.create({
   },
   midChatInputContainer: {
     width: '100%',
-    paddingTop: 5,
-    paddingBottom: 5
+    paddingVertical: 5
   },
   midButtonStyle: {
     flexDirection: 'row',
@@ -654,10 +653,6 @@ const getStyleSheet = theme => StyleSheet.create({
   fileName: {
     color: theme.textColor,
   },
-  chatButtonContainer: {
-    backgroundColor: theme.tintColor,
-    padding: 11
-  },
   chatTypeContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -674,10 +669,11 @@ const getStyleSheet = theme => StyleSheet.create({
   },
   textStyleContainer: {
     borderWidth: 1,
+    marginRight: 25,
     borderColor: theme.borderColor,
     padding: 15,
-    paddingBottom: 10,
-    paddingTop: 3,
+    paddingBottom: 6,
+    paddingTop: 5,
     margin: 10,
     marginTop: 0,
     borderRadius: 13
@@ -778,11 +774,11 @@ const getStyleSheet = theme => StyleSheet.create({
     flex: 1,
     alignItems: 'flex-end',
     marginRight: 15,
-    marginLeft: 24,
-    marginBottom: 10
+    marginLeft: 24
   },
   promptTextWrapper: {
     borderRadius: 8,
+    borderTopRightRadius: 0,
     backgroundColor: theme.tintColor
   },
   promptText: {
@@ -792,11 +788,11 @@ const getStyleSheet = theme => StyleSheet.create({
     paddingHorizontal: 9,
     fontSize: 16
   },
-  buttonStyle: {
+  chatButton: {
     marginRight: 14,
     padding: 5,
     borderRadius: 99,
-    backgroundColor: '#0381ff'
+    backgroundColor: theme.tintColor
   },
   buttonText: {
     color: theme.textColor,
@@ -816,13 +812,12 @@ const getStyleSheet = theme => StyleSheet.create({
   },
   input: {
     flex: 1,
-    height: 43,
     borderWidth: 1,
     borderRadius: 99,
     color: theme.textColor,
-    marginHorizontal: 6,
+    marginHorizontal: 10,
+    paddingVertical: 10,
     paddingHorizontal: 21,
-    paddingBottom: 3,
     paddingRight: 39,
     borderColor: theme.borderColor,
     fontFamily: 'Geist-SemiBold',

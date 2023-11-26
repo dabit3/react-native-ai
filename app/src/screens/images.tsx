@@ -549,7 +549,8 @@ const getStyles = theme => StyleSheet.create({
     marginBottom: 5
   },
   promptTextWrapper: {
-    borderRadius: 6,
+    borderRadius: 8,
+    borderTopRightRadius: 0,
     backgroundColor: theme.tintColor,
   },
   promptText: {
@@ -575,8 +576,7 @@ const getStyles = theme => StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingBottom: 5,
-    paddingHorizontal: 10
+    paddingBottom: 5
   },
   midButtonStyle: {
     flexDirection: 'row',
@@ -620,14 +620,16 @@ const getStyles = theme => StyleSheet.create({
     alignItems: 'center',
   },
   input: {
-    width: '92%',
-    color: theme.textColor,
+    flex: 1,
     borderWidth: 1,
-    borderRadius: 50,
-    paddingHorizontal: 13,
-    fontFamily: 'Geist-Regular',
-    padding: 7,
-    borderColor: theme.borderColor
+    borderRadius: 99,
+    color: theme.textColor,
+    marginHorizontal: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 21,
+    paddingRight: 39,
+    borderColor: theme.borderColor,
+    fontFamily: 'Geist-SemiBold',
   },
   bottomButtonStyle: {
     marginVertical: 5,
@@ -648,7 +650,6 @@ const getStyles = theme => StyleSheet.create({
   },
   buttonStyle: {
     marginRight: 14,
-    marginLeft: 5,
     padding: 5,
     borderRadius: 99,
     backgroundColor: theme.tintColor
