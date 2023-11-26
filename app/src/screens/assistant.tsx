@@ -13,13 +13,13 @@ import {
   ActivityIndicator
 } from 'react-native'
 import { ThemeContext } from '../context'
-import Ionicons from '@expo/vector-icons/Ionicons'
 import { DOMAIN } from '../../constants'
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
-import Markdown from '@ronradtke/react-native-markdown-display';
-import * as DocumentPicker from 'expo-document-picker';
-import * as Clipboard from 'expo-clipboard'
 import { useActionSheet } from '@expo/react-native-action-sheet'
+import Ionicons from '@expo/vector-icons/Ionicons'
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
+import Markdown from '@ronradtke/react-native-markdown-display'
+import * as DocumentPicker from 'expo-document-picker'
+import * as Clipboard from 'expo-clipboard'
 
 const { height } = Dimensions.get('window')
 

@@ -195,6 +195,13 @@ export function Settings() {
           })
         }
         <View
+          style={styles.titleContainer}
+        >
+          <Text
+            style={styles.mainText}
+          >Illusion Diffusion Base</Text>
+        </View>
+        <View
           style={styles.illusionImageContainer}
         >
           {
@@ -257,7 +264,7 @@ const getStyles = (theme:any) => StyleSheet.create({
     padding: 14,
     flex: 1,
     backgroundColor: theme.backgroundColor,
-    paddingTop: 20,
+    paddingTop: 10,
   },
   contentContainer: {
     paddingBottom: 40
@@ -265,6 +272,7 @@ const getStyles = (theme:any) => StyleSheet.create({
   titleContainer: {
     paddingVertical: 10,
     paddingHorizontal: 15,
+    marginTop: 10
   },
   chatChoiceButton: {
     padding: 15,

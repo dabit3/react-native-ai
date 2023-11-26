@@ -30,16 +30,16 @@ exports.saveToBytescale = void 0;
 const Bytescale = __importStar(require("@bytescale/sdk"));
 const node_fetch_1 = __importDefault(require("node-fetch"));
 require("dotenv/config");
-const uploadManager = new Bytescale.UploadManager({
-    fetchApi: node_fetch_1.default,
-    apiKey: process.env.BYTESCALE_API_KEY || ''
-});
 async function saveToBytescale(file) {
-    const fileBase64 = file.buffer.toString('base64');
-    const mimeType = file.mimetype;
-    const dataURI = `data:${mimeType};base64,${fileBase64}`;
-    var buf = Buffer.from(dataURI.replace(/^data:image\/\w+;base64,/, ""), 'base64');
     try {
+        const uploadManager = new Bytescale.UploadManager({
+            fetchApi: node_fetch_1.default,
+            apiKey: process.env.BYTESCALE_API_KEY || ''
+        });
+        const fileBase64 = file.buffer.toString('base64');
+        const mimeType = file.mimetype;
+        const dataURI = `data:${mimeType};base64,${fileBase64}`;
+        var buf = Buffer.from(dataURI.replace(/^data:image\/\w+;base64,/, ""), 'base64');
         const upload = await uploadManager
             .upload({
             data: buf,

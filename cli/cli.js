@@ -91,19 +91,19 @@ EXPO_PUBLIC_PROD_API_URL="https://staging.example.com"
 # environment, either PRODUCTION or DEVELOPMENT
 ENVIRONMENT="PRODUCTION"
 
-# ByteScale secret
+# ByteScale secret https://bytescale.com
 BYTESCALE_API_KEY=""
 
-# OpenAI
+# OpenAI https://platform.openai.com
 OPENAI_API_KEY=""
 
-# Anthropic
+# Anthropic https://console.anthropic.com
 ANTHROPIC_API_KEY=""
 
-# Cohere
+# Cohere https://cohere.com
 COHERE_API_KEY=""
 
-# FAL
+# FAL AI https://www.fal.ai
 FAL_API_KEY=""
 `
 

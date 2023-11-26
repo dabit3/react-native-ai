@@ -7,18 +7,15 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
-  Dimensions,
   FlatList,
-  Keyboard,
-  Share
+  Keyboard
 } from 'react-native'
-import 'react-native-get-random-values';
+import 'react-native-get-random-values'
 import { useContext, useState, useRef } from 'react'
 import { ThemeContext, AppContext } from '../context'
 import { getEventSource, getFirstN, getFirstNCharsOrLess, getChatType } from '../utils'
 import { v4 as uuid } from 'uuid'
 import Ionicons from '@expo/vector-icons/Ionicons'
-import FeatherIcon from '@expo/vector-icons/Feather'
 import {
   IOpenAIMessages,
   IOpenAIStateWithIndex
@@ -219,9 +216,9 @@ export function Chat() {
           eventSource.close()
         }
       }
-      eventSource.addEventListener("open", listener);
-      eventSource.addEventListener("message", listener);
-      eventSource.addEventListener("error", listener);
+      eventSource.addEventListener("open", listener)
+      eventSource.addEventListener("message", listener)
+      eventSource.addEventListener("error", listener)
     } catch (err) {
       console.log('error in generateOpenaiResponse: ', err)
     }
@@ -324,9 +321,9 @@ export function Chat() {
         }
       }
      
-      es.addEventListener("open", listener);
-      es.addEventListener("message", listener);
-      es.addEventListener("error", listener);
+      es.addEventListener("open", listener)
+      es.addEventListener("message", listener)
+      es.addEventListener("error", listener)
     } catch (err) {
       console.log('error generating cohere chat...', err)
     }

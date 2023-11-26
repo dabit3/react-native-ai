@@ -17,9 +17,9 @@ import { v4 as uuid } from 'uuid'
 import { ThemeContext, AppContext } from '../context'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import MaterialIcons from '@expo/vector-icons/MaterialCommunityIcons'
-import * as FileSystem from 'expo-file-system';
 import { useActionSheet } from '@expo/react-native-action-sheet'
-import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system'
+import * as ImagePicker from 'expo-image-picker'
 import * as Clipboard from 'expo-clipboard'
 
 const { width } = Dimensions.get('window')
@@ -186,9 +186,9 @@ export function Images() {
         FileSystem.documentDirectory + uuid() + '.png',
       )
       try {
-        const data = await downloadResumable.downloadAsync();
+        await downloadResumable.downloadAsync()
       } catch (e) {
-        console.error(e);
+        console.error(e)
       }
     } catch (err) {
       console.log('error saving image ...', err)
