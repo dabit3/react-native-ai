@@ -138,6 +138,7 @@ FAL_API_KEY="${fal_api_key}"
 
     spinner.start()
     await execa('git', ['clone', repoUrl, appName])
+    await execa('rm', ['-rf', `${appName}/cli`])
 
     let packageJson = fs.readFileSync(`${appName}/server/package.json`, 'utf8')
     const packageObj = JSON.parse(packageJson)
