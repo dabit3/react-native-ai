@@ -1,6 +1,6 @@
 {
   "name": "rn-ai",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Full stack mobile framework for building cross-platform mobile AI apps supporting image processing, real-time / streaming text and chat UIs, and image uploads with multiple service providers.",
   "type": "module",
   "bin": "cli.js",

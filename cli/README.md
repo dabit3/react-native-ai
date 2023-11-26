@@ -1,6 +1,6 @@
 # React Native AI CLI
 
-Full stack mobile framework for building cross-platform mobile AI apps supporting LLM real-time / streaming text and chat UIs, image services and natural langauge to images with multiple models, and image processing.
+Full stack framework for building cross-platform mobile AI apps supporting LLM real-time / streaming text and chat UIs, image services and natural langauge to images with multiple models, and image processing.
 
 ![React Native AI](https://arweave.net/GSflqAZCEwg8n6svAGR_d8rYa3ApbDIwF6Nbo-IFTQg)
 
