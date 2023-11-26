@@ -14,6 +14,8 @@ Full stack mobile framework for building cross-platform mobile AI apps supportin
 - Server proxy to easily enable authentication and authorization with auth provider of choice.
 - Theming (comes out of the box with 4 themes) - easily add additional themes with just a few lines of code.
 
+![React Native AI Preview](screenzzz.png)
+
 ## Usage
 
 Generate a new project by running:
