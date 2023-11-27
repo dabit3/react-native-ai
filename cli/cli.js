@@ -148,9 +148,11 @@ FAL_API_KEY="${fal_api_key}"
 
     spinner.start()
     await execa('git', ['clone', repoUrl, appName])
-    await execa('rm', ['-r', `${appName}/cli`])
-    await execa('rm', [`${appName}/rnaiheader.png`])
-    await execa('rm', [`${appName}/screenzzz.png`])
+    try {
+      await execa('rm', ['-r', `${appName}/cli`])
+      await execa('rm', [`${appName}/rnaiheader.png`])
+      await execa('rm', [`${appName}/screenzzz.png`])
+    } catch (err) {}
 
     let packageJson = fs.readFileSync(`${appName}/server/package.json`, 'utf8')
     const packageObj = JSON.parse(packageJson)
@@ -159,9 +161,9 @@ FAL_API_KEY="${fal_api_key}"
     fs.writeFileSync(`${appName}/server/package.json`, packageJson)
 
     let packageJson2 = fs.readFileSync(`${appName}/app/package.json`, 'utf8')
-    const packageObj2 = JSON.parse(packageJson)
-    packageObj.name = appName
-    packageJson = JSON.stringify(packageObj2, null, 2)
+    const packageObj2 = JSON.parse(packageJson2)
+    packageObj2.name = appName
+    packageJson2 = JSON.stringify(packageObj2, null, 2)
     fs.writeFileSync(`${appName}/app/package.json`, packageJson2)
     fs.writeFileSync(`${appName}/server/.env`, envs)
     fs.writeFileSync(`${appName}/app/.env`, clientEnvs)
@@ -213,7 +215,7 @@ FAL_API_KEY="${fal_api_key}"
     log(`To get started, change into the server directory and run ${chalk.cyan(serverStartCommand)}\n`)
     log(`In a separate terminal, change into the app directory and run ${chalk.cyan(appStartCommand)}`)
   } catch (err) {
-    console.log('eror:', err)
+    console.log('error:', err)
     log('\n')
     if (err.exitCode == 128) {
       log('Error: directory already exists.')
