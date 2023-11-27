@@ -7,7 +7,20 @@ const colors = {
   lightPink: '#F7B5CD'
 }
 
+const fonts = {
+  ultraLightFont: 'Geist-Ultralight',
+  thinFont: 'Geist-Thin',
+  regularFont: 'Geist-Regular',
+  lightFont: 'Geist-Light',
+  mediumFont: 'Geist-Medium',
+  semiBoldFont: 'Geist-SemiBold',
+  boldFont: 'Geist-Bold',
+  blackFont: 'Geist-Black',
+  ultraBlackFont: 'Geist-Ultrablack',
+}
+
 const lightTheme = {
+  ...fonts,
   name: 'Light',
   label: 'light',
   textColor: colors.black,
@@ -25,6 +38,7 @@ const lightTheme = {
 }
 
 const darkTheme = {
+  ...fonts,
   name: 'Dark',
   label: 'dark',
   textColor: colors.white,

@@ -67,7 +67,7 @@ function getStyles(theme) {
       marginBottom: 22,
       textAlign: 'center',
       fontSize: 16,
-      fontFamily: 'Geist-SemiBold',
+      fontFamily: theme.semiBoldFont,
       marginLeft: 10
     },
     bottomSheetContainer: {
@@ -101,7 +101,7 @@ function optionText(theme, baseType, type) {
   const selected = baseType === type
   return {
     color: selected ? theme.secondaryTextColor : theme.textColor,
-    fontFamily: 'Geist-Bold',
+    fontFamily: theme.boldFont,
     fontSize: 15,
     shadowColor: 'rgba(0, 0, 0, .2)',
     shadowOffset: {width: 0, height: 2},

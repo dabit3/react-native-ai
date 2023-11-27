@@ -507,7 +507,7 @@ const getStyleSheet = theme => StyleSheet.create({
     fontSize: 13,
     opacity: .8,
     paddingHorizontal: 30,
-    fontFamily: 'Geist-Light'
+    fontFamily: theme.regularFont
   },
   image: {
     width: 250,
@@ -543,7 +543,7 @@ const getStyleSheet = theme => StyleSheet.create({
     borderRadius: 99,
     color: theme.textColor,
     borderColor: theme.borderColor,
-    fontFamily: 'Geist-SemiBold',
+    fontFamily: theme.semiBoldFont,
   },
   midChatInputWrapper: {
     flex: 1,
@@ -567,7 +567,7 @@ const getStyleSheet = theme => StyleSheet.create({
   midButtonText: {
     color: theme.buttonTextColor,
     marginLeft: 10,
-    fontFamily: 'Geist-Bold',
+    fontFamily: theme.boldFont,
     fontSize: 16
   },
   closeIconContainer: {
@@ -635,46 +635,56 @@ const getStyleSheet = theme => StyleSheet.create({
   textStyle: {
     body: {
       color: theme.textColor,
-      fontFamily: 'Geist-Regular'
+      fontFamily: theme.regularFont
     },
     paragraph: {
       color: theme.textColor,
       fontSize: 16,
-      fontFamily: 'Geist-Regular'
+      fontFamily: theme.regularFont
     },
     heading1: {
-      fontFamily: 'Geist-SemiBold',
+      color: theme.textColor,
+      fontFamily: theme.semiBoldFont,
       marginVertical: 5
     },
     heading2: {
-      fontFamily: 'Geist-SemiBold',
-      marginVertical: 5
+      marginTop: 20,
+      color: theme.textColor,
+      fontFamily: theme.semiBoldFont,
+      marginBottom: 5
     },
     heading3: {
-      fontFamily: 'Geist-Medium',
-      marginVertical: 5
+      marginTop: 20,
+      color: theme.textColor,
+      fontFamily: theme.mediumFont,
+      marginBottom: 5
     },
     heading4: {
-      fontFamily: 'Geist-Medium',
-      marginVertical: 5
+      marginTop: 10,
+      color: theme.textColor,
+      fontFamily: theme.mediumFont,
+      marginBottom: 5
     },
     heading5: {
-      fontFamily: 'Geist-Medium',
-      marginVertical: 5
+      marginTop: 10,
+      color: theme.textColor,
+      fontFamily: theme.mediumFont,
+      marginBottom: 5
     },
     heading6: {
-      fontFamily: 'Geist-Medium',
+      color: theme.textColor,
+      fontFamily: theme.mediumFont,
       marginVertical: 5
     },
     list_item: {
       marginTop: 7,
-      fontFamily: 'Geist-Regular',
+      fontFamily: theme.regularFont,
       fontSize: 16
     },
     ordered_list_icon: {
       color: theme.textColor,
       fontSize: 16,
-      fontFamily: 'Geist-Regular'
+      fontFamily: theme.regularFont
     },
     bullet_list: {
       marginTop: 10
@@ -685,14 +695,14 @@ const getStyleSheet = theme => StyleSheet.create({
     bullet_list_icon: {
       color: theme.textColor,
       fontSize: 16,
-      fontFamily: 'Geist-Regular'
+      fontFamily: theme.regularFont
     },
     code_inline: {
       color: theme.secondaryTextColor,
       backgroundColor: theme.secondaryBackgroundColor,
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, .1)',
-      fontFamily: 'Geist-Light'
+      fontFamily: theme.lightFont
     },
     hr: {
       backgroundColor: 'rgba(255, 255, 255, .1)',
@@ -738,7 +748,7 @@ const getStyleSheet = theme => StyleSheet.create({
   },
   promptText: {
     color: theme.secondaryTextColor,
-    fontFamily: 'Geist-Regular',
+    fontFamily: theme.regularFont,
     paddingVertical: 5,
     paddingHorizontal: 9,
     fontSize: 16
@@ -751,7 +761,7 @@ const getStyleSheet = theme => StyleSheet.create({
   },
   buttonText: {
     color: theme.textColor,
-    fontFamily: 'Geist-Medium',
+    fontFamily: theme.mediumFont,
   },
   chatInputContainer: {
     paddingTop: 5,
@@ -775,6 +785,6 @@ const getStyleSheet = theme => StyleSheet.create({
     paddingHorizontal: 21,
     paddingRight: 39,
     borderColor: theme.borderColor,
-    fontFamily: 'Geist-SemiBold',
+    fontFamily: theme.semiBoldFont,
   }
 })
