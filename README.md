@@ -64,7 +64,7 @@ At the bottom of the file, export the new theme:
 
 ```ts
 export {
-  lightTheme, darkTheme, hackerNews, miami, vercel
+  lightTheme, darkTheme, hackerNews, miami, vercel, christmas
 }
 ```
 
