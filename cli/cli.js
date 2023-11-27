@@ -14,7 +14,7 @@ const log = console.log
 const program = new Command()
 const green = chalk.green
 
-const repoUrl = 'git@github.com:dabit3/react-native-ai.git'
+const repoUrl = 'https://github.com/dabit3/react-native-ai.git'
 
 const isYarnInstalled = () => {
   try {
