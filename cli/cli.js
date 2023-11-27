@@ -64,7 +64,7 @@ async function main() {
     }
   
     const withEnv = await select({
-      message: 'Configure environment variables?',
+      message: 'Configure environment variables now?',
       choices: [
         {
           name: 'Yes',

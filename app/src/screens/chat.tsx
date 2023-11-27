@@ -182,9 +182,8 @@ export function Chat() {
       setInput('')
       const eventSource = getEventSource(eventSourceArgs)
 
-      console.log('aboutto open listener...')
+      console.log('about to open listener...')
       const listener = (event:any) => {
-        console.log('event:', event)
         if (event.type === "open") {
           console.log("Open SSE connection.")
           setLoading(false)
