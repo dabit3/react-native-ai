@@ -150,8 +150,6 @@ FAL_API_KEY="${fal_api_key}"
     await execa('git', ['clone', repoUrl, appName])
     try {
       await execa('rm', ['-r', `${appName}/cli`])
-      await execa('rm', [`${appName}/rnaiheader.png`])
-      await execa('rm', [`${appName}/screenzzz.png`])
     } catch (err) {}
 
     let packageJson = fs.readFileSync(`${appName}/server/package.json`, 'utf8')
@@ -215,7 +213,6 @@ FAL_API_KEY="${fal_api_key}"
     log(`To get started, change into the server directory and run ${chalk.cyan(serverStartCommand)}\n`)
     log(`In a separate terminal, change into the app directory and run ${chalk.cyan(appStartCommand)}`)
   } catch (err) {
-    console.log('error:', err)
     log('\n')
     if (err.exitCode == 128) {
       log('Error: directory already exists.')
