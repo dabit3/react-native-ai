@@ -91,20 +91,20 @@ EXPO_PUBLIC_PROD_API_URL="https://staging.example.com"
 # environment, either PRODUCTION or DEVELOPMENT
 ENVIRONMENT="PRODUCTION"
 
-# ByteScale secret https://bytescale.com
-BYTESCALE_API_KEY=""
-
 # OpenAI https://platform.openai.com
 OPENAI_API_KEY=""
 
-# Anthropic https://console.anthropic.com
-ANTHROPIC_API_KEY=""
-
-# Cohere https://cohere.com
-COHERE_API_KEY=""
-
 # FAL AI https://www.fal.ai
 FAL_API_KEY=""
+
+# Anthropic (optional) https://console.anthropic.com
+ANTHROPIC_API_KEY=""
+
+# Cohere (optional) https://cohere.com
+COHERE_API_KEY=""
+
+# ByteScale secret (optional) https://bytescale.com
+BYTESCALE_API_KEY=""
 `
 
     if (withEnv === 'yes') {
@@ -114,13 +114,13 @@ FAL_API_KEY=""
       console.log('Get Fal API Key at https://www.fal.ai/')
       const fal_api_key = await input({ message: "Fal API Key" })
       
-      console.log('Get Anthropic API Key at https://console.anthropic.com/')
+      console.log('(optional) Get Anthropic API Key at https://console.anthropic.com/')
       const anthropic_api_key = await input({ message: "Anthropic API Key" })
 
-      console.log('Get Cohere API Key at https://cohere.com/')
+      console.log('(optional) Get Cohere API Key at https://cohere.com/')
       const cohere_api_key = await input({ message: "Cohere API Key" })
 
-      console.log('Get Bytescale API Key at https://bytescale.com/')
+      console.log('(optional) Get Bytescale API Key at https://bytescale.com/')
       const bytescale_api_key = await input({ message: "Bytescale API Key" })
       
       envs = `

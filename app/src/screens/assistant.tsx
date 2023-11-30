@@ -713,7 +713,8 @@ const getStyleSheet = theme => StyleSheet.create({
       padding: 10,
       color: theme.secondaryTextColor,
       backgroundColor: theme.secondaryBackgroundColor,
-      borderColor: 'rgba(255, 255, 255, .1)'
+      borderColor: 'rgba(255, 255, 255, .1)',
+      fontFamily: theme.regularFont
     },
     tr: {
       borderBottomWidth: 1,
@@ -747,7 +748,7 @@ const getStyleSheet = theme => StyleSheet.create({
     backgroundColor: theme.tintColor
   },
   promptText: {
-    color: theme.secondaryTextColor,
+    color: theme.textColor,
     fontFamily: theme.regularFont,
     paddingVertical: 5,
     paddingHorizontal: 9,
