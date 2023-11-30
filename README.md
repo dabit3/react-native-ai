@@ -4,6 +4,8 @@ Full stack framework for building cross-platform mobile AI apps supporting LLM r
 
 ![React Native AI](https://i.imgur.com/AOOgBM0.png)
 
+> Check out the video tutorial [here](https://www.youtube.com/watch?v=zf3NnTU5pr4)
+
 ## Features
 
 - LLM support for [OpenAI](https://openai.com/) ChatGPT, [Anthropic](https://anthropic.com) Claude, [Cohere](https://cohere.com/) and Cohere Web
