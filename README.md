@@ -14,7 +14,7 @@ Full stack framework for building cross-platform mobile AI apps supporting LLM r
 - Theming (comes out of the box with 5 themes) - easily add additional themes with just a few lines of code.
 - Image processing with [ByteScale](https://bytescale.com/)
 
-![React Native AI Preview](https://i.imgur.com/7Gser4F.png)
+![React Native AI Preview](https://i.imgur.com/D4LIVal.png)
 
 ## Usage
 
@@ -67,6 +67,8 @@ export {
   lightTheme, darkTheme, hackerNews, miami, vercel, christmas
 }
 ```
+
+![React Native AI Themes](https://i.imgur.com/7Gser4F.png)
 
 ## Configuring LLM Models
 
