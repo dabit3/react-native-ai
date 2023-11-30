@@ -78,12 +78,12 @@ const vercel = {
   ...darkTheme,
   name: 'Vercel',
   label: 'vercel',
-  backgroundColor: 'black',
+  backgroundColor: colors.black,
   tintColor: '#171717',
-  buttonTextColor: 'white',
-  tabBarActiveTintColor: 'white',
-  secondaryTextColor: 'black',
-  highlightedTextColor: 'white'
+  buttonTextColor: colors.white,
+  tabBarActiveTintColor: colors.white,
+  secondaryTextColor: colors.black,
+  highlightedTextColor: colors.white
 }
 
 export {
