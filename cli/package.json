@@ -1,6 +1,6 @@
 {
   "name": "rn-ai",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Full stack mobile framework for building cross-platform mobile AI apps supporting image processing, real-time / streaming text and chat UIs, and image uploads with multiple service providers.",
   "type": "module",
   "bin": "cli.js",
@@ -10,6 +10,10 @@
   "keywords": ["AI", "OpenAI", "Anthropic", "LLM"],
   "author": "Nader Dabit",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dabit3/react-native-ai"
+  },
   "dependencies": {
     "@inquirer/prompts": "^3.1.1",
     "chalk": "^5.3.0",
