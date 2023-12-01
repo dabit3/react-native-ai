@@ -12,6 +12,7 @@ import { Model } from './types'
 import { ActionSheetProvider } from '@expo/react-native-action-sheet'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
+  BottomSheetBackdrop,
   BottomSheetModal,
   BottomSheetModalProvider,
   BottomSheetView,
@@ -68,8 +69,7 @@ export default function App() {
 
   function handlePresentModalPress() {
     if (modalVisible) {
-      bottomSheetModalRef.current?.dismiss()
-      setModalVisible(false)
+      closeModal()
     } else {
       bottomSheetModalRef.current?.present()
       setModalVisible(true)
@@ -125,11 +125,10 @@ export default function App() {
                 backgroundStyle={bottomSheetStyles.background}
                 ref={bottomSheetModalRef}
                 enableDynamicSizing={true}
-                onChange={
-                  (index) => {
-                    if (index === -1) setModalVisible(false)
-                  }
-                }
+                backdropComponent={(props) => <BottomSheetBackdrop {...props}  disappearsOnIndex={-1}/>}
+                enableDismissOnClose
+                enablePanDownToClose
+                onDismiss={() => setModalVisible(false)}
               >
                 <BottomSheetView>
                   <ChatModelModal
