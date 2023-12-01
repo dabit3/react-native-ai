@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
   BottomSheetModal,
   BottomSheetModalProvider,
+  BottomSheetView,
 } from '@gorhom/bottom-sheet'
 import { StyleSheet } from 'react-native'
 import LogBox from 'react-native/Libraries/LogBox/LogBox'
@@ -123,16 +124,18 @@ export default function App() {
                 handleStyle={bottomSheetStyles.handle}
                 backgroundStyle={bottomSheetStyles.background}
                 ref={bottomSheetModalRef}
-                snapPoints={['50%']}
+                enableDynamicSizing={true}
                 onChange={
                   (index) => {
                     if (index === -1) setModalVisible(false)
                   }
                 }
               >
-                <ChatModelModal
-                  handlePresentModalPress={handlePresentModalPress}
-                />
+                <BottomSheetView>
+                  <ChatModelModal
+                    handlePresentModalPress={handlePresentModalPress}
+                  />
+                </BottomSheetView>
               </BottomSheetModal>
             </BottomSheetModalProvider>
         </ThemeContext.Provider>

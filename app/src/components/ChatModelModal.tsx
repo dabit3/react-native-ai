@@ -73,7 +73,6 @@ function getStyles(theme) {
     bottomSheetContainer: {
       borderColor: theme.borderColor,
       borderWidth: 1,
-      flex: 1,
       padding: 24,
       justifyContent: 'center',
       backgroundColor: theme.backgroundColor,
