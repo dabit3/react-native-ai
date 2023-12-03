@@ -150,6 +150,7 @@ FAL_API_KEY="${fal_api_key}"
     await execa('git', ['clone', repoUrl, appName])
     try {
       await execa('rm', ['-r', `${appName}/cli`])
+      await execa('rm', ['-rf', `${appName}/.git`])
     } catch (err) {}
 
     let packageJson = fs.readFileSync(`${appName}/server/package.json`, 'utf8')
