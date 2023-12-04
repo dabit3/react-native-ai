@@ -12,8 +12,10 @@ import { Model } from './types'
 import { ActionSheetProvider } from '@expo/react-native-action-sheet'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import {
+  BottomSheetBackdrop,
   BottomSheetModal,
   BottomSheetModalProvider,
+  BottomSheetView,
 } from '@gorhom/bottom-sheet'
 import { StyleSheet } from 'react-native'
 import LogBox from 'react-native/Libraries/LogBox/LogBox'
@@ -67,8 +69,7 @@ export default function App() {
 
   function handlePresentModalPress() {
     if (modalVisible) {
-      bottomSheetModalRef.current?.dismiss()
-      setModalVisible(false)
+      closeModal()
     } else {
       bottomSheetModalRef.current?.present()
       setModalVisible(true)
@@ -123,16 +124,17 @@ export default function App() {
                 handleStyle={bottomSheetStyles.handle}
                 backgroundStyle={bottomSheetStyles.background}
                 ref={bottomSheetModalRef}
-                snapPoints={['50%']}
-                onChange={
-                  (index) => {
-                    if (index === -1) setModalVisible(false)
-                  }
-                }
+                enableDynamicSizing={true}
+                backdropComponent={(props) => <BottomSheetBackdrop {...props}  disappearsOnIndex={-1}/>}
+                enableDismissOnClose
+                enablePanDownToClose
+                onDismiss={() => setModalVisible(false)}
               >
-                <ChatModelModal
-                  handlePresentModalPress={handlePresentModalPress}
-                />
+                <BottomSheetView>
+                  <ChatModelModal
+                    handlePresentModalPress={handlePresentModalPress}
+                  />
+                </BottomSheetView>
               </BottomSheetModal>
             </BottomSheetModalProvider>
         </ThemeContext.Provider>
