@@ -41,7 +41,7 @@ export function Assistant() {
   }
 
   function onChangeInstructionsText(v) {
-    setInput(v)
+    setInstructions(v)
   }
 
   async function clearChat() {
