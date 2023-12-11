@@ -49,5 +49,8 @@ export function getChatType(type: Model) {
   if (type.label.includes('cohere')) {
     return 'cohere'
   }
+  if (type.label.includes('mistral')) {
+    return 'mistral'
+  }
   else return 'claude'
 }
