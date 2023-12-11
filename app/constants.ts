@@ -1,6 +1,7 @@
 import { AnthropicIcon } from './src/components/AnthropicIcon'
 import { CohereIcon } from './src/components/CohereIcon'
 import { OpenAIIcon } from './src/components/OpenAIIcon'
+import { MistralIcon } from './src/components/MistralIcon'
 
 export const DOMAIN = process.env.EXPO_PUBLIC_ENV === 'DEVELOPMENT' ?
   process.env.EXPO_PUBLIC_DEV_API_URL :
@@ -12,7 +13,8 @@ export const MODELS = {
   claude: { name: 'Claude', label: 'claude', icon: AnthropicIcon },
   claudeInstant: { name: 'Claude Instant', label: 'claudeInstant', icon: AnthropicIcon },
   cohere: { name: 'Cohere', label: 'cohere', icon: CohereIcon },
-  cohereWeb: { name: 'Cohere Web', label: 'cohereWeb', icon: CohereIcon }
+  cohereWeb: { name: 'Cohere Web', label: 'cohereWeb', icon: CohereIcon },
+  mistral: { name: 'Mistral', label: 'mistral', icon: MistralIcon },
 }
 
 export const IMAGE_MODELS = {

@@ -5,16 +5,15 @@ import { View, Text, StyleSheet, TouchableHighlight } from 'react-native'
 
 export function ChatModelModal({ handlePresentModalPress }) {
   const { theme } = useContext(ThemeContext)
-  
   const { setChatType, chatType } = useContext(AppContext)
   const styles = getStyles(theme)
-
   const options = Object.values(MODELS)
 
   function _setChatType(v) {
     setChatType(v)
     handlePresentModalPress()
   }
+
   return (
     <View style={styles.bottomSheetContainer}>
       <View>

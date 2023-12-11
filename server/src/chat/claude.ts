@@ -50,7 +50,6 @@ export const claude = asyncHandler(async (req: Request, res: Response) => {
         }
   
         let chunk = decoder.decode(value)
-        console.log('chunk:', chunk)
         const lines = chunk.split("event: completion")
   
         const parsedLines = lines

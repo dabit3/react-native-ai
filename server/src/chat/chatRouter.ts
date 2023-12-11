@@ -3,6 +3,7 @@ import multer from 'multer'
 import { cohere } from './cohere'
 import { claude } from './claude'
 import { gpt } from './gpt'
+import { mistral } from './mistral'
 
 const upload = multer()
 
@@ -18,6 +19,7 @@ const router = express.Router()
 router.post('/claude', claude)
 router.post('/cohere', cohere)
 router.post('/gpt', gpt)
+router.post('/mistral', mistral)
 
 // assistant
 router.post('/create-assistant', upload.single('file'), createAssistant)

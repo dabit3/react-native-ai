@@ -82,7 +82,7 @@ const vercel = {
   tintColor: '#171717',
   buttonTextColor: colors.white,
   tabBarActiveTintColor: colors.white,
-  secondaryTextColor: colors.black,
+  secondaryTextColor: colors.white,
   highlightedTextColor: colors.white
 }
 

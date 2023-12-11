@@ -50,6 +50,13 @@ export function Chat() {
     index: uuid()
   })
 
+  // mistral state management
+  const [mistralAPIMessages, setMistralAPIMessages] = useState('')
+  const [mistralResponse, setMistralResponse] = useState({
+    messages: [],
+    index: uuid()
+  })
+
   const { theme } = useContext(ThemeContext)
   const { chatType } = useContext(AppContext)
   const styles = getStyles(theme)
@@ -61,9 +68,86 @@ export function Chat() {
       generateClaudeResponse()
     } else if (chatType.label.includes('cohere')) {
       generateCohereResponse()
+    } else if (chatType.label.includes('mistral')) {
+      generateMistralResponse()
     } else {
       generateOpenaiResponse()
     }
+  }
+
+  async function generateMistralResponse() {
+    if (!input) return
+    Keyboard.dismiss()
+    let localResponse = ''
+    const mistralInput = `${mistralAPIMessages}\n\n Prompt: ${input}`
+
+    let mistralArray = [
+      ...mistralResponse.messages, {
+        user: input,
+      }
+    ] as [{user: string, assistant?: string}]
+
+    setMistralResponse(c => ({
+      index: c.index,
+      messages: JSON.parse(JSON.stringify(mistralArray))
+    }))
+
+    setLoading(true)
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({
+        animated: true
+      })
+    }, 1)
+    setInput('')
+
+    const eventSourceArgs = {
+      body: {
+        prompt: mistralInput,
+        model: chatType.label
+      },
+      type: getChatType(chatType)
+    }
+
+    const es = await getEventSource(eventSourceArgs)
+
+    const listener = (event) => {
+      if (event.type === "open") {
+        console.log("Open SSE connection.")
+        setLoading(false)
+      } else if (event.type === "message") {
+        if (event.data !== "[DONE]") {
+          if (localResponse.length < 850) {
+            scrollViewRef.current?.scrollToEnd({
+              animated: true
+            })
+          }
+          const data = event.data
+          localResponse = localResponse + JSON.parse(data).data
+
+          mistralArray[mistralArray.length - 1].assistant = localResponse
+          setMistralResponse(c => ({
+            index: c.index,
+            messages: JSON.parse(JSON.stringify(mistralArray))
+          }))
+        } else {
+          setLoading(false)
+          setMistralAPIMessages(
+            `${mistralAPIMessages}\n\nPrompt: ${input}\n\nResponse:${getFirstNCharsOrLess(localResponse, 2000)}`
+          )
+          es.close()
+        }
+      } else if (event.type === "error") {
+        console.error("Connection error:", event.message)
+        setLoading(false)
+      } else if (event.type === "exception") {
+        console.error("Error:", event.message, event.error)
+        setLoading(false)
+      }
+    }
+   
+    es.addEventListener("open", listener);
+    es.addEventListener("message", listener);
+    es.addEventListener("error", listener);
   }
 
   async function generateClaudeResponse() {
@@ -157,7 +241,7 @@ export function Chat() {
       }
       messagesRequest = [...messagesRequest, {role: 'user', content: input}]
       setOpenaiMessages(messagesRequest)
-    
+
       // set local openai state to dislay user's most recent question
       let openaiArray = [
         ...openaiResponse.messages,
@@ -177,7 +261,7 @@ export function Chat() {
           messages: messagesRequest,
           model: chatType.label
         },
-        type: getChatType(chatType),
+        type: getChatType(chatType)
       }
       setInput('')
       const eventSource = getEventSource(eventSourceArgs)
@@ -360,6 +444,12 @@ export function Chat() {
         messages: [],
         index: uuid()
       })
+    } else if (chatType.label.includes('mistral')) {
+      setMistralResponse({
+        messages: [],
+        index: uuid()
+      })
+      setMistralAPIMessages('')
     } else {
       setOpenaiResponse({
         messages: [],
@@ -414,6 +504,9 @@ export function Chat() {
     }
     if (chatType.label.includes('cohere')) {
       return cohereResponse.messages.length > 0
+    }
+    if (chatType.label.includes('mistral')) {
+      return mistralResponse.messages.length > 0
     }
     return openaiResponse.messages.length > 0
   })()
@@ -487,6 +580,15 @@ export function Chat() {
               chatType.label.includes('cohere') && (
                 <FlatList
                   data={cohereResponse.messages}
+                  renderItem={renderItem}
+                  scrollEnabled={false}
+                />
+              )
+            }
+            {
+              chatType.label.includes('mistral') && (
+                <FlatList
+                  data={mistralResponse.messages}
                   renderItem={renderItem}
                   scrollEnabled={false}
                 />

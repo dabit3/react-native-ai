@@ -41,7 +41,6 @@ exports.claude = (0, express_async_handler_1.default)(async (req, res) => {
                     break;
                 }
                 let chunk = decoder.decode(value);
-                console.log('chunk:', chunk);
                 const lines = chunk.split("event: completion");
                 const parsedLines = lines
                     .filter(line => line.includes('log_id'))

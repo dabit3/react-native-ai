@@ -86,6 +86,11 @@
   dependencies:
     "@types/node" "*"
 
+"@types/eventsource@^1.1.15":
+  version "1.1.15"
+  resolved "https://registry.yarnpkg.com/@types/eventsource/-/eventsource-1.1.15.tgz#949383d3482e20557cbecbf3b038368d94b6be27"
+  integrity sha512-XQmGcbnxUNa06HR3VBVkc9+A2Vpi9ZyLJcdS5dwaQQ/4ZMWFO+5c90FnMUpbtMZwB/FChoYHwuVg8TvkECacTA==
+
 "@types/express-serve-static-core@^4.17.33":
   version "4.17.39"
   resolved "https://registry.yarnpkg.com/@types/express-serve-static-core/-/express-serve-static-core-4.17.39.tgz#2107afc0a4b035e6cb00accac3bdf2d76ae408c8"
@@ -557,6 +562,11 @@ etag@~1.8.1:
   version "1.8.1"
   resolved "https://registry.yarnpkg.com/etag/-/etag-1.8.1.tgz#41ae2eeb65efa62268aebfea83ac7d79299b0887"
   integrity sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==
+
+eventsource@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/eventsource/-/eventsource-2.0.2.tgz#76dfcc02930fb2ff339520b6d290da573a9e8508"
+  integrity sha512-IzUmBGPR3+oUG9dUeXynyNmf91/3zUSJg1lCktzKw47OXuhco54U3r9B7O4XX+Rb1Itm9OZ2b0RkTs10bICOxA==
 
 express-async-handler@^1.2.0:
   version "1.2.0"
@@ -1068,6 +1078,11 @@ regenerator-runtime@^0.14.0:
   version "0.14.0"
   resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.14.0.tgz#5e19d68eb12d486f797e15a3c6a918f7cec5eb45"
   integrity sha512-srw17NI0TUWHuGa5CFGGmhfNIeja30WMBfbslPNhf6JrqQlLN5gcrvig1oqPxiVaXb0oW0XRKtH6Nngs5lKCIA==
+
+replicate@^0.25.0:
+  version "0.25.0"
+  resolved "https://registry.yarnpkg.com/replicate/-/replicate-0.25.0.tgz#e072cbf157f6e44de0e835d67df2ef1a63eb6750"
+  integrity sha512-drD+K9xwoSldIrU/zOg+CPu5kXMUhTkXyJEA3GUozxQ67aqftvDhyYYjiBD2zaCb1GKA4+w/zIc6+ITV5OlkKQ==
 
 require-directory@^2.1.1:
   version "2.1.1"

@@ -8,6 +8,7 @@ const multer_1 = __importDefault(require("multer"));
 const cohere_1 = require("./cohere");
 const claude_1 = require("./claude");
 const gpt_1 = require("./gpt");
+const mistral_1 = require("./mistral");
 const upload = (0, multer_1.default)();
 // assistant API
 const createAssistant_1 = require("./createAssistant");
@@ -19,6 +20,7 @@ const router = express_1.default.Router();
 router.post('/claude', claude_1.claude);
 router.post('/cohere', cohere_1.cohere);
 router.post('/gpt', gpt_1.gpt);
+router.post('/mistral', mistral_1.mistral);
 // assistant
 router.post('/create-assistant', upload.single('file'), createAssistant_1.createAssistant);
 router.post('/add-message-to-thread', upload.single('file'), addMessageToThread_1.addMessageToThread);

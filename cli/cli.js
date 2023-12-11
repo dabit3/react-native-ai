@@ -105,23 +105,29 @@ COHERE_API_KEY=""
 
 # ByteScale secret (optional) https://bytescale.com
 BYTESCALE_API_KEY=""
+
+# Replicate secret (optional) https://replicate.com/
+REPLICATE_KEY=""
 `
 
     if (withEnv === 'yes') {
-      console.log('Get OpenAI API Key at https://platform.openai.com/')
+      console.log('Get OpenAI API Key at https://platform.openai.com')
       const openai_api_key = await input({ message: "OpenAI API Key" })
 
-      console.log('Get Fal API Key at https://www.fal.ai/')
+      console.log('Get Fal API Key at https://www.fal.ai')
       const fal_api_key = await input({ message: "Fal API Key" })
       
-      console.log('(optional) Get Anthropic API Key at https://console.anthropic.com/')
+      console.log('(optional) Get Anthropic API Key at https://console.anthropic.com')
       const anthropic_api_key = await input({ message: "Anthropic API Key" })
 
-      console.log('(optional) Get Cohere API Key at https://cohere.com/')
+      console.log('(optional) Get Cohere API Key at https://cohere.com')
       const cohere_api_key = await input({ message: "Cohere API Key" })
 
-      console.log('(optional) Get Bytescale API Key at https://bytescale.com/')
+      console.log('(optional) Get Bytescale API Key at https://bytescale.com')
       const bytescale_api_key = await input({ message: "Bytescale API Key" })
+
+      console.log('(optional) Get Replicate API Key at https://replicate.com')
+      const replicate_api_key = await input({ message: "Replicate API Key" })
       
       envs = `
 # environment, either PRODUCTION or DEVELOPMENT
@@ -141,6 +147,9 @@ COHERE_API_KEY="${cohere_api_key}"
 
 # FAL
 FAL_API_KEY="${fal_api_key}"
+
+# Replicate secret
+REPLICATE_KEY="${replicate_api_key}"
 `
     }
 

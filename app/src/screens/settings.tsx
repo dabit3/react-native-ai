@@ -3,7 +3,6 @@ import {
   Text,
   StyleSheet,
   TouchableHighlight,
-  Touchable,
   ScrollView,
   Dimensions,
   Image
@@ -14,6 +13,7 @@ import {
   AnthropicIcon,
   OpenAIIcon,
   CohereIcon,
+  MistralIcon
  } from '../components/index'
 import FontAwesome from '@expo/vector-icons/FontAwesome5'
 import { IIconProps } from '../../types'
@@ -53,6 +53,9 @@ export function Settings() {
     }
     if (type.includes('cohere')) {
       return <CohereIcon {...props} />
+    }
+    if (type.includes('mistral')) {
+      return <MistralIcon{...props} />
     }
     if (type.includes('fastImage')) {
       return <FontAwesome name="images" {...props} />
