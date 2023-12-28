@@ -134,7 +134,7 @@ export function Chat() {
           }
         
           const data = event.data
-          localResponse = localResponse + data
+          localResponse = localResponse + JSON.parse(data)
           geminiArray[geminiArray.length - 1].assistant = localResponse
           setGeminiResponse(c => ({
             index: c.index,
