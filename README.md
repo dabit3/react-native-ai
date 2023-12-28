@@ -8,7 +8,7 @@ Full stack framework for building cross-platform mobile AI apps supporting LLM r
 
 ## Features
 
-- LLM support for [OpenAI](https://openai.com/) ChatGPT, [Anthropic](https://anthropic.com) Claude, [Cohere](https://cohere.com/), Cohere Web, and [Mistral](https://mistral.ai/)
+- LLM support for [OpenAI](https://openai.com/) ChatGPT, [Anthropic](https://anthropic.com) Claude, [Cohere](https://cohere.com/), Cohere Web, [Gemini](https://makersuite.google.com), and [Mistral](https://mistral.ai/)
 - An array of image models provided by [Fal.ai](https://www.fal.ai/)
 - Real-time / streaming responses from all providers
 - OpenAI Assistants including code interpreter and retrieval
