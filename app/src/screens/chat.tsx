@@ -637,7 +637,7 @@ export function Chat() {
                   <View style={styles.midButtonStyle}>
                     <Ionicons
                       name="chatbox-ellipses-outline"
-                      size={22} color={theme.buttonTextColor}
+                      size={22} color={theme.tintTextColor}
                     />
                     <Text style={styles.midButtonText}>
                       Start {chatType.name} Chat
@@ -730,7 +730,7 @@ export function Chat() {
               >
                 <Ionicons
                   name="md-arrow-up"
-                  size={20} color={theme.buttonTextColor}
+                  size={20} color={theme.tintTextColor}
                 />
               </View>
             </TouchableHighlight>
@@ -781,7 +781,7 @@ const getStyles = (theme: any) => StyleSheet.create({
     alignItems: 'center'
   },
   midButtonText: {
-    color: theme.buttonTextColor,
+    color: theme.tintTextColor,
     marginLeft: 10,
     fontFamily: theme.boldFont,
     fontSize: 16
@@ -824,7 +824,7 @@ const getStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.tintColor,
   },
   promptText: {
-    color: theme.textColor,
+    color: theme.tintTextColor,
     fontFamily: theme.regularFont,
     paddingVertical: 5,
     paddingHorizontal: 9,

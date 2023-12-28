@@ -254,7 +254,7 @@ export function Images() {
                           <View style={styles.midButtonStyle}>
                             <Ionicons
                               name="images-outline"
-                              size={22} color={theme.buttonTextColor}
+                              size={22} color={theme.tintTextColor}
                             />
                             <Text style={styles.midButtonText}>
                               Create
@@ -273,7 +273,7 @@ export function Images() {
                         <View style={styles.midButtonStyle}>
                           <Ionicons
                             name="images-outline"
-                            size={22} color={theme.buttonTextColor}
+                            size={22} color={theme.tintTextColor}
                           />
                           <Text style={styles.midButtonText}>
                             {
@@ -298,7 +298,7 @@ export function Images() {
                           <MaterialIcons
                             style={styles.closeIcon}
                             name="close"
-                            color={theme.settingsButtonBackgroundColor}
+                            color={theme.textColor}
                             size={14}
                           />
                         </TouchableHighlight>
@@ -388,7 +388,7 @@ export function Images() {
                       <View style={styles.buttonStyle}>
                         <Ionicons
                           name="md-arrow-up"
-                          size={20} color={theme.buttonTextColor}
+                          size={20} color={theme.tintTextColor}
                         />
                       </View>
                     </TouchableHighlight>
@@ -404,7 +404,7 @@ export function Images() {
                     <View style={styles.bottomButtonStyle}>
                       <Ionicons
                         name="images-outline"
-                        size={22} color={theme.buttonTextColor}
+                        size={22} color={theme.tintTextColor}
                       />
                       <Text style={styles.midButtonText}>
                         {
@@ -507,7 +507,7 @@ const getStyles = theme => StyleSheet.create({
     backgroundColor: theme.tintColor,
   },
   promptText: {
-    color: theme.secondaryTextColor,
+    color: theme.tintTextColor,
     fontFamily: theme.regularFont,
     paddingVertical: 5,
     paddingHorizontal: 9,
@@ -542,7 +542,7 @@ const getStyles = theme => StyleSheet.create({
     alignItems: 'center'
   },
   midButtonText: {
-    color: theme.buttonTextColor,
+    color: theme.tintTextColor,
     marginLeft: 10,
     fontFamily: theme.boldFont,
     fontSize: 16
