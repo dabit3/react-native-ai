@@ -57,6 +57,14 @@ export function Chat() {
     index: uuid()
   })
 
+
+  // Gemini state management
+  const [geminiAPIMessages, setGeminiAPIMessages] = useState('')
+  const [geminiResponse, setGeminiResponse] = useState({
+    messages: [],
+    index: uuid()
+  })
+
   const { theme } = useContext(ThemeContext)
   const { chatType } = useContext(AppContext)
   const styles = getStyles(theme)
@@ -70,9 +78,87 @@ export function Chat() {
       generateCohereResponse()
     } else if (chatType.label.includes('mistral')) {
       generateMistralResponse()
-    } else {
+    } else if (chatType.label.includes('gemini')) {
+      generateGeminiResponse()
+    }
+    else {
       generateOpenaiResponse()
     }
+  }
+  async function generateGeminiResponse() {
+    if (!input) return
+    Keyboard.dismiss()
+    let localResponse = ''
+    const geminiInput = `${input}`
+
+    let geminiArray = [
+      ...geminiResponse.messages, {
+        user: input,
+      }
+    ] as [{user: string, assistant?: string}]
+
+    setGeminiResponse(c => ({
+      index: c.index,
+      messages: JSON.parse(JSON.stringify(geminiArray))
+    }))
+
+    setLoading(true)
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({
+        animated: true
+      })
+    }, 1)
+    setInput('')
+
+    const eventSourceArgs = {
+      body: {
+        prompt: geminiInput,
+        model: chatType.label
+      },
+      type: getChatType(chatType)
+    }
+
+    const es = await getEventSource(eventSourceArgs)
+
+   
+    const listener = (event) => {
+      if (event.type === "open") {
+        console.log("Open SSE connection.")
+        setLoading(false)
+      } else if (event.type === "message") {
+        if (event.data !== "[DONE]") {
+          if (localResponse.length < 850) {
+            scrollViewRef.current?.scrollToEnd({
+              animated: true
+            })
+          }
+        
+          const data = event.data
+          localResponse = localResponse + data
+          geminiArray[geminiArray.length - 1].assistant = localResponse
+          setGeminiResponse(c => ({
+            index: c.index,
+            messages: JSON.parse(JSON.stringify(geminiArray))
+          }))
+        } else {
+          setLoading(false)
+          setGeminiAPIMessages(
+            `${geminiAPIMessages}\n\nPrompt: ${input}\n\nResponse:${localResponse}`
+          )
+          es.close()
+        }
+      } else if (event.type === "error") {
+        console.error("Connection error:", event.message)
+        setLoading(false)
+      } else if (event.type === "exception") {
+        console.error("Error:", event.message, event.error)
+        setLoading(false)
+      }
+    }
+   
+    es.addEventListener("open", listener);
+    es.addEventListener("message", listener);
+    es.addEventListener("error", listener);
   }
 
   async function generateMistralResponse() {
@@ -450,7 +536,14 @@ export function Chat() {
         index: uuid()
       })
       setMistralAPIMessages('')
-    } else {
+    } else if (chatType.label.includes('gemini')) {
+      setGeminiResponse({
+        messages: [],
+        index: uuid()
+      })
+      setGeminiAPIMessages('')
+    }
+     else {
       setOpenaiResponse({
         messages: [],
         index: uuid()
@@ -507,6 +600,9 @@ export function Chat() {
     }
     if (chatType.label.includes('mistral')) {
       return mistralResponse.messages.length > 0
+    }
+    if (chatType.label.includes('gemini')) {
+      return geminiResponse.messages.length > 0
     }
     return openaiResponse.messages.length > 0
   })()
@@ -589,6 +685,15 @@ export function Chat() {
               chatType.label.includes('mistral') && (
                 <FlatList
                   data={mistralResponse.messages}
+                  renderItem={renderItem}
+                  scrollEnabled={false}
+                />
+              )
+            }
+            {
+              chatType.label.includes('gemini') && (
+                <FlatList
+                  data={geminiResponse.messages}
                   renderItem={renderItem}
                   scrollEnabled={false}
                 />
