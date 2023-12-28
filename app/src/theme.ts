@@ -31,7 +31,6 @@ const lightTheme = {
   placeholderTextColor: colors.gray,
   secondaryBackgroundColor: colors.black,
   borderColor: 'rgba(0, 0, 0, .15)',
-  buttonTextColor: colors.white,
   tintColor: '#0281ff',
   tintTextColor: colors.white,
   tabBarActiveTintColor: colors.black,
@@ -51,7 +50,6 @@ const darkTheme = {
   laceholderTextColor: colors.lightWhite,
   secondaryBackgroundColor: colors.white,
   borderColor: 'rgba(255, 255, 255, .2)',
-  buttonTextColor: colors.white,
   tintColor: '#0281ff',
   tintTextColor: colors.white,
   tabBarActiveTintColor: colors.blueTintColor,
@@ -73,7 +71,6 @@ const miami = {
   backgroundColor: '#231F20',
   tintColor: colors.lightPink,
   tintTextColor: '#231F20',
-  buttonTextColor: '#231F20',
   tabBarActiveTintColor: colors.lightPink
 }
 
@@ -84,7 +81,6 @@ const vercel = {
   backgroundColor: colors.black,
   tintColor: '#171717',
   tintTextColor: colors.white,
-  buttonTextColor: colors.white,
   tabBarActiveTintColor: colors.white,
   secondaryTextColor: colors.white,
   highlightedTextColor: colors.white
