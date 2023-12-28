@@ -12,7 +12,7 @@ export function AnthropicIcon({
   selected,
   ...props
 }: IAnthropicIcon) {
-  const fill = selected ? theme.secondaryTextColor : theme.textColor
+  const fill = selected ? theme.tintTextColor : theme.textColor
   return (
     <Svg
       {...props}

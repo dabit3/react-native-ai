@@ -186,7 +186,7 @@ export function Settings() {
                       theme,
                       size: 18,
                       style: {marginRight: 8},
-                      color: imageModel === model.label ? theme.secondaryTextColor : theme.textColor
+                      color: imageModel === model.label ? theme.tintTextColor : theme.textColor
                     }
                   })
                 }
@@ -238,7 +238,7 @@ export function Settings() {
 function getDynamicTextStyle(baseType:string, type:string, theme:any) {
   if (type === baseType) {
     return {
-      color: theme.highlightedTextColor,
+      color: theme.tintTextColor,
     }
   } else return {}
 }

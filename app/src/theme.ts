@@ -26,7 +26,6 @@ const lightTheme = {
   textColor: colors.black,
   secondaryTextColor: colors.white,
   mutedForegroundColor: colors.gray,
-  highlightedTextColor: colors.white,
   backgroundColor: colors.white,
   placeholderTextColor: colors.gray,
   secondaryBackgroundColor: colors.black,
@@ -44,7 +43,6 @@ const darkTheme = {
   textColor: colors.white,
   secondaryTextColor: colors.black,
   mutedForegroundColor: colors.lightWhite,
-  highlightedTextColor: colors.black,
   backgroundColor: colors.black,
   placeholderTextColor: colors.lightWhite,
   laceholderTextColor: colors.lightWhite,
@@ -83,7 +81,6 @@ const vercel = {
   tintTextColor: colors.white,
   tabBarActiveTintColor: colors.white,
   secondaryTextColor: colors.white,
-  highlightedTextColor: colors.white
 }
 
 export {

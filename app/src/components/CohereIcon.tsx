@@ -12,7 +12,7 @@ export function CohereIcon({
   selected,
   ...props
 }: ICohereIcon) {
-  const fill = selected ? theme.secondaryTextColor : theme.textColor
+  const fill = selected ? theme.tintTextColor : theme.textColor
   return (
     <Svg
       {...props}

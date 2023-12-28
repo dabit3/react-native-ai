@@ -6,14 +6,13 @@ export function GeminiIcon({
   selected,
   ...props
 }) {
-    const fill = selected ? theme.secondaryTextColor : theme.textColor
+    const fill = selected ? theme.tintTextColor : theme.textColor
   return (
     <Svg
       {...props}
       width={size}
       height={size}
       viewBox="0 0 73 73" 
-      xmlns="http://www.w3.org/2000/svg"
     >
       <G>
         <Path

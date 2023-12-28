@@ -98,7 +98,7 @@ function optionContainer(theme, baseType, type) {
 function optionText(theme, baseType, type) {
   const selected = baseType === type
   return {
-    color: selected ? theme.secondaryTextColor : theme.textColor,
+    color: selected ? theme.tintTextColor : theme.textColor,
     fontFamily: theme.boldFont,
     fontSize: 15,
     shadowColor: 'rgba(0, 0, 0, .2)',
