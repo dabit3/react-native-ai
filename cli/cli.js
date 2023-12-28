@@ -158,7 +158,7 @@ FAL_API_KEY="${fal_api_key}"
 REPLICATE_KEY="${replicate_api_key}"
 
 # Gemini API Key
-# GEMINI_API_KEY=${gemeni_api_key}
+GEMINI_API_KEY=${gemeni_api_key}
 `
     }
 
