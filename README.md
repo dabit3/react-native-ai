@@ -50,7 +50,7 @@ To add a new theme, open `app/src/theme.ts` and add a new theme with the followi
 
 ```ts
 const christmas = {
-  // extend an esisting theme or start from scratch
+  // extend an existing theme or start from scratch
   ...lightTheme,
   name: 'Christmas',
   label: 'christmas',
