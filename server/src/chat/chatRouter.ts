@@ -4,6 +4,7 @@ import { cohere } from './cohere'
 import { claude } from './claude'
 import { gpt } from './gpt'
 import { mistral } from './mistral'
+import { gemini } from './gemini'
 
 const upload = multer()
 
@@ -20,6 +21,7 @@ router.post('/claude', claude)
 router.post('/cohere', cohere)
 router.post('/gpt', gpt)
 router.post('/mistral', mistral)
+router.post('/gemini', gemini)
 
 // assistant
 router.post('/create-assistant', upload.single('file'), createAssistant)

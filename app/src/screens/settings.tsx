@@ -13,7 +13,8 @@ import {
   AnthropicIcon,
   OpenAIIcon,
   CohereIcon,
-  MistralIcon
+  MistralIcon,
+  GeminiIcon
  } from '../components/index'
 import FontAwesome from '@expo/vector-icons/FontAwesome5'
 import { IIconProps } from '../../types'
@@ -56,6 +57,9 @@ export function Settings() {
     }
     if (type.includes('mistral')) {
       return <MistralIcon{...props} />
+    }
+    if (type.includes('gemini')) {
+      return <GeminiIcon{...props} />
     }
     if (type.includes('fastImage')) {
       return <FontAwesome name="images" {...props} />
