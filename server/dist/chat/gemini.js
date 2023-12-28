@@ -10,7 +10,6 @@ async function gemini(req, res) {
             'Cache-Control': 'no-cache'
         });
         const { prompt } = req.body;
-        console.log(req.body);
         if (!prompt) {
             return res.json({
                 error: 'no prompt'
@@ -18,7 +17,9 @@ async function gemini(req, res) {
         }
         const genAIInit = new generative_ai_1.GoogleGenerativeAI(`${process.env.GEMINI_API_KEY}`);
         // For text-only input, use the gemini-pro model
-        const model = genAIInit.getGenerativeModel({ model: "gemini-pro" });
+        const model = genAIInit.getGenerativeModel({
+            model: "gemini-pro",
+        });
         const geminiResult = await model.generateContentStream(prompt);
         if (geminiResult && geminiResult.stream) {
             await streamToStdout(geminiResult.stream, res);
@@ -35,13 +36,9 @@ async function gemini(req, res) {
 }
 exports.gemini = gemini;
 async function streamToStdout(stream, res) {
-    console.log("Streaming...\n");
     for await (const chunk of stream) {
-        // Get first candidate's current text chunk
         const chunkText = chunk.text();
-        // Print to console without adding line breaks
-        process.stdout.write(chunkText);
-        res.write(`data: ${chunkText}\n\n`);
+        res.write(`data: ${JSON.stringify(chunkText)}\n\n`);
     }
     res.write('data: [DONE]\n\n');
     res.end();
