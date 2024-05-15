@@ -3,8 +3,8 @@ import asyncHandler from 'express-async-handler'
 
 export const gpt = asyncHandler(async (req: Request, res: Response) => {
   const models:any = {
-    gptTurbo: 'gpt-4-1106-preview',
-    gpt: 'gpt-4'
+    gptTurbo: 'gpt-4-turbo',
+    gpt: 'gpt-4o'
   }
   try {
     res.writeHead(200, {

@@ -283,7 +283,7 @@ export function Chat() {
             })
           }
           const data = event.data
-          localResponse = localResponse + JSON.parse(data).completion
+          localResponse = localResponse + JSON.parse(data).text
           claudeArray[claudeArray.length - 1].assistant = localResponse
           setClaudeResponse(c => ({
             index: c.index,

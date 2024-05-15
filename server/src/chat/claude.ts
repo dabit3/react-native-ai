@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from "express"
 import asyncHandler from 'express-async-handler'
 
-type ModelName = 'claude-2.0' | 'claude-instant-1.2';
+type ModelName = 'claude-3-opus-20240229' | 'claude-3-haiku-20240307';
 
 const models: Record<string, ModelName> = {
-  claude: 'claude-2.0',
-  claudeInstant: 'claude-instant-1.2'
+  claude: 'claude-3-opus-20240229',
+  claudeInstant: 'claude-3-haiku-20240307'
 }
 
 interface RequestBody {
@@ -24,17 +24,18 @@ export const claude = asyncHandler(async (req: Request, res: Response) => {
     const { prompt, model }: RequestBody = req.body
 
     const decoder = new TextDecoder()
-    const response = await fetch('https://api.anthropic.com/v1/complete', {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'messages-2023-12-15',
         'x-api-key': process.env.ANTHROPIC_API_KEY || ''
       },
       body: JSON.stringify({
         model: models[model],
-        prompt: prompt,
-        "max_tokens_to_sample": 5000,
+        "messages": [{"role": "user", "content": prompt }],
+        "max_tokens": 4096,
         stream: true
       })
     })
@@ -45,36 +46,26 @@ export const claude = asyncHandler(async (req: Request, res: Response) => {
 
       while (true) {
         const { done, value } = await reader.read()
+
         if (done) {
           break
         }
   
         let chunk = decoder.decode(value)
-        const lines = chunk.split("event: completion")
+
+        const lines = chunk.split("\n")
   
         const parsedLines = lines
-          .filter(line => line.includes('log_id'))
-          .map(line => line.replace('data: ', ''))
-          .filter(line => {
-            try {
-              JSON.parse(line)
-              return true
-            } catch (err) {
-              return false
-            } 
-          })
-          .map(l => JSON.parse(l))
-          for (const parsedLine of parsedLines) {
-            if (parsedLine) {
-              if (parsedLine.completion) {
-                if (index == 0) {
-                  parsedLine.completion = parsedLine.completion.trim()
-                  index = index + 1
-                }
-                res.write(`data: ${JSON.stringify(parsedLine)}\n\n`)
-              }
+          .filter(line => line.startsWith('data: '))
+          .map(line => JSON.parse(line.replace('data: ', '')))
+
+        for (const parsedLine of parsedLines) {
+          if (parsedLine) {
+            if (parsedLine.delta && parsedLine.delta.text) {
+              res.write(`data: ${JSON.stringify(parsedLine.delta)}\n\n`)
             }
           }
+        }
       }
   
       res.write('data: [DONE]\n\n')

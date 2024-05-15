@@ -7,8 +7,8 @@ exports.gpt = void 0;
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 exports.gpt = (0, express_async_handler_1.default)(async (req, res) => {
     const models = {
-        gptTurbo: 'gpt-4-1106-preview',
-        gpt: 'gpt-4'
+        gptTurbo: 'gpt-4-turbo',
+        gpt: 'gpt-4o'
     };
     try {
         res.writeHead(200, {
