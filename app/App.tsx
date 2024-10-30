@@ -17,10 +17,8 @@ import {
   BottomSheetModalProvider,
   BottomSheetView,
 } from '@gorhom/bottom-sheet'
-import { StyleSheet } from 'react-native'
-import LogBox from 'react-native/Libraries/LogBox/LogBox'
+import { StyleSheet, LogBox } from 'react-native'
 
-// @ts-ignore
 LogBox.ignoreLogs([
   'Key "cancelled" in the image picker result is deprecated and will be removed in SDK 48, use "canceled" instead',
   'No native splash screen registered'
