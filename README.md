@@ -46,6 +46,10 @@ Change into the server directory and run:
 npm run dev
 ```
 
+### Environment variables
+
+The server environment variables are available in `server/.env.example`. If already not present, update this file name to `.env.example` to configure server environment variables.
+
 ## Theming
 
 To add a new theme, open `app/src/theme.ts` and add a new theme with the following configuration:
