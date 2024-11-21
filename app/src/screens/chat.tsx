@@ -729,7 +729,7 @@ export function Chat() {
                 style={styles.chatButton}
               >
                 <Ionicons
-                  name="md-arrow-up"
+                  name="arrow-up-outline"
                   size={20} color={theme.tintTextColor}
                 />
               </View>
