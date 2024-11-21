@@ -22,7 +22,7 @@ export async function mistral(req: Request, res: Response) {
         prompt,
         max_new_tokens: 5000
       },
-      version: '83b6a56e7c828e667f21fd596c338fd4f0039b46bcfa18d973e8e70e455fda70',
+      version: 'd938add77615da25dd74c9bcbc5b8ee11c9c3476eb721a6991d32fe5c2ec1968',
       stream: true
     })
 

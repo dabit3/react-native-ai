@@ -48,7 +48,7 @@ npm run dev
 
 ### Environment variables
 
-The server environment variables are available in `server/.env.example`. If already not present, update this file name to `.env.example` to configure server environment variables.
+The server environment variables are available in `server/.env.example`. If already not present, update this file name to `.env` and configure server environment variables.
 
 ## Theming
 
