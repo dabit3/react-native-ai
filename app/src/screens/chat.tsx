@@ -13,16 +13,24 @@ import {
 import 'react-native-get-random-values'
 import { useContext, useState, useRef } from 'react'
 import { ThemeContext, AppContext } from '../context'
-import { getEventSource, getFirstN, getFirstNCharsOrLess, getChatType } from '../utils'
+import { getEventSource, getFirstNCharsOrLess, getChatType } from '../utils'
 import { v4 as uuid } from 'uuid'
 import Ionicons from '@expo/vector-icons/Ionicons'
-import {
-  IOpenAIMessages,
-  IOpenAIStateWithIndex
-} from '../../types'
 import * as Clipboard from 'expo-clipboard'
 import { useActionSheet } from '@expo/react-native-action-sheet'
 import Markdown from '@ronradtke/react-native-markdown-display'
+
+type ChatState = {
+  messages: Array<{user: string, assistant?: string}>,
+  index: string,
+  apiMessages: string
+}
+
+const createEmptyChatState = (): ChatState => ({
+  messages: [],
+  index: uuid(),
+  apiMessages: ''
+})
 
 export function Chat() {
   const [loading, setLoading] = useState<boolean>(false)
@@ -30,40 +38,21 @@ export function Chat() {
   const scrollViewRef = useRef<ScrollView | null>(null)
   const { showActionSheetWithOptions } = useActionSheet()
 
-  // claude state management
-  const [claudeAPIMessages, setClaudeAPIMessages] = useState('')
-  const [claudeResponse, setClaudeResponse] = useState({
-    messages: [],
-    index: uuid(),
-  })
+  // Per-model chat state - each model has its own conversation history
+  const [chatStates, setChatStates] = useState<Record<string, ChatState>>({})
 
-  // openAI state management
-  const [openaiMessages, setOpenaiMessages] = useState<IOpenAIMessages[]>([])
-  const [openaiResponse, setOpenaiResponse] = useState<IOpenAIStateWithIndex>({
-    messages: [],
-    index: uuid()
-  })
+  // Helper to get or create chat state for current model
+  const getChatState = (modelLabel: string): ChatState => {
+    return chatStates[modelLabel] || createEmptyChatState()
+  }
 
-  // cohere state management
-  const [cohereResponse, setCohereResponse] = useState({
-    messages: [],
-    index: uuid()
-  })
-
-  // mistral state management
-  const [mistralAPIMessages, setMistralAPIMessages] = useState('')
-  const [mistralResponse, setMistralResponse] = useState({
-    messages: [],
-    index: uuid()
-  })
-
-
-  // Gemini state management
-  const [geminiAPIMessages, setGeminiAPIMessages] = useState('')
-  const [geminiResponse, setGeminiResponse] = useState({
-    messages: [],
-    index: uuid()
-  })
+  // Helper to update chat state for a specific model
+  const updateChatState = (modelLabel: string, updater: (prev: ChatState) => ChatState) => {
+    setChatStates(prev => ({
+      ...prev,
+      [modelLabel]: updater(prev[modelLabel] || createEmptyChatState())
+    }))
+  }
 
   const { theme } = useContext(ThemeContext)
   const { chatType } = useContext(AppContext)
@@ -74,32 +63,112 @@ export function Chat() {
     Keyboard.dismiss()
     if (chatType.label.includes('claude')) {
       generateClaudeResponse()
-    } else if (chatType.label.includes('cohere')) {
-      generateCohereResponse()
-    } else if (chatType.label.includes('mistral')) {
-      generateMistralResponse()
+    } else if (chatType.label.includes('gpt')) {
+      generateGptResponse()
     } else if (chatType.label.includes('gemini')) {
       generateGeminiResponse()
     }
-    else {
-      generateOpenaiResponse()
+  }
+  async function generateGptResponse() {
+    if (!input) return
+    Keyboard.dismiss()
+    let localResponse = ''
+    const modelLabel = chatType.label
+    const currentState = getChatState(modelLabel)
+
+    let messageArray = [
+      ...currentState.messages, {
+        user: input,
+      }
+    ] as [{user: string, assistant?: string}]
+
+    updateChatState(modelLabel, prev => ({
+      ...prev,
+      messages: JSON.parse(JSON.stringify(messageArray))
+    }))
+
+    setLoading(true)
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({
+        animated: true
+      })
+    }, 1)
+    setInput('')
+
+    const messages = messageArray.reduce((acc: any[], message) => {
+      acc.push({ role: 'user', content: message.user })
+      if (message.assistant) {
+        acc.push({ role: 'assistant', content: message.assistant })
+      }
+      return acc
+    }, [])
+
+    const eventSourceArgs = {
+      body: {
+        messages,
+        model: chatType.label
+      },
+      type: getChatType(chatType)
     }
+
+    const es = await getEventSource(eventSourceArgs)
+
+    const listener = (event) => {
+      if (event.type === "open") {
+        console.log("Open SSE connection.")
+        setLoading(false)
+      } else if (event.type === "message") {
+        if (event.data !== "[DONE]") {
+          if (localResponse.length < 850) {
+            scrollViewRef.current?.scrollToEnd({
+              animated: true
+            })
+          }
+          const data = JSON.parse(event.data)
+          if (typeof data === 'string') {
+            localResponse = localResponse + data
+          } else if (data?.content) {
+            localResponse = localResponse + data.content
+          }
+          messageArray[messageArray.length - 1].assistant = localResponse
+          updateChatState(modelLabel, prev => ({
+            ...prev,
+            messages: JSON.parse(JSON.stringify(messageArray))
+          }))
+        } else {
+          setLoading(false)
+          es.close()
+        }
+      } else if (event.type === "error") {
+        console.error("Connection error:", event.message)
+        setLoading(false)
+      } else if (event.type === "exception") {
+        console.error("Error:", event.message, event.error)
+        setLoading(false)
+      }
+    }
+
+    es.addEventListener("open", listener)
+    es.addEventListener("message", listener)
+    es.addEventListener("error", listener)
   }
   async function generateGeminiResponse() {
     if (!input) return
     Keyboard.dismiss()
     let localResponse = ''
+    const modelLabel = chatType.label
+    const currentState = getChatState(modelLabel)
     const geminiInput = `${input}`
 
-    let geminiArray = [
-      ...geminiResponse.messages, {
+    let messageArray = [
+      ...currentState.messages, {
         user: input,
       }
     ] as [{user: string, assistant?: string}]
 
-    setGeminiResponse(c => ({
-      index: c.index,
-      messages: JSON.parse(JSON.stringify(geminiArray))
+    updateChatState(modelLabel, prev => ({
+      ...prev,
+      messages: JSON.parse(JSON.stringify(messageArray))
     }))
 
     setLoading(true)
@@ -135,91 +204,17 @@ export function Chat() {
         
           const data = event.data
           localResponse = localResponse + JSON.parse(data)
-          geminiArray[geminiArray.length - 1].assistant = localResponse
-          setGeminiResponse(c => ({
-            index: c.index,
-            messages: JSON.parse(JSON.stringify(geminiArray))
+          messageArray[messageArray.length - 1].assistant = localResponse
+          updateChatState(modelLabel, prev => ({
+            ...prev,
+            messages: JSON.parse(JSON.stringify(messageArray))
           }))
         } else {
           setLoading(false)
-          setGeminiAPIMessages(
-            `${geminiAPIMessages}\n\nPrompt: ${input}\n\nResponse:${localResponse}`
-          )
-          es.close()
-        }
-      } else if (event.type === "error") {
-        console.error("Connection error:", event.message)
-        setLoading(false)
-      } else if (event.type === "exception") {
-        console.error("Error:", event.message, event.error)
-        setLoading(false)
-      }
-    }
-   
-    es.addEventListener("open", listener);
-    es.addEventListener("message", listener);
-    es.addEventListener("error", listener);
-  }
-
-  async function generateMistralResponse() {
-    if (!input) return
-    Keyboard.dismiss()
-    let localResponse = ''
-    const mistralInput = `${mistralAPIMessages}\n\n Prompt: ${input}`
-
-    let mistralArray = [
-      ...mistralResponse.messages, {
-        user: input,
-      }
-    ] as [{user: string, assistant?: string}]
-
-    setMistralResponse(c => ({
-      index: c.index,
-      messages: JSON.parse(JSON.stringify(mistralArray))
-    }))
-
-    setLoading(true)
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({
-        animated: true
-      })
-    }, 1)
-    setInput('')
-
-    const eventSourceArgs = {
-      body: {
-        prompt: mistralInput,
-        model: chatType.label
-      },
-      type: getChatType(chatType)
-    }
-
-    const es = await getEventSource(eventSourceArgs)
-
-    const listener = (event) => {
-      if (event.type === "open") {
-        console.log("Open SSE connection.")
-        setLoading(false)
-      } else if (event.type === "message") {
-        if (event.data !== "[DONE]") {
-          if (localResponse.length < 850) {
-            scrollViewRef.current?.scrollToEnd({
-              animated: true
-            })
-          }
-          const data = event.data
-          localResponse = localResponse + JSON.parse(data).data
-
-          mistralArray[mistralArray.length - 1].assistant = localResponse
-          setMistralResponse(c => ({
-            index: c.index,
-            messages: JSON.parse(JSON.stringify(mistralArray))
+          updateChatState(modelLabel, prev => ({
+            ...prev,
+            apiMessages: `${prev.apiMessages}\n\nPrompt: ${input}\n\nResponse:${localResponse}`
           }))
-        } else {
-          setLoading(false)
-          setMistralAPIMessages(
-            `${mistralAPIMessages}\n\nPrompt: ${input}\n\nResponse:${getFirstNCharsOrLess(localResponse, 2000)}`
-          )
           es.close()
         }
       } else if (event.type === "error") {
@@ -240,17 +235,19 @@ export function Chat() {
     if (!input) return
     Keyboard.dismiss()
     let localResponse = ''
-    const claudeInput = `${claudeAPIMessages}\n\nHuman: ${input}\n\nAssistant:`
+    const modelLabel = chatType.label
+    const currentState = getChatState(modelLabel)
+    const claudeInput = `${currentState.apiMessages}\n\nHuman: ${input}\n\nAssistant:`
 
-    let claudeArray = [
-      ...claudeResponse.messages, {
+    let messageArray = [
+      ...currentState.messages, {
         user: input,
       }
     ] as [{user: string, assistant?: string}]
 
-    setClaudeResponse(c => ({
-      index: c.index,
-      messages: JSON.parse(JSON.stringify(claudeArray))
+    updateChatState(modelLabel, prev => ({
+      ...prev,
+      messages: JSON.parse(JSON.stringify(messageArray))
     }))
 
     setLoading(true)
@@ -284,16 +281,17 @@ export function Chat() {
           }
           const data = event.data
           localResponse = localResponse + JSON.parse(data).text
-          claudeArray[claudeArray.length - 1].assistant = localResponse
-          setClaudeResponse(c => ({
-            index: c.index,
-            messages: JSON.parse(JSON.stringify(claudeArray))
+          messageArray[messageArray.length - 1].assistant = localResponse
+          updateChatState(modelLabel, prev => ({
+            ...prev,
+            messages: JSON.parse(JSON.stringify(messageArray))
           }))
         } else {
           setLoading(false)
-          setClaudeAPIMessages(
-            `${claudeAPIMessages}\n\nHuman: ${input}\n\nAssistant:${getFirstNCharsOrLess(localResponse, 2000)}`
-          )
+          updateChatState(modelLabel, prev => ({
+            ...prev,
+            apiMessages: `${prev.apiMessages}\n\nHuman: ${input}\n\nAssistant:${getFirstNCharsOrLess(localResponse, 2000)}`
+          }))
           es.close()
         }
       } else if (event.type === "error") {
@@ -307,195 +305,6 @@ export function Chat() {
     es.addEventListener("open", listener)
     es.addEventListener("message", listener)
     es.addEventListener("error", listener)
-  }
-
-  async function generateOpenaiResponse() {
-    try {
-      setLoading(true)
-      // set message state for openai to have context on previous conversations
-      let messagesRequest = getFirstN({ messages: openaiMessages })
-      if (openaiResponse.messages.length) {
-        messagesRequest = [
-          ...messagesRequest,
-          {
-            role: 'assistant',
-            content: getFirstNCharsOrLess(
-              openaiResponse.messages[openaiResponse.messages.length -1].assistant
-            )
-          }
-        ]
-      }
-      messagesRequest = [...messagesRequest, {role: 'user', content: input}]
-      setOpenaiMessages(messagesRequest)
-
-      // set local openai state to dislay user's most recent question
-      let openaiArray = [
-        ...openaiResponse.messages,
-        {
-          user: input,
-          assistant: ''
-        }
-      ]
-      setOpenaiResponse(c => ({
-        index: c.index,
-        messages: JSON.parse(JSON.stringify(openaiArray))
-      }))
-
-      let localResponse = ''
-      const eventSourceArgs = {
-        body: {
-          messages: messagesRequest,
-          model: chatType.label
-        },
-        type: getChatType(chatType)
-      }
-      setInput('')
-      const eventSource = getEventSource(eventSourceArgs)
-
-      console.log('about to open listener...')
-      const listener = (event:any) => {
-        if (event.type === "open") {
-          console.log("Open SSE connection.")
-          setLoading(false)
-        } else if (event.type === 'message') {
-          if (event.data !== "[DONE]") {
-            if (localResponse.length < 850) {
-              scrollViewRef.current?.scrollToEnd({
-                animated: true
-              })
-            }
-            // if (!JSON.parse(event.data).content) return
-            localResponse = localResponse + JSON.parse(event.data).content
-            openaiArray[openaiArray.length - 1].assistant = localResponse
-            setOpenaiResponse(c => ({
-              index: c.index,
-              messages: JSON.parse(JSON.stringify(openaiArray))
-            }))
-          } else {
-            setLoading(false)
-            eventSource.close()
-          }
-        } else if (event.type === "error") {
-          console.error("Connection error:", event.message)
-          setLoading(false)
-          eventSource.close()
-        } else if (event.type === "exception") {
-          console.error("Error:", event.message, event.error)
-          setLoading(false)
-          eventSource.close()
-        }
-      }
-      eventSource.addEventListener("open", listener)
-      eventSource.addEventListener("message", listener)
-      eventSource.addEventListener("error", listener)
-    } catch (err) {
-      console.log('error in generateOpenaiResponse: ', err)
-    }
-  }
-
-  async function generateCohereResponse() {
-    try {
-      if (!input) return
-      Keyboard.dismiss()
-      let localResponse = ''
-      let requestInput = input
-
-      let cohereArray = [
-        ...cohereResponse.messages,
-        {
-          user: input,
-          assistant: ''
-        }
-      ]
-
-      setCohereResponse(r => ({
-        index: r.index,
-        messages: JSON.parse(JSON.stringify(cohereArray))
-      }))
-
-      setLoading(true)
-      setInput('')
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({
-          animated: true
-        })
-      }, 1)
-
-      const eventSourceArgs = {
-        type: getChatType(chatType),
-        body: {
-          prompt: requestInput,
-          conversationId: cohereResponse.index,
-          model: chatType.label
-        }
-      }
-
-      const es = await getEventSource(eventSourceArgs)
-
-      const listener = (event) => {
-        if (
-          event.data === "[DONE]"
-        ) {
-          console.log('done ....')
-          return es.close()
-        }
-        if (event.type === "open") {
-          setLoading(false)
-        } else if (event.type === 'message') {
-          try {
-            JSON.parse(event.data)
-            if (event.data !== "[DONE]" || !JSON.parse(event.data).is_finished) {
-              if (localResponse.length < 850) {
-                scrollViewRef.current?.scrollToEnd({
-                  animated: true
-                })
-              }
-              if (JSON.parse(event.data).text) {
-                if (!localResponse && JSON.parse(event.data).text === '\n') return
-                if (
-                  !localResponse && 
-                  JSON.parse(event.data).text.charAt(0) === ' '
-                ) {
-                  localResponse = JSON.parse(event.data).text.substring(1)
-                } else {
-                  localResponse = localResponse + JSON.parse(event.data).text
-                }
-                cohereArray[cohereArray.length - 1].assistant = localResponse
-                setCohereResponse(r => ({
-                  index: r.index,
-                  messages: JSON.parse(JSON.stringify(cohereArray))
-                }))
-              }
-              if (JSON.parse(event.data).is_finished) {
-                setLoading(false)
-                es.close()
-              }
-            } else {
-              setLoading(false)
-              es.close()
-            }
-          } catch (err) {
-            console.log('error parsing data ... ', err)
-            setLoading(false)
-            es.close()
-          }
-        } else if (event.type === "error" || event.type === "exception") {
-          console.error("Connection error:", event.message)
-          setLoading(false)
-          es.close()
-        } else {
-          console.error("Connection error:", event.message)
-          setLoading(false)
-          es.close()
-        }
-      }
-     
-      es.addEventListener("open", listener)
-      es.addEventListener("message", listener)
-      es.addEventListener("error", listener)
-    } catch (err) {
-      console.log('error generating cohere chat...', err)
-    }
   }
 
   async function copyToClipboard(text) {
@@ -519,37 +328,8 @@ export function Chat() {
 
   async function clearChat() {
     if (loading) return
-    if (chatType.label.includes('claude')) {
-      setClaudeResponse({
-        messages: [],
-        index: uuid()
-      })
-      setClaudeAPIMessages('')
-    } else if (chatType.label.includes('cohere')) {
-      setCohereResponse({
-        messages: [],
-        index: uuid()
-      })
-    } else if (chatType.label.includes('mistral')) {
-      setMistralResponse({
-        messages: [],
-        index: uuid()
-      })
-      setMistralAPIMessages('')
-    } else if (chatType.label.includes('gemini')) {
-      setGeminiResponse({
-        messages: [],
-        index: uuid()
-      })
-      setGeminiAPIMessages('')
-    }
-     else {
-      setOpenaiResponse({
-        messages: [],
-        index: uuid()
-      })
-      setOpenaiMessages([])
-    }
+    const modelLabel = chatType.label
+    updateChatState(modelLabel, () => createEmptyChatState())
   }
 
   function renderItem({
@@ -591,21 +371,8 @@ export function Chat() {
     )
   }
 
-  const callMade = (() => {
-    if (chatType.label.includes('claude')) {
-      return claudeResponse.messages.length > 0
-    }
-    if (chatType.label.includes('cohere')) {
-      return cohereResponse.messages.length > 0
-    }
-    if (chatType.label.includes('mistral')) {
-      return mistralResponse.messages.length > 0
-    }
-    if (chatType.label.includes('gemini')) {
-      return geminiResponse.messages.length > 0
-    }
-    return openaiResponse.messages.length > 0
-  })()
+  const currentChatState = getChatState(chatType.label)
+  const callMade = currentChatState.messages.length > 0
 
   return (
     <KeyboardAvoidingView
@@ -640,7 +407,7 @@ export function Chat() {
                       size={22} color={theme.tintTextColor}
                     />
                     <Text style={styles.midButtonText}>
-                      Start {chatType.name} Chat
+                      Start chat
                     </Text>
                   </View>
                 </TouchableHighlight>
@@ -653,53 +420,11 @@ export function Chat() {
         }
         {
           callMade && (
-            <>
-            {
-              chatType.label.includes('gpt') && (
-                <FlatList
-                  data={openaiResponse.messages}
-                  renderItem={renderItem}
-                  scrollEnabled={false}
-                />
-              )
-            }
-            {
-              chatType.label.includes('claude') && (
-                <FlatList
-                  data={claudeResponse.messages}
-                  renderItem={renderItem}
-                  scrollEnabled={false}
-                />
-              )
-            }
-            {
-              chatType.label.includes('cohere') && (
-                <FlatList
-                  data={cohereResponse.messages}
-                  renderItem={renderItem}
-                  scrollEnabled={false}
-                />
-              )
-            }
-            {
-              chatType.label.includes('mistral') && (
-                <FlatList
-                  data={mistralResponse.messages}
-                  renderItem={renderItem}
-                  scrollEnabled={false}
-                />
-              )
-            }
-            {
-              chatType.label.includes('gemini') && (
-                <FlatList
-                  data={geminiResponse.messages}
-                  renderItem={renderItem}
-                  scrollEnabled={false}
-                />
-              )
-            }
-            </>
+            <FlatList
+              data={currentChatState.messages}
+              renderItem={renderItem}
+              scrollEnabled={false}
+            />
           )
         }
         {

@@ -11,14 +11,12 @@ import { useContext } from 'react'
 import { AppContext, ThemeContext } from '../context'
 import {
   AnthropicIcon,
-  OpenAIIcon,
-  CohereIcon,
-  MistralIcon,
-  GeminiIcon
+  GeminiIcon,
+  OpenAIIcon
  } from '../components/index'
 import FontAwesome from '@expo/vector-icons/FontAwesome5'
 import { IIconProps } from '../../types'
-import { MODELS, IMAGE_MODELS, ILLUSION_DIFFUSION_IMAGES } from '../../constants'
+import { MODELS, IMAGE_MODELS } from '../../constants'
 import * as themes from '../theme'
 
 const { width } = Dimensions.get('window')
@@ -28,7 +26,6 @@ const _themes = Object.values(themes).map(v => ({
   name: v.name,
   label: v.label
 }))
-const diffusionImages = Object.values(ILLUSION_DIFFUSION_IMAGES)
 
 export function Settings() {
   const { theme, setTheme, themeName } = useContext(ThemeContext)
@@ -37,8 +34,6 @@ export function Settings() {
     setChatType,
     setImageModel,
     imageModel,
-    illusionImage,
-    setIllusionImage
   } = useContext(AppContext)
 
   const styles = getStyles(theme)
@@ -46,34 +41,19 @@ export function Settings() {
   function renderIcon({
     type, props
   }: IIconProps) {
-    if (type.includes('gpt')) {
-      return <OpenAIIcon {...props} />
-    }
     if (type.includes('claude')) {
       return <AnthropicIcon {...props} />
     }
-    if (type.includes('cohere')) {
-      return <CohereIcon {...props} />
-    }
-    if (type.includes('mistral')) {
-      return <MistralIcon{...props} />
+    if (type.includes('gpt')) {
+      return <OpenAIIcon {...props} />
     }
     if (type.includes('gemini')) {
       return <GeminiIcon{...props} />
     }
-    if (type.includes('fastImage')) {
-      return <FontAwesome name="images" {...props} />
+    if (type.includes('nanoBanana')) {
+      return <GeminiIcon{...props} />
     }
-    if (type.includes('removeBg')) {
-      return <FontAwesome name="eraser" {...props} />
-    }
-    if (type.includes('upscale')) {
-      return <FontAwesome name="chevron-up" {...props} />
-    }
-    if (type.includes('illusion')) {
-      return <FontAwesome name="cubes" {...props} />
-    }
-    return <FontAwesome name="images" {...props} />
+    return <GeminiIcon{...props} />
   }
 
   return (
@@ -200,36 +180,6 @@ export function Settings() {
             )
           })
         }
-        <View
-          style={styles.titleContainer}
-        >
-          <Text
-            style={styles.mainText}
-          >Illusion Diffusion Base</Text>
-        </View>
-        <View
-          style={styles.illusionImageContainer}
-        >
-          {
-            diffusionImages.map((model, index) => (
-              <TouchableHighlight
-                key={index}
-                underlayColor='transparent'
-                onPress={() => {
-                  setIllusionImage(model.label)
-                }}
-              >
-                <Image
-                  source={{ uri: model.image}}
-                  style={{
-                    ...styles.illusionImage,
-                    borderColor: illusionImage === model.label ? theme.tintColor : theme.textColor
-                  }}
-                />
-              </TouchableHighlight>
-            ))
-          }
-        </View>
       </View>
     </ScrollView>
   )
@@ -253,16 +203,6 @@ function getDynamicViewStyle(baseType:string, type:string, theme:any) {
 }
 
 const getStyles = (theme:any) => StyleSheet.create({
-  illusionImage: {
-    width: (width - 30) / 3,
-    height: (width - 30) / 3,
-    borderWidth: 4,
-  },
-  illusionImageContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 10
-  },
   buttonContainer: {
     marginBottom: 20
   },

@@ -19,7 +19,7 @@ export function ChatModelModal({ handlePresentModalPress }) {
       <View>
         <View style={styles.chatOptionsTextContainer}>
           <Text style={styles.chatOptionsText}>
-            Language Models
+            Models
           </Text>
         </View>
         {

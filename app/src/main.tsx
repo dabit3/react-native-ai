@@ -1,7 +1,7 @@
 import { useContext, useRef, useCallback } from 'react';
 import { StyleSheet, Text, View, Button } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Chat, Images, Settings, Assistant } from './screens'
+import { Chat, Images, Settings } from './screens'
 import { Header } from './components'
 import FeatherIcon from '@expo/vector-icons/Feather'
 import {
@@ -37,20 +37,6 @@ function MainComponent() {
             tabBarIcon: ({ color, size }) => (
               <FeatherIcon
                 name="message-circle"
-                color={color}
-                size={size}
-              />
-            ),
-          }}
-        />
-        <Tab.Screen
-          name="OpenAI Assistant"
-          component={Assistant}
-          options={{
-            header: () => <Header />,
-            tabBarIcon: ({ color, size }) => (
-              <FeatherIcon
-                name="user"
                 color={color}
                 size={size}
               />

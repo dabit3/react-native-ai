@@ -5,7 +5,7 @@ import { Main } from './src/main'
 import { useFonts } from 'expo-font'
 import { ThemeContext, AppContext } from './src/context'
 import * as themes from './src/theme'
-import { IMAGE_MODELS, MODELS, ILLUSION_DIFFUSION_IMAGES } from './constants'
+import { IMAGE_MODELS, MODELS } from './constants'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { ChatModelModal } from './src/components/index'
 import { Model } from './types'
@@ -26,11 +26,10 @@ LogBox.ignoreLogs([
 
 export default function App() {
   const [theme, setTheme] = useState<string>('light')
-  const [chatType, setChatType] = useState<Model>(MODELS.gptTurbo)
-  const [imageModel, setImageModel] = useState<string>(IMAGE_MODELS.fastImage.label)
+  const [chatType, setChatType] = useState<Model>(MODELS.claudeOpus)
+  const [imageModel, setImageModel] = useState<string>(IMAGE_MODELS.nanoBanana.label)
   const [modalVisible, setModalVisible] = useState<boolean>(false)
-  const [illusionImage, setIllusionImage] = useState<string>(ILLUSION_DIFFUSION_IMAGES.mediumSquares.label)
-  const [fontsLoaded] = useFonts({
+    const [fontsLoaded] = useFonts({
     'Geist-Regular': require('./assets/fonts/Geist-Regular.otf'),
     'Geist-Light': require('./assets/fonts/Geist-Light.otf'),
     'Geist-Bold': require('./assets/fonts/Geist-Bold.otf'),
@@ -102,8 +101,6 @@ export default function App() {
           imageModel,
           setImageModel: _setImageModel,
           closeModal,
-          illusionImage,
-          setIllusionImage
         }}
       >
         <ThemeContext.Provider value={{

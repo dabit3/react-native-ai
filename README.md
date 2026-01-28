@@ -10,13 +10,11 @@ Full stack framework for building cross-platform mobile AI apps supporting LLM r
 
 ## Features
 
-- LLM support for [OpenAI](https://openai.com/) ChatGPT, [Anthropic](https://anthropic.com) Claude, [Cohere](https://cohere.com/), Cohere Web, [Gemini](https://makersuite.google.com), and [Mistral](https://mistral.ai/)
-- An array of image models provided by [Fal.ai](https://www.fal.ai/)
+- LLM support for [OpenAI](https://openai.com/) GPT-5.2 + GPT-5 mini, [Anthropic](https://anthropic.com) Claude Opus/Sonnet/Haiku 4.5, and [Gemini](https://makersuite.google.com)
+- Image generation with Gemini (Nano Banana)
 - Real-time / streaming responses from all providers
-- OpenAI Assistants including code interpreter and retrieval
 - Server proxy to easily enable authentication and authorization with auth provider of choice.
 - Theming (comes out of the box with 5 themes) - easily add additional themes with just a few lines of code.
-- Image processing with [ByteScale](https://bytescale.com/)
 
 ![React Native AI Preview](https://i.imgur.com/D4LIVal.png)
 
@@ -48,7 +46,7 @@ npm run dev
 
 ### Environment variables
 
-The server environment variables are available in `server/.env.example`. If already not present, update this file name to `.env` and configure server environment variables.
+The server environment variables are available in `server/.env.example`. If already not present, update this file name to `.env` and configure server environment variables. Gemini image generation requires `GEMINI_API_KEY`.
 
 ## Theming
 
@@ -124,7 +122,7 @@ You can add or configure a model by updating `IMAGE_MODELS` in `constants.ts`.
 
 For removing models, just remove the models you do not want to support.
 
-For adding models, once the model definition is add to the `IMAGE_MODELS` array, you should update `src/screens/images.tsx` to support the new model.
+For adding models, once the model definition is added to the `IMAGE_MODELS` array, you should update `src/screens/images.tsx` to support the new model.
 
 Main consideration is input. Does the model take text, image, or both as inputs?
 
@@ -132,9 +130,9 @@ The app is configured to handle both, but you must update the `generate` functio
 
 ### On the server
 
-#### Fal.ai
+#### Gemini (Nano Banana)
 
-In `server/src/images/fal`, update the handler function to take into account the new model.
+Gemini image generation is handled in `server/src/images/gemini.ts`. Configure `GEMINI_API_KEY` and select the Nano Banana image models from the settings screen.
 
 #### Other API providers
 

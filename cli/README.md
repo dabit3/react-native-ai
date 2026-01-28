@@ -8,10 +8,9 @@ Full stack framework for building cross-platform mobile AI apps supporting LLM r
 
 ## Features
 
-- LLM support for [OpenAI](https://openai.com/) ChatGPT, [Anthropic](https://anthropic.com) Claude, [Cohere](https://cohere.com/) and Cohere Web
-- An array of image models provided by [Fal.ai](https://www.fal.ai/)
+- LLM support for [OpenAI](https://openai.com/) GPT-5.2 + GPT-5 mini, [Anthropic](https://anthropic.com) Claude Opus/Sonnet/Haiku 4.5, and [Gemini](https://makersuite.google.com)
+- Image generation with Gemini (Nano Banana)
 - Real-time / streaming responses from all providers
-- OpenAI Assistants including code interpreter and retrieval
 - Server proxy to easily enable authentication and authorization with auth provider of choice.
 - Theming (comes out of the box with 5 themes) - easily add additional themes with just a few lines of code.
 - Image processing with [ByteScale](https://bytescale.com/)

@@ -94,9 +94,6 @@ ENVIRONMENT="PRODUCTION"
 # OpenAI https://platform.openai.com
 OPENAI_API_KEY=""
 
-# FAL AI https://www.fal.ai
-FAL_API_KEY=""
-
 # Anthropic (optional) https://console.anthropic.com
 ANTHROPIC_API_KEY=""
 
@@ -116,9 +113,6 @@ GEMINI_API_KEY=""
     if (withEnv === 'yes') {
       console.log('Get OpenAI API Key at https://platform.openai.com')
       const openai_api_key = await input({ message: "OpenAI API Key" })
-
-      console.log('Get Fal API Key at https://www.fal.ai')
-      const fal_api_key = await input({ message: "Fal API Key" })
 
       console.log('(optional) Get Anthropic API Key at https://console.anthropic.com')
       const anthropic_api_key = await input({ message: "Anthropic API Key" })
@@ -150,9 +144,6 @@ ANTHROPIC_API_KEY="${anthropic_api_key}"
 
 # Cohere
 COHERE_API_KEY="${cohere_api_key}"
-
-# FAL
-FAL_API_KEY="${fal_api_key}"
 
 # Replicate secret
 REPLICATE_KEY="${replicate_api_key}"
