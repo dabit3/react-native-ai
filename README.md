@@ -1,4 +1,4 @@
-[![Ceasefire Now](https://badge.techforpalestine.org/default)](https://techforpalestine.org/learn-more)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dabit3/react-native-ai)
 
 # React Native AI
 
