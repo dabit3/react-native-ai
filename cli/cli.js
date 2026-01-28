@@ -100,12 +100,6 @@ ANTHROPIC_API_KEY=""
 # Cohere (optional) https://cohere.com
 COHERE_API_KEY=""
 
-# ByteScale secret (optional) https://bytescale.com
-BYTESCALE_API_KEY=""
-
-# Replicate secret (optional) https://replicate.com/
-REPLICATE_KEY=""
-
 # Gemini API Key (optional) https://makersuite.google.com
 GEMINI_API_KEY=""
 `
@@ -120,21 +114,12 @@ GEMINI_API_KEY=""
       console.log('(optional) Get Cohere API Key at https://cohere.com')
       const cohere_api_key = await input({ message: "Cohere API Key" })
 
-      console.log('(optional) Get Bytescale API Key at https://bytescale.com')
-      const bytescale_api_key = await input({ message: "Bytescale API Key" })
-
-      console.log('(optional) Get Replicate API Key at https://replicate.com')
-      const replicate_api_key = await input({ message: "Replicate API Key" })
-
       console.log('(optional) Get Gemini API Key at https://makersuite.google.com')
       const gemeni_api_key = await input({ message: "Gemini API Key" })
 
       envs = `
 # environment, either PRODUCTION or DEVELOPMENT
 ENVIRONMENT="PRODUCTION"
-
-# ByteScale
-BYTESCALE_API_KEY="${bytescale_api_key}"
 
 # OpenAI
 OPENAI_API_KEY="${openai_api_key}"
@@ -144,9 +129,6 @@ ANTHROPIC_API_KEY="${anthropic_api_key}"
 
 # Cohere
 COHERE_API_KEY="${cohere_api_key}"
-
-# Replicate secret
-REPLICATE_KEY="${replicate_api_key}"
 
 # Gemini API Key
 GEMINI_API_KEY=${gemeni_api_key}

@@ -1,5 +1,4 @@
 import { Request, Response } from "express"
-import { saveToBytescale } from "../helpers/saveToBytescale"
 import { saveFileToOpenai } from '../helpers/saveFileToOpenai'
 
 interface Body {

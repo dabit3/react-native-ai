@@ -13,7 +13,6 @@ Full stack framework for building cross-platform mobile AI apps supporting LLM r
 - Real-time / streaming responses from all providers
 - Server proxy to easily enable authentication and authorization with auth provider of choice.
 - Theming (comes out of the box with 5 themes) - easily add additional themes with just a few lines of code.
-- Image processing with [ByteScale](https://bytescale.com/)
 
 ![React Native AI Preview](https://i.imgur.com/D4LIVal.png)
 
