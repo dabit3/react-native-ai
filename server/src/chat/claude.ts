@@ -1,16 +1,21 @@
 import { Request, Response, NextFunction } from "express"
 import asyncHandler from 'express-async-handler'
 
-type ModelName = 'claude-3-opus-20240229' | 'claude-3-haiku-20240307';
+type ModelLabel = 'claudeOpus' | 'claudeSonnet' | 'claudeHaiku'
+type ModelName =
+  | 'claude-opus-4-5-20251101'
+  | 'claude-sonnet-4-5-20250929'
+  | 'claude-haiku-4-5-20251001';
 
-const models: Record<string, ModelName> = {
-  claude: 'claude-3-opus-20240229',
-  claudeInstant: 'claude-3-haiku-20240307'
+const models: Record<ModelLabel, ModelName> = {
+  claudeOpus: 'claude-opus-4-5-20251101',
+  claudeSonnet: 'claude-sonnet-4-5-20250929',
+  claudeHaiku: 'claude-haiku-4-5-20251001'
 }
 
 interface RequestBody {
   prompt: any;
-  model: ModelName;
+  model: ModelLabel;
 }
 
 export const claude = asyncHandler(async (req: Request, res: Response) => {
@@ -22,6 +27,13 @@ export const claude = asyncHandler(async (req: Request, res: Response) => {
     })
 
     const { prompt, model }: RequestBody = req.body
+    const selectedModel = models[model]
+
+    if (!selectedModel) {
+      res.write('data: [DONE]\n\n')
+      res.end()
+      return
+    }
 
     const decoder = new TextDecoder()
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -33,7 +45,7 @@ export const claude = asyncHandler(async (req: Request, res: Response) => {
         'x-api-key': process.env.ANTHROPIC_API_KEY || ''
       },
       body: JSON.stringify({
-        model: models[model],
+        model: selectedModel,
         "messages": [{"role": "user", "content": prompt }],
         "max_tokens": 4096,
         stream: true
@@ -57,7 +69,14 @@ export const claude = asyncHandler(async (req: Request, res: Response) => {
   
         const parsedLines = lines
           .filter(line => line.startsWith('data: '))
-          .map(line => JSON.parse(line.replace('data: ', '')))
+          .map(line => {
+            try {
+              return JSON.parse(line.replace('data: ', ''))
+            } catch {
+              return null
+            }
+          })
+          .filter(Boolean)
 
         for (const parsedLine of parsedLines) {
           if (parsedLine) {

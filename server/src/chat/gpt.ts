@@ -3,8 +3,8 @@ import asyncHandler from 'express-async-handler'
 
 export const gpt = asyncHandler(async (req: Request, res: Response) => {
   const models:any = {
-    gptTurbo: 'gpt-4-turbo',
-    gpt: 'gpt-4o'
+    gpt52: 'gpt-5.2-2025-12-11',
+    gpt5Mini: 'gpt-5-mini-2025-08-07'
   }
   try {
     res.writeHead(200, {
@@ -13,6 +13,13 @@ export const gpt = asyncHandler(async (req: Request, res: Response) => {
       'Cache-Control': 'no-cache'
     })
     const { model, messages } = req.body
+    const selectedModel = models[model]
+
+    if (!selectedModel) {
+      res.write('data: [DONE]\n\n')
+      res.end()
+      return
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -21,7 +28,7 @@ export const gpt = asyncHandler(async (req: Request, res: Response) => {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: models[model],
+        model: selectedModel,
         messages,
         stream: true
       })

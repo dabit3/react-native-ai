@@ -18,9 +18,8 @@ export async function gemini(req: Request, res: Response) {
 
     const genAIInit = new GoogleGenerativeAI(`${process.env.GEMINI_API_KEY}`)
 
-    // For text-only input, use the gemini-pro model
     const model = genAIInit.getGenerativeModel({
-      model: "gemini-pro",
+      model: "gemini-3-pro-preview",
     })
     
     const geminiResult = await model.generateContentStream(prompt)

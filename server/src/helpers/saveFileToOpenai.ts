@@ -10,7 +10,7 @@ export async function saveFileToOpenai(file: any) {
   }
   const filePath = path.join(uploadsDir, file.originalname);
   try {
-    const writeToFile = new Promise((resolve, reject) => {
+    const writeToFile = new Promise<void>((resolve, reject) => {
       const readableStream = new Readable({
           read() {
               this.push(file.buffer);

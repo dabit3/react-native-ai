@@ -1,10 +1,10 @@
 import express from 'express'
 import multer from 'multer'
-import { falAI } from './fal'
+import { geminiImage } from './gemini'
 
 const upload = multer()
 const router = express.Router()
 
-router.post('/fal', upload.single('file'), falAI)
+router.post('/gemini', upload.single('file'), geminiImage)
 
 export default router
