@@ -97,9 +97,6 @@ OPENAI_API_KEY=""
 # Anthropic (optional) https://console.anthropic.com
 ANTHROPIC_API_KEY=""
 
-# Cohere (optional) https://cohere.com
-COHERE_API_KEY=""
-
 # Gemini API Key (optional) https://makersuite.google.com
 GEMINI_API_KEY=""
 `
@@ -110,9 +107,6 @@ GEMINI_API_KEY=""
 
       console.log('(optional) Get Anthropic API Key at https://console.anthropic.com')
       const anthropic_api_key = await input({ message: "Anthropic API Key" })
-
-      console.log('(optional) Get Cohere API Key at https://cohere.com')
-      const cohere_api_key = await input({ message: "Cohere API Key" })
 
       console.log('(optional) Get Gemini API Key at https://makersuite.google.com')
       const gemeni_api_key = await input({ message: "Gemini API Key" })
@@ -126,9 +120,6 @@ OPENAI_API_KEY="${openai_api_key}"
 
 # Anthropic
 ANTHROPIC_API_KEY="${anthropic_api_key}"
-
-# Cohere
-COHERE_API_KEY="${cohere_api_key}"
 
 # Gemini API Key
 GEMINI_API_KEY=${gemeni_api_key}
