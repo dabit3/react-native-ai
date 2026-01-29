@@ -324,7 +324,7 @@ export function Images() {
                   }
                   {renderSelectedImage()}
                   <Text style={styles.chatDescription}>
-                    Generate images and art using natural language. Choose from a variety of models.
+                    Generate images and art using natural language.
                   </Text>
                 </View>
               </View>
