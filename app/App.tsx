@@ -88,7 +88,7 @@ export default function App() {
     AsyncStorage.setItem('rnai-theme', theme)
   }
 
-  const bottomSheetStyles = getBottomsheetStyles(theme)
+  const bottomSheetStyles = getBottomsheetStyles(getTheme(theme))
 
   if (!fontsLoaded) return null
   return (

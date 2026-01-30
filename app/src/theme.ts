@@ -4,7 +4,10 @@ const colors = {
   gray: 'rgba(0, 0, 0, .5)',
   lightWhite: 'rgba(255, 255, 255, .5)',
   blueTintColor: '#0281ff',
-  lightPink: '#F7B5CD'
+  lightPink: '#F7B5CD',
+  neonCyan: '#00f0ff',
+  neonMagenta: '#ff00ff',
+  cyberpunkDark: '#0d0221'
 }
 
 const fonts = {
@@ -45,7 +48,6 @@ const darkTheme = {
   mutedForegroundColor: colors.lightWhite,
   backgroundColor: colors.black,
   placeholderTextColor: colors.lightWhite,
-  laceholderTextColor: colors.lightWhite,
   secondaryBackgroundColor: colors.white,
   borderColor: 'rgba(255, 255, 255, .2)',
   tintColor: '#0281ff',
@@ -83,6 +85,18 @@ const vercel = {
   secondaryTextColor: colors.white,
 }
 
+const cyberpunk = {
+  ...darkTheme,
+  name: 'Cyberpunk',
+  label: 'cyberpunk',
+  backgroundColor: colors.cyberpunkDark,
+  tintColor: colors.neonCyan,
+  tintTextColor: colors.cyberpunkDark,
+  tabBarActiveTintColor: colors.neonCyan,
+  tabBarInactiveTintColor: colors.neonMagenta,
+  borderColor: 'rgba(0, 240, 255, .3)',
+}
+
 export {
-  lightTheme, darkTheme, hackerNews, miami, vercel
+  lightTheme, darkTheme, hackerNews, miami, vercel, cyberpunk
 }
