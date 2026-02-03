@@ -7,7 +7,10 @@ const colors = {
   lightPink: '#F7B5CD',
   neonCyan: '#00f0ff',
   neonMagenta: '#ff00ff',
-  cyberpunkDark: '#0d0221'
+  cyberpunkDark: '#0d0221',
+  matrixGreen: '#00ff41',
+  matrixDarkGreen: '#003b00',
+  matrixBlack: '#0d0d0d'
 }
 
 const fonts = {
@@ -97,6 +100,18 @@ const cyberpunk = {
   borderColor: 'rgba(0, 240, 255, .3)',
 }
 
+const matrix = {
+  ...darkTheme,
+  name: 'Matrix',
+  label: 'matrix',
+  backgroundColor: colors.matrixBlack,
+  tintColor: colors.matrixGreen,
+  tintTextColor: colors.matrixBlack,
+  tabBarActiveTintColor: colors.matrixGreen,
+  tabBarInactiveTintColor: colors.matrixDarkGreen,
+  borderColor: 'rgba(0, 255, 65, .3)',
+}
+
 export {
-  lightTheme, darkTheme, hackerNews, miami, vercel, cyberpunk
+  lightTheme, darkTheme, hackerNews, miami, vercel, cyberpunk, matrix
 }
