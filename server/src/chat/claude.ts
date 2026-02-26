@@ -3,13 +3,13 @@ import asyncHandler from 'express-async-handler'
 
 type ModelLabel = 'claudeOpus' | 'claudeSonnet' | 'claudeHaiku'
 type ModelName =
-  | 'claude-opus-4-5-20251101'
-  | 'claude-sonnet-4-5-20250929'
+  | 'claude-opus-4-6-20260219'
+  | 'claude-sonnet-4-6-20260220'
   | 'claude-haiku-4-5-20251001';
 
 const models: Record<ModelLabel, ModelName> = {
-  claudeOpus: 'claude-opus-4-5-20251101',
-  claudeSonnet: 'claude-sonnet-4-5-20250929',
+  claudeOpus: 'claude-opus-4-6-20260219',
+  claudeSonnet: 'claude-sonnet-4-6-20260220',
   claudeHaiku: 'claude-haiku-4-5-20251001'
 }
 

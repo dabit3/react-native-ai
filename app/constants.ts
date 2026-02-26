@@ -19,12 +19,12 @@ export const DOMAIN = normalizeDomain(rawDomain || devUrl || prodUrl || '')
 
 export const MODELS = {
   claudeOpus: {
-    name: 'Claude Opus',
+    name: 'Claude Opus 4.6',
     label: 'claudeOpus',
     icon: AnthropicIcon
   },
   claudeSonnet: {
-    name: 'Claude Sonnet',
+    name: 'Claude Sonnet 4.6',
     label: 'claudeSonnet',
     icon: AnthropicIcon
   },
