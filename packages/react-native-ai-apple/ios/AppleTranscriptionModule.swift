@@ -41,8 +41,12 @@ public class AppleTranscriptionModule: Module {
 
       let request = SFSpeechURLRecognitionRequest(url: url)
 
+      var hasSettled = false
       recognizer.recognitionTask(with: request) { result, error in
+        if hasSettled { return }
+
         if let error = error {
+          hasSettled = true
           promise.reject(
             TranscriptionError.recognitionFailed,
             error.localizedDescription
@@ -54,6 +58,7 @@ public class AppleTranscriptionModule: Module {
           return
         }
 
+        hasSettled = true
         let segments: [[String: Any]] = result.bestTranscription.segments.map { segment in
           return [
             "text": segment.substring,

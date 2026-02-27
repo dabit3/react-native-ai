@@ -132,7 +132,13 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
         const taskHint = options?.taskHint ?? 'dictation';
 
         // Request permissions and start native streaming
-        await NativeAppleTranscription.requestPermissions();
+        const permissionStatus = await NativeAppleTranscription.requestPermissions();
+        if (permissionStatus !== 'authorized') {
+          setError(`Permission not granted: ${permissionStatus}`);
+          setState('error');
+          cleanupSubscriptions();
+          return;
+        }
         await NativeAppleTranscription.startStreamingTranscription(
           locale,
           partialResults,

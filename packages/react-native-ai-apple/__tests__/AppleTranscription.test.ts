@@ -221,4 +221,33 @@ describe('useStreamingTranscription', () => {
 
     expect(mockStopStreaming).toHaveBeenCalled();
   });
+
+  test('startListening sets error when permission denied', async () => {
+    mockRequestPermissions.mockResolvedValueOnce('denied');
+    const result = getHook(true);
+    await result.startListening();
+
+    // Permission was requested
+    expect(mockRequestPermissions).toHaveBeenCalled();
+    // But streaming should NOT have been started
+    expect(mockStartStreaming).not.toHaveBeenCalled();
+
+    // setError (index 3) and setState (index 2) should reflect the denial
+    const setError = capturedSetters[3];
+    const setState = capturedSetters[2];
+    expect(setError).toHaveBeenCalledWith('Permission not granted: denied');
+    expect(setState).toHaveBeenCalledWith('error');
+  });
+
+  test('startListening sets error when microphone denied', async () => {
+    mockRequestPermissions.mockResolvedValueOnce('microphone_denied');
+    const result = getHook(true);
+    await result.startListening();
+
+    expect(mockRequestPermissions).toHaveBeenCalled();
+    expect(mockStartStreaming).not.toHaveBeenCalled();
+
+    const setError = capturedSetters[3];
+    expect(setError).toHaveBeenCalledWith('Permission not granted: microphone_denied');
+  });
 });
