@@ -15,6 +15,10 @@ class SpeechTranscriptionModule: RCTEventEmitter {
   private let audioEngine = AVAudioEngine()
   private var isStreaming = false
 
+  /// Monotonically increasing session ID. Incremented each time startStreaming
+  /// is called so that deferred cleanup from old sessions can detect staleness.
+  private var sessionId: Int = 0
+
   /// Serial queue to synchronize access to mutable state across threads
   /// (JS thread, audio callback, recognition callback).
   private let stateQueue = DispatchQueue(label: "com.reactnativeai.speechtranscription")
@@ -151,6 +155,10 @@ class SpeechTranscriptionModule: RCTEventEmitter {
 
       let inputNode = audioEngine.inputNode
 
+      // Capture current session ID so the callback can detect staleness.
+      sessionId += 1
+      let currentSessionId = sessionId
+
       // Start recognition task
       recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
         guard let self = self else { return }
@@ -161,7 +169,7 @@ class SpeechTranscriptionModule: RCTEventEmitter {
             "code": (error as NSError).code
           ])
           self.stateQueue.async {
-            self.cleanupStreamingUnsafe()
+            self.cleanupStreamingUnsafe(forSession: currentSessionId)
           }
           return
         }
@@ -187,7 +195,7 @@ class SpeechTranscriptionModule: RCTEventEmitter {
         if result.isFinal {
           self.sendEvent(withName: "onTranscriptionFinalResult", body: transcriptionData)
           self.stateQueue.async {
-            self.cleanupStreamingUnsafe()
+            self.cleanupStreamingUnsafe(forSession: currentSessionId)
           }
         } else {
           self.sendEvent(withName: "onTranscriptionPartialResult", body: transcriptionData)
@@ -214,7 +222,7 @@ class SpeechTranscriptionModule: RCTEventEmitter {
           "locale": locale
         ])
       } catch {
-        cleanupStreamingUnsafe()
+        cleanupStreamingUnsafe(forSession: currentSessionId)
         reject("ERR_AUDIO_ENGINE", "Failed to start audio engine: \(error.localizedDescription)", error)
       }
     }
@@ -239,6 +247,8 @@ class SpeechTranscriptionModule: RCTEventEmitter {
       audioEngine.inputNode.removeTap(onBus: 0)
       recognitionRequest?.endAudio()
       recognitionTask?.finish()
+      recognitionRequest = nil
+      recognitionTask = nil
       isStreaming = false
 
       sendEvent(withName: "onTranscriptionStateChange", body: [
@@ -270,38 +280,46 @@ class SpeechTranscriptionModule: RCTEventEmitter {
     }
 
     var hasSettled = false
-    recognizer.recognitionTask(with: request) { result, error in
-      guard !hasSettled else { return }
+    recognizer.recognitionTask(with: request) { [weak self] result, error in
+      guard let self = self else { return }
+      // Synchronize hasSettled access via stateQueue to prevent
+      // concurrent callbacks from settling the promise twice.
+      self.stateQueue.sync {
+        guard !hasSettled else { return }
 
-      if let error = error {
+        if let error = error {
+          hasSettled = true
+          reject("ERR_TRANSCRIPTION", "Transcription failed: \(error.localizedDescription)", error)
+          return
+        }
+        guard let result = result, result.isFinal else { return }
+
         hasSettled = true
-        reject("ERR_TRANSCRIPTION", "Transcription failed: \(error.localizedDescription)", error)
-        return
-      }
-      guard let result = result, result.isFinal else { return }
+        let segments = result.bestTranscription.segments.map { segment -> [String: Any] in
+          return [
+            "text": segment.substring,
+            "timestamp": segment.timestamp,
+            "duration": segment.duration,
+            "confidence": segment.confidence
+          ]
+        }
 
-      hasSettled = true
-      let segments = result.bestTranscription.segments.map { segment -> [String: Any] in
-        return [
-          "text": segment.substring,
-          "timestamp": segment.timestamp,
-          "duration": segment.duration,
-          "confidence": segment.confidence
-        ]
+        resolve([
+          "text": result.bestTranscription.formattedString,
+          "segments": segments,
+          "isFinal": true
+        ])
       }
-
-      resolve([
-        "text": result.bestTranscription.formattedString,
-        "segments": segments,
-        "isFinal": true
-      ])
     }
   }
 
   // MARK: - Private
 
   /// Internal cleanup — must be called from within stateQueue.
-  private func cleanupStreamingUnsafe() {
+  /// Only cleans up if the given session ID matches the current session,
+  /// preventing stale callbacks from destroying a newer session's state.
+  private func cleanupStreamingUnsafe(forSession cleanupSessionId: Int) {
+    guard cleanupSessionId == sessionId else { return }
     audioEngine.stop()
     audioEngine.inputNode.removeTap(onBus: 0)
     recognitionRequest = nil
