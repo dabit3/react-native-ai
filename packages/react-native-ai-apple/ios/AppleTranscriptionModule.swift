@@ -11,6 +11,10 @@ import AVFoundation
 /// - `onStreamingStateChange`: Fired with `{ state }` when streaming state changes.
 public class AppleTranscriptionModule: Module {
   private var streamingSession: StreamingTranscriptionSession?
+  /// Incremented each time a new streaming session is created.
+  /// Callbacks from older sessions compare their captured generation
+  /// against this value and become no-ops when they don't match.
+  private var sessionGeneration: Int = 0
 
   public func definition() -> ModuleDefinition {
     Name("AppleTranscription")
@@ -88,9 +92,12 @@ public class AppleTranscriptionModule: Module {
         taskHint: String,
         promise: Promise
       ) in
-      // Tear down any existing session
+      // Tear down any existing session and bump generation so stale
+      // callbacks from the old session are silently discarded.
       self.streamingSession?.stop()
       self.streamingSession = nil
+      self.sessionGeneration += 1
+      let gen = self.sessionGeneration
 
       self.sendEvent("onStreamingStateChange", ["state": "starting"])
 
@@ -102,21 +109,24 @@ public class AppleTranscriptionModule: Module {
           requiresOnDeviceRecognition: requiresOnDeviceRecognition,
           taskHint: taskHint,
           onPartialResult: { [weak self] text, isFinal, confidence in
-            self?.sendEvent("onPartialResult", [
+            guard let self = self, self.sessionGeneration == gen else { return }
+            self.sendEvent("onPartialResult", [
               "text": text,
               "isFinal": isFinal,
               "confidence": confidence,
             ])
           },
           onError: { [weak self] message, code in
-            self?.sendEvent("onError", [
+            guard let self = self, self.sessionGeneration == gen else { return }
+            self.sendEvent("onError", [
               "message": message,
               "code": code,
             ])
-            self?.sendEvent("onStreamingStateChange", ["state": "error"])
+            self.sendEvent("onStreamingStateChange", ["state": "error"])
           },
           onStateChange: { [weak self] state in
-            self?.sendEvent("onStreamingStateChange", ["state": state])
+            guard let self = self, self.sessionGeneration == gen else { return }
+            self.sendEvent("onStreamingStateChange", ["state": state])
           }
         )
 

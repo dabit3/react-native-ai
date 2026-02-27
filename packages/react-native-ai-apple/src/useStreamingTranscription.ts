@@ -122,20 +122,9 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
           setState('error');
           return;
         }
-        await NativeAppleTranscription.startStreamingTranscription(
-          locale,
-          partialResults,
-          addsPunctuation,
-          requiresOnDevice,
-          taskHint
-        );
-        if (!isMountedRef.current) {
-          NativeAppleTranscription.stopStreamingTranscription().catch(() => {});
-          return;
-        }
 
-        // Subscribe to streaming events AFTER the native session is started
-        // to avoid receiving stale events from the old session's teardown
+        // Subscribe to streaming events BEFORE the native call so we
+        // catch the synchronous 'listening' event emitted by session.start().
         partialResultSubscription.current =
           NativeAppleTranscription.addListener(
             'onPartialResult',
@@ -159,6 +148,19 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
             setState(event.state as StreamingTranscriptionState);
           }
         );
+
+        await NativeAppleTranscription.startStreamingTranscription(
+          locale,
+          partialResults,
+          addsPunctuation,
+          requiresOnDevice,
+          taskHint
+        );
+        if (!isMountedRef.current) {
+          NativeAppleTranscription.stopStreamingTranscription().catch(() => {});
+          cleanupSubscriptions();
+          return;
+        }
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : 'Failed to start transcription';
