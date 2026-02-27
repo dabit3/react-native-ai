@@ -117,6 +117,7 @@ class StreamingTranscriptionSession {
 
         if isFinal {
           self.stop()
+          return
         }
       }
 

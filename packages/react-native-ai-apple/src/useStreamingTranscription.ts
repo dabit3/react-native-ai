@@ -55,15 +55,16 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
     checkAvailability();
     return () => {
       cleanupSubscriptions();
+      NativeAppleTranscription?.stopStreamingTranscription().catch(() => {});
     };
   }, []);
 
-  function checkAvailability(): void {
+  function checkAvailability(locale = 'en-US'): void {
     if (!NativeAppleTranscription) {
       setIsAvailable(false);
       return;
     }
-    NativeAppleTranscription.isAvailable('en-US')
+    NativeAppleTranscription.isAvailable(locale)
       .then((available: boolean) => setIsAvailable(available))
       .catch(() => setIsAvailable(false));
   }
@@ -130,6 +131,9 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
         const addsPunctuation = options?.addsPunctuation ?? true;
         const requiresOnDevice = options?.requiresOnDeviceRecognition ?? false;
         const taskHint = options?.taskHint ?? 'dictation';
+
+        // Re-check availability for the requested locale
+        checkAvailability(locale);
 
         // Request permissions and start native streaming
         const permissionStatus = await NativeAppleTranscription.requestPermissions();
