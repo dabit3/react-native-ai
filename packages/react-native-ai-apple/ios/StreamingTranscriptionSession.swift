@@ -196,8 +196,8 @@ class StreamingTranscriptionSession {
     // Stop audio engine
     if audioEngine.isRunning {
       audioEngine.stop()
-      audioEngine.inputNode.removeTap(onBus: 0)
     }
+    audioEngine.inputNode.removeTap(onBus: 0)
 
     // End the recognition request (signals end of audio)
     recognitionRequest?.endAudio()
