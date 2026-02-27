@@ -49,11 +49,13 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
   const partialResultSubscription = useRef<{ remove: () => void } | null>(null);
   const errorSubscription = useRef<{ remove: () => void } | null>(null);
   const stateSubscription = useRef<{ remove: () => void } | null>(null);
+  const isMountedRef = useRef<boolean>(true);
 
   // Check availability on mount
   useEffect(() => {
     checkAvailability();
     return () => {
+      isMountedRef.current = false;
       cleanupSubscriptions();
       NativeAppleTranscription?.stopStreamingTranscription().catch(() => {});
     };
@@ -101,7 +103,39 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
         // Clean up any existing subscriptions
         cleanupSubscriptions();
 
-        // Subscribe to streaming events
+        const locale = options?.locale ?? 'en-US';
+        const partialResults = options?.partialResults ?? true;
+        const addsPunctuation = options?.addsPunctuation ?? true;
+        const requiresOnDevice = options?.requiresOnDeviceRecognition ?? false;
+        const taskHint = options?.taskHint ?? 'dictation';
+
+        // Re-check availability for the requested locale
+        checkAvailability(locale);
+
+        // Request permissions and start native streaming
+        const permissionStatus = await NativeAppleTranscription.requestPermissions();
+        if (!isMountedRef.current) {
+          return;
+        }
+        if (permissionStatus !== 'authorized') {
+          setError(`Permission not granted: ${permissionStatus}`);
+          setState('error');
+          return;
+        }
+        await NativeAppleTranscription.startStreamingTranscription(
+          locale,
+          partialResults,
+          addsPunctuation,
+          requiresOnDevice,
+          taskHint
+        );
+        if (!isMountedRef.current) {
+          NativeAppleTranscription.stopStreamingTranscription().catch(() => {});
+          return;
+        }
+
+        // Subscribe to streaming events AFTER the native session is started
+        // to avoid receiving stale events from the old session's teardown
         partialResultSubscription.current =
           NativeAppleTranscription.addListener(
             'onPartialResult',
@@ -124,31 +158,6 @@ export function useStreamingTranscription(): UseStreamingTranscriptionReturn {
           (event: { state: string }) => {
             setState(event.state as StreamingTranscriptionState);
           }
-        );
-
-        const locale = options?.locale ?? 'en-US';
-        const partialResults = options?.partialResults ?? true;
-        const addsPunctuation = options?.addsPunctuation ?? true;
-        const requiresOnDevice = options?.requiresOnDeviceRecognition ?? false;
-        const taskHint = options?.taskHint ?? 'dictation';
-
-        // Re-check availability for the requested locale
-        checkAvailability(locale);
-
-        // Request permissions and start native streaming
-        const permissionStatus = await NativeAppleTranscription.requestPermissions();
-        if (permissionStatus !== 'authorized') {
-          setError(`Permission not granted: ${permissionStatus}`);
-          setState('error');
-          cleanupSubscriptions();
-          return;
-        }
-        await NativeAppleTranscription.startStreamingTranscription(
-          locale,
-          partialResults,
-          addsPunctuation,
-          requiresOnDevice,
-          taskHint
         );
       } catch (err: unknown) {
         const message =

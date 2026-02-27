@@ -47,7 +47,7 @@ jest.mock('react', () => {
     useEffect: jest.fn((cb: Function) => {
       cb();
     }),
-    useRef: jest.fn(() => ({ current: null })),
+    useRef: jest.fn((initial: unknown) => ({ current: initial !== undefined ? initial : null })),
   };
 });
 
