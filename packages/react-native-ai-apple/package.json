@@ -1,0 +1,52 @@
+{
+  "name": "@react-native-ai/apple",
+  "version": "0.1.0",
+  "description": "Apple on-device AI capabilities for React Native, including streaming speech transcription via SFSpeechRecognizer",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "react-native",
+    "ios",
+    "apple",
+    "speech",
+    "transcription",
+    "streaming",
+    "on-device",
+    "SFSpeechRecognizer",
+    "SpeechAnalyzer"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "expo": ">=51.0.0",
+    "react": ">=18.0.0",
+    "react-native": ">=0.74.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/react": "~19.1.10",
+    "expo-modules-core": "^2.3.0",
+    "jest": "^29.7.0",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "ts-jest": "^29.1.2",
+    "typescript": "~5.8.3"
+  },
+  "dependencies": {
+    "expo-modules-core": "^2.3.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dabit3/react-native-ai.git",
+    "directory": "packages/react-native-ai-apple"
+  },
+  "files": [
+    "build",
+    "ios",
+    "expo-module.config.json"
+  ]
+}
