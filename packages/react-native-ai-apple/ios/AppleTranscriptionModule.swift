@@ -49,35 +49,40 @@ public class AppleTranscriptionModule: Module {
       recognizer.recognitionTask(with: request) { result, error in
         if hasSettled { return }
 
+        // Check result BEFORE error — Apple often delivers both a final
+        // result and an error in the same callback invocation. Preferring
+        // the result ensures valid transcriptions aren't discarded.
+        if let result = result {
+          if result.isFinal {
+            hasSettled = true
+            let segments: [[String: Any]] = result.bestTranscription.segments.map { segment in
+              return [
+                "text": segment.substring,
+                "startTime": segment.timestamp,
+                "duration": segment.duration,
+                "confidence": segment.confidence,
+              ]
+            }
+
+            let fullText = result.bestTranscription.formattedString
+
+            promise.resolve([
+              "segments": segments,
+              "text": fullText,
+            ])
+            return
+          }
+          // Non-final partial result — wait for more
+          return
+        }
+
         if let error = error {
           hasSettled = true
           promise.reject(
             TranscriptionError.recognitionFailed,
             error.localizedDescription
           )
-          return
         }
-
-        guard let result = result, result.isFinal else {
-          return
-        }
-
-        hasSettled = true
-        let segments: [[String: Any]] = result.bestTranscription.segments.map { segment in
-          return [
-            "text": segment.substring,
-            "startTime": segment.timestamp,
-            "duration": segment.duration,
-            "confidence": segment.confidence,
-          ]
-        }
-
-        let fullText = result.bestTranscription.formattedString
-
-        promise.resolve([
-          "segments": segments,
-          "text": fullText,
-        ])
       }
     }
 
