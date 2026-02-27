@@ -50,6 +50,8 @@
     <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your photos</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to use speech recognition for on-device transcription</string>
     <key>RCTNewArchEnabled</key>
     <true/>
     <key>UILaunchStoryboardName</key>
