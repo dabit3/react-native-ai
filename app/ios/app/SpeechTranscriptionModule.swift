@@ -239,6 +239,7 @@ class SpeechTranscriptionModule: RCTEventEmitter {
       audioEngine.inputNode.removeTap(onBus: 0)
       recognitionRequest?.endAudio()
       recognitionTask?.finish()
+      isStreaming = false
 
       sendEvent(withName: "onTranscriptionStateChange", body: [
         "state": "stopped"
@@ -304,7 +305,6 @@ class SpeechTranscriptionModule: RCTEventEmitter {
     audioEngine.stop()
     audioEngine.inputNode.removeTap(onBus: 0)
     recognitionRequest = nil
-    recognitionTask?.cancel()
     recognitionTask = nil
     isStreaming = false
 
