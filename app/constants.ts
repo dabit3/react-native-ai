@@ -18,6 +18,11 @@ const rawDomain = env === 'DEVELOPMENT' ? devUrl : prodUrl
 export const DOMAIN = normalizeDomain(rawDomain || devUrl || prodUrl || '')
 
 export const MODELS = {
+  claudeOpus4_6: {
+    name: 'Claude Opus 4.6',
+    label: 'claudeOpus4_6',
+    icon: AnthropicIcon
+  },
   claudeOpus: {
     name: 'Claude Opus',
     label: 'claudeOpus',
