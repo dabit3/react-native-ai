@@ -280,7 +280,12 @@ class SpeechTranscriptionModule: RCTEventEmitter {
     }
 
     var hasSettled = false
-    recognizer.recognitionTask(with: request) { [weak self] result, error in
+    // Retain the recognizer and task in the closure capture list so they
+    // are not deallocated before the async recognition completes.
+    var retainedTask: SFSpeechRecognitionTask?
+    retainedTask = recognizer.recognitionTask(with: request) { [weak self, recognizer] result, error in
+      // Keep recognizer alive for the duration of the task.
+      _ = recognizer
       guard let self = self else { return }
       // Synchronize hasSettled access via stateQueue to prevent
       // concurrent callbacks from settling the promise twice.
@@ -289,12 +294,14 @@ class SpeechTranscriptionModule: RCTEventEmitter {
 
         if let error = error {
           hasSettled = true
+          retainedTask = nil
           reject("ERR_TRANSCRIPTION", "Transcription failed: \(error.localizedDescription)", error)
           return
         }
         guard let result = result, result.isFinal else { return }
 
         hasSettled = true
+        retainedTask = nil
         let segments = result.bestTranscription.segments.map { segment -> [String: Any] in
           return [
             "text": segment.substring,
