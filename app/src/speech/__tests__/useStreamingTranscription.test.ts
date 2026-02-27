@@ -196,6 +196,11 @@ describe('Streaming Speech Transcription Types', () => {
     const mockReturn: UseStreamingTranscriptionReturn = {
       startStreaming: async () => {},
       stopStreaming: async () => {},
+      transcribeFile: async () => ({
+        text: 'hello world',
+        segments: [],
+        isFinal: true,
+      }),
       isStreaming: false,
       partialText: '',
       finalText: '',

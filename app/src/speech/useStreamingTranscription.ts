@@ -108,6 +108,9 @@ export function useStreamingTranscription(
       finalSub.remove()
       errorSub.remove()
       stateSub.remove()
+      // Stop streaming on unmount to prevent the native module from
+      // continuing to record after the component is removed.
+      SpeechTranscriptionModule.stopStreaming().catch(() => {})
     }
   }, [])
 
@@ -139,6 +142,24 @@ export function useStreamingTranscription(
     await SpeechTranscriptionModule.stopStreaming()
   }, [])
 
+  const transcribeFile = useCallback(
+    async (
+      filePath: string,
+      locale: string = 'en-US'
+    ): Promise<TranscriptionResult> => {
+      if (Platform.OS !== 'ios') {
+        throw new Error('File transcription is only available on iOS')
+      }
+      if (!SpeechTranscriptionModule) {
+        throw new Error(
+          'SpeechTranscriptionModule is not available. Make sure you are running on a real iOS device.'
+        )
+      }
+      return SpeechTranscriptionModule.transcribeFile(filePath, locale)
+    },
+    []
+  )
+
   const checkAvailability = useCallback(
     async (locale: string = 'en-US'): Promise<SpeechAvailability> => {
       if (Platform.OS !== 'ios' || !SpeechTranscriptionModule) {
@@ -164,6 +185,7 @@ export function useStreamingTranscription(
   return {
     startStreaming,
     stopStreaming,
+    transcribeFile,
     isStreaming,
     partialText,
     finalText,

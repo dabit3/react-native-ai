@@ -95,6 +95,8 @@ export interface UseStreamingTranscriptionReturn {
   startStreaming: (locale?: string, options?: StreamingOptions) => Promise<void>
   /** Stop the current streaming transcription session. */
   stopStreaming: () => Promise<void>
+  /** Transcribe an audio file at the given path (batch, non-streaming). */
+  transcribeFile: (filePath: string, locale?: string) => Promise<TranscriptionResult>
   /** Whether streaming transcription is currently active. */
   isStreaming: boolean
   /** The current partial transcription text (updated in real-time). */
