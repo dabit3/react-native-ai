@@ -18,6 +18,8 @@ class StreamingTranscriptionSession {
   private let audioEngine = AVAudioEngine()
   private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
   private var recognitionTask: SFSpeechRecognitionTask?
+  private var isStopped = false
+  private let queue = DispatchQueue(label: "com.reactnativeai.apple.transcription")
 
   private let partialResults: Bool
   private let addsPunctuation: Bool
@@ -97,40 +99,45 @@ class StreamingTranscriptionSession {
     self.recognitionRequest = request
 
     // Start recognition task
+    isStopped = false
     recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
       guard let self = self else { return }
 
-      if let result = result {
-        let text = result.bestTranscription.formattedString
-        let isFinal = result.isFinal
+      self.queue.async {
+        if self.isStopped { return }
 
-        // Calculate average confidence from segments
-        let segments = result.bestTranscription.segments
-        let avgConfidence: Float
-        if segments.isEmpty {
-          avgConfidence = 0.0
-        } else {
-          avgConfidence = segments.reduce(Float(0)) { $0 + $1.confidence } / Float(segments.count)
+        if let result = result {
+          let text = result.bestTranscription.formattedString
+          let isFinal = result.isFinal
+
+          // Calculate average confidence from segments
+          let segments = result.bestTranscription.segments
+          let avgConfidence: Float
+          if segments.isEmpty {
+            avgConfidence = 0.0
+          } else {
+            avgConfidence = segments.reduce(Float(0)) { $0 + $1.confidence } / Float(segments.count)
+          }
+
+          self.onPartialResult(text, isFinal, avgConfidence)
+
+          if isFinal {
+            self.stopInternal()
+            return
+          }
         }
 
-        self.onPartialResult(text, isFinal, avgConfidence)
-
-        if isFinal {
-          self.stop()
-          return
+        if let error = error {
+          let nsError = error as NSError
+          // Ignore cancellation errors (code 216 = user cancelled, code 1 = cancelled)
+          if nsError.domain == "kAFAssistantErrorDomain" && nsError.code == 216 {
+            return
+          }
+          if nsError.domain == "kAFAssistantErrorDomain" && nsError.code == 1 {
+            return
+          }
+          self.onError(error.localizedDescription, "RECOGNITION_ERROR")
         }
-      }
-
-      if let error = error {
-        let nsError = error as NSError
-        // Ignore cancellation errors (code 216 = user cancelled, code 1 = cancelled)
-        if nsError.domain == "kAFAssistantErrorDomain" && nsError.code == 216 {
-          return
-        }
-        if nsError.domain == "kAFAssistantErrorDomain" && nsError.code == 1 {
-          return
-        }
-        self.onError(error.localizedDescription, "RECOGNITION_ERROR")
       }
     }
 
@@ -148,7 +155,18 @@ class StreamingTranscriptionSession {
   }
 
   /// Stop the streaming recognition session and clean up resources.
+  /// Thread-safe: synchronizes on the internal serial queue.
   func stop() {
+    queue.sync {
+      stopInternal()
+    }
+  }
+
+  /// Internal stop implementation. Must be called on `queue`.
+  private func stopInternal() {
+    if isStopped { return }
+    isStopped = true
+
     // Stop audio engine
     if audioEngine.isRunning {
       audioEngine.stop()
@@ -165,6 +183,9 @@ class StreamingTranscriptionSession {
 
     // Deactivate audio session
     try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+
+    // Notify JS that we're idle
+    onStateChange("idle")
   }
 }
 

@@ -135,7 +135,7 @@ public class AppleTranscriptionModule: Module {
     AsyncFunction("stopStreamingTranscription") { (promise: Promise) in
       self.streamingSession?.stop()
       self.streamingSession = nil
-      self.sendEvent("onStreamingStateChange", ["state": "idle"])
+      // Note: stop() already emits onStreamingStateChange("idle") via the session's onStateChange callback
       promise.resolve(nil)
     }
 
