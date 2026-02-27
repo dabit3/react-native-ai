@@ -62,10 +62,31 @@ class StreamingTranscriptionSession {
   }
 
   /// Start the streaming recognition session.
+  ///
+  /// Uses a `defer` block to ensure that if any step after audio session
+  /// activation fails (e.g., `audioEngine.start()` throws), all resources
+  /// are cleaned up: recognition task cancelled, audio tap removed, and
+  /// audio session deactivated.
   func start() throws {
     // Cancel any previous task
     recognitionTask?.cancel()
     recognitionTask = nil
+
+    var started = false
+    defer {
+      if !started {
+        // Cleanup on failure: undo everything set up so far
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        recognitionRequest?.endAudio()
+        recognitionRequest = nil
+        if audioEngine.isRunning {
+          audioEngine.stop()
+        }
+        audioEngine.inputNode.removeTap(onBus: 0)
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+      }
+    }
 
     // Configure audio session for recording
     let audioSession = AVAudioSession.sharedInstance()
@@ -154,6 +175,8 @@ class StreamingTranscriptionSession {
     audioEngine.prepare()
     try audioEngine.start()
 
+    // Mark success — defer cleanup will be skipped
+    started = true
     onStateChange("listening")
   }
 
