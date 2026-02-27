@@ -79,6 +79,9 @@ class StreamingTranscriptionSession {
     // iOS 16+ features
     if #available(iOS 16.0, *) {
       request.addsPunctuation = addsPunctuation
+    }
+    // iOS 13+ features
+    if #available(iOS 13.0, *) {
       request.requiresOnDeviceRecognition = requiresOnDeviceRecognition
     }
 
