@@ -6,15 +6,15 @@ type ModelName =
   | 'claude-opus-4-5-20251101'
   | 'claude-sonnet-4-5-20250929'
   | 'claude-haiku-4-5-20251001'
-  | 'claude-opus-4-6-20260210'
-  | 'claude-sonnet-4-6-20260210';
+  | 'claude-opus-4-6'
+  | 'claude-sonnet-4-6';
 
 const models: Record<ModelLabel, ModelName> = {
   claudeOpus: 'claude-opus-4-5-20251101',
   claudeSonnet: 'claude-sonnet-4-5-20250929',
   claudeHaiku: 'claude-haiku-4-5-20251001',
-  claudeOpus46: 'claude-opus-4-6-20260210',
-  claudeSonnet46: 'claude-sonnet-4-6-20260210'
+  claudeOpus46: 'claude-opus-4-6',
+  claudeSonnet46: 'claude-sonnet-4-6'
 }
 
 interface RequestBody {
