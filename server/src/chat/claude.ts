@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express"
 import asyncHandler from 'express-async-handler'
 
-type ModelLabel = 'claudeOpus' | 'claudeSonnet' | 'claudeHaiku' | 'claudeOpus4' | 'claudeSonnet4'
+type ModelLabel = 'claudeOpus' | 'claudeSonnet' | 'claudeHaiku' | 'claudeOpus46' | 'claudeSonnet46'
 type ModelName =
   | 'claude-opus-4-5-20251101'
   | 'claude-sonnet-4-5-20250929'
@@ -13,8 +13,8 @@ const models: Record<ModelLabel, ModelName> = {
   claudeOpus: 'claude-opus-4-5-20251101',
   claudeSonnet: 'claude-sonnet-4-5-20250929',
   claudeHaiku: 'claude-haiku-4-5-20251001',
-  claudeOpus4: 'claude-opus-4-6-20260201',
-  claudeSonnet4: 'claude-sonnet-4-6-20260201'
+  claudeOpus46: 'claude-opus-4-6-20260201',
+  claudeSonnet46: 'claude-sonnet-4-6-20260201'
 }
 
 interface RequestBody {
