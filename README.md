@@ -10,7 +10,7 @@ Full stack framework for building cross-platform mobile AI apps supporting LLM r
 
 ## Features
 
-- LLM support for [OpenAI](https://openai.com/) GPT-5.2 + GPT-5 mini, [Anthropic](https://anthropic.com) Claude Opus/Sonnet/Haiku 4.5, and [Gemini](https://makersuite.google.com)
+- LLM support for [OpenAI](https://openai.com/) GPT-5.2 + GPT-5 mini, [Anthropic](https://anthropic.com) Claude Opus/Sonnet/Haiku 4.5, [Gemini](https://makersuite.google.com), and [Kimi](https://kimi.moonshot.cn/) K2.5
 - Image generation with Gemini (Nano Banana)
 - Real-time / streaming responses from all providers
 - Server proxy to easily enable authentication and authorization with auth provider of choice.
@@ -46,7 +46,7 @@ npm run dev
 
 ### Environment variables
 
-The server environment variables are available in `server/.env.example`. If already not present, update this file name to `.env` and configure server environment variables. Gemini image generation requires `GEMINI_API_KEY`.
+The server environment variables are available in `server/.env.example`. If already not present, update this file name to `.env` and configure server environment variables. Gemini image generation requires `GEMINI_API_KEY`. Kimi K2.5 requires `MOONSHOT_API_KEY`.
 
 ## Theming
 
