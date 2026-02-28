@@ -67,6 +67,8 @@ export function Chat() {
       generateGptResponse()
     } else if (chatType.label.includes('gemini')) {
       generateGeminiResponse()
+    } else if (chatType.label.includes('kimi')) {
+      generateGptResponse()
     }
   }
   async function generateGptResponse() {
