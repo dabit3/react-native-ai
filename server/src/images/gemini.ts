@@ -1,10 +1,11 @@
 import { Request, Response } from "express"
 
-type GeminiImageModel = "nanoBanana" | "nanoBananaPro"
+type GeminiImageModel = "nanoBanana" | "nanoBananaPro" | "nanoBanana3"
 
 const geminiModels: Record<GeminiImageModel, string> = {
   nanoBanana: "gemini-2.5-flash-image",
-  nanoBananaPro: "gemini-3-pro-image-preview"
+  nanoBananaPro: "gemini-3-pro-image-preview",
+  nanoBanana3: "gemini-3-flash-image"
 }
 
 const geminiApiBase = "https://generativelanguage.googleapis.com/v1beta/models"

@@ -41,4 +41,5 @@ export const MODELS = {
 export const IMAGE_MODELS = {
   nanoBanana: { name: 'Nano Banana (Gemini Flash Image)', label: 'nanoBanana' },
   nanoBananaPro: { name: 'Nano Banana Pro (Gemini 3 Pro)', label: 'nanoBananaPro' },
+  nanoBanana3: { name: 'Nano Banana 3 (Gemini 3 Flash Image)', label: 'nanoBanana3' },
 }
