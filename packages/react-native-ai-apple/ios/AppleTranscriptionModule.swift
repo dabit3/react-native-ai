@@ -72,8 +72,7 @@ public class AppleTranscriptionModule: Module {
             ])
             return
           }
-          // Non-final partial result - wait for more
-          return
+          // Non-final partial result - don't return yet, fall through to check error
         }
 
         if let error = error {
