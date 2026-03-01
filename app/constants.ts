@@ -34,11 +34,6 @@ export const MODELS = {
     label: 'claudeHaiku',
     icon: AnthropicIcon
   },
-  claudeOpus4: {
-    name: 'Claude Opus 4',
-    label: 'claudeOpus4',
-    icon: AnthropicIcon
-  },
   claudeSonnet4: {
     name: 'Claude Sonnet 4',
     label: 'claudeSonnet4',
