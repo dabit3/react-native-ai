@@ -99,6 +99,9 @@ ANTHROPIC_API_KEY=""
 
 # Gemini API Key (optional) https://makersuite.google.com
 GEMINI_API_KEY=""
+
+# DeepSeek API Key (optional) https://platform.deepseek.com
+DEEPSEEK_API_KEY=""
 `
 
     if (withEnv === 'yes') {
@@ -110,6 +113,9 @@ GEMINI_API_KEY=""
 
       console.log('(optional) Get Gemini API Key at https://makersuite.google.com')
       const gemeni_api_key = await input({ message: "Gemini API Key" })
+
+      console.log('(optional) Get DeepSeek API Key at https://platform.deepseek.com')
+      const deepseek_api_key = await input({ message: "DeepSeek API Key" })
 
       envs = `
 # environment, either PRODUCTION or DEVELOPMENT
@@ -123,6 +129,9 @@ ANTHROPIC_API_KEY="${anthropic_api_key}"
 
 # Gemini API Key
 GEMINI_API_KEY=${gemeni_api_key}
+
+# DeepSeek API Key
+DEEPSEEK_API_KEY="${deepseek_api_key}"
 `
     }
 

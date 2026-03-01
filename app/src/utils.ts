@@ -52,5 +52,8 @@ export function getChatType(type: Model) {
   if (type.label.includes('kimi')) {
     return 'kimi'
   }
+  if (type.label.includes('deepseek')) {
+    return 'deepseek'
+  }
   else return 'claude'
 }

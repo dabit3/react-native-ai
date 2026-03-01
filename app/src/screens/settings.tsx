@@ -12,7 +12,8 @@ import { AppContext, ThemeContext } from '../context'
 import {
   AnthropicIcon,
   GeminiIcon,
-  OpenAIIcon
+  OpenAIIcon,
+  DeepSeekIcon
  } from '../components/index'
 import FontAwesome from '@expo/vector-icons/FontAwesome5'
 import { IIconProps } from '../../types'
@@ -49,6 +50,9 @@ export function Settings() {
     }
     if (type.includes('gemini')) {
       return <GeminiIcon{...props} />
+    }
+    if (type.includes('deepseek')) {
+      return <DeepSeekIcon {...props} />
     }
     if (type.includes('nanoBanana')) {
       return <GeminiIcon{...props} />
