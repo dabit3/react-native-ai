@@ -34,12 +34,12 @@ export const MODELS = {
     icon: AnthropicIcon
   },
   claudeOpus4: {
-    name: 'Claude Opus 4',
+    name: 'Claude Opus 4.6',
     label: 'claudeOpus4',
     icon: AnthropicIcon
   },
   claudeSonnet4: {
-    name: 'Claude Sonnet 4',
+    name: 'Claude Sonnet 4.6',
     label: 'claudeSonnet4',
     icon: AnthropicIcon
   },
