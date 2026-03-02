@@ -84,7 +84,10 @@ export const glm = asyncHandler(async (req: Request, res: Response) => {
     }
   
     res.write('data: [DONE]\n\n')
+    res.end()
   } catch (err) {
-    console.log('error: ', err)
+    console.log('error in glm chat: ', err)
+    res.write('data: [DONE]\n\n')
+    res.end()
   }
 })
