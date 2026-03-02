@@ -46,7 +46,7 @@ export const kimi = asyncHandler(async (req: Request, res: Response) => {
           break
         }
 
-        let chunk = decoder.decode(value)
+        let chunk = decoder.decode(value, {stream: true})
         if (brokenLine) {
           chunk = brokenLine + chunk
           brokenLine = ''
