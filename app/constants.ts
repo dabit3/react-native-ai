@@ -1,6 +1,7 @@
 import { AnthropicIcon } from './src/components/AnthropicIcon'
 import { GeminiIcon } from './src/components/GeminiIcon'
 import { OpenAIIcon } from './src/components/OpenAIIcon'
+import { ZhipuIcon } from './src/components/ZhipuIcon'
 
 const normalizeDomain = (value?: string) => {
   if (!value) return ''
@@ -41,6 +42,7 @@ export const MODELS = {
   gpt52: { name: 'GPT 5.2', label: 'gpt52', icon: OpenAIIcon },
   gpt5Mini: { name: 'GPT 5 Mini', label: 'gpt5Mini', icon: OpenAIIcon },
   gemini: { name: 'Gemini', label: 'gemini', icon: GeminiIcon },
+  glm5: { name: 'GLM 5', label: 'glm5', icon: ZhipuIcon },
 }
 
 export const IMAGE_MODELS = {
