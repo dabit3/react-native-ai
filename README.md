@@ -10,7 +10,7 @@ Full stack framework for building cross-platform mobile AI apps supporting LLM r
 
 ## Features
 
-- LLM support for [OpenAI](https://openai.com/) GPT-5.2 + GPT-5 mini, [Anthropic](https://anthropic.com) Claude Opus/Sonnet/Haiku 4.5, and [Gemini](https://makersuite.google.com)
+- LLM support for [OpenAI](https://openai.com/) GPT-5.2 + GPT-5 mini, [Anthropic](https://anthropic.com) Claude Opus/Sonnet/Haiku 4.5 + Opus/Sonnet 4.6, and [Gemini](https://makersuite.google.com)
 - Image generation with Gemini (Nano Banana)
 - Real-time / streaming responses from all providers
 - Server proxy to easily enable authentication and authorization with auth provider of choice.
