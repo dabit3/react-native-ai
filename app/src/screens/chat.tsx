@@ -67,6 +67,8 @@ export function Chat() {
       generateGptResponse()
     } else if (chatType.label.includes('gemini')) {
       generateGeminiResponse()
+    } else if (chatType.label.includes('kimi')) {
+      generateKimiResponse()
     }
   }
   async function generateGptResponse() {
@@ -231,6 +233,89 @@ export function Chat() {
     es.addEventListener("error", listener);
   }
 
+  async function generateKimiResponse() {
+    if (!input) return
+    Keyboard.dismiss()
+    let localResponse = ''
+    const modelLabel = chatType.label
+    const currentState = getChatState(modelLabel)
+
+    let messageArray = [
+      ...currentState.messages, {
+        user: input,
+      }
+    ] as [{user: string, assistant?: string}]
+
+    updateChatState(modelLabel, prev => ({
+      ...prev,
+      messages: JSON.parse(JSON.stringify(messageArray))
+    }))
+
+    setLoading(true)
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({
+        animated: true
+      })
+    }, 1)
+    setInput('')
+
+    const messages = messageArray.reduce((acc: any[], message) => {
+      acc.push({ role: 'user', content: message.user })
+      if (message.assistant) {
+        acc.push({ role: 'assistant', content: message.assistant })
+      }
+      return acc
+    }, [])
+
+    const eventSourceArgs = {
+      body: {
+        messages,
+        model: chatType.label
+      },
+      type: getChatType(chatType)
+    }
+
+    const es = await getEventSource(eventSourceArgs)
+
+    const listener = (event) => {
+      if (event.type === "open") {
+        console.log("Open SSE connection.")
+        setLoading(false)
+      } else if (event.type === "message") {
+        if (event.data !== "[DONE]") {
+          if (localResponse.length < 850) {
+            scrollViewRef.current?.scrollToEnd({
+              animated: true
+            })
+          }
+          const data = JSON.parse(event.data)
+          if (typeof data === 'string') {
+            localResponse = localResponse + data
+          } else if (data?.content) {
+            localResponse = localResponse + data.content
+          }
+          messageArray[messageArray.length - 1].assistant = localResponse
+          updateChatState(modelLabel, prev => ({
+            ...prev,
+            messages: JSON.parse(JSON.stringify(messageArray))
+          }))
+        } else {
+          setLoading(false)
+          es.close()
+        }
+      } else if (event.type === "error") {
+        console.error("Connection error:", event.message)
+        setLoading(false)
+      } else if (event.type === "exception") {
+        console.error("Error:", event.message, event.error)
+        setLoading(false)
+      }
+    }
+
+    es.addEventListener("open", listener)
+    es.addEventListener("message", listener)
+    es.addEventListener("error", listener)
+  }
   async function generateClaudeResponse() {
     if (!input) return
     Keyboard.dismiss()
