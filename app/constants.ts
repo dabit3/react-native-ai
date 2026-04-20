@@ -38,6 +38,11 @@ export const MODELS = {
     label: 'claudeSonnet4',
     icon: AnthropicIcon
   },
+  claudeOpus47: {
+    name: 'Claude Opus 4.7',
+    label: 'claudeOpus47',
+    icon: AnthropicIcon
+  },
   gpt52: { name: 'GPT 5.2', label: 'gpt52', icon: OpenAIIcon },
   gpt5Mini: { name: 'GPT 5 Mini', label: 'gpt5Mini', icon: OpenAIIcon },
   gemini: { name: 'Gemini', label: 'gemini', icon: GeminiIcon },
