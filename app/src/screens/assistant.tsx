@@ -487,7 +487,7 @@ export function Assistant() {
             >
               <View style={styles.chatButton}>
                 <Ionicons
-                  name="md-arrow-up"
+                  name="arrow-up"
                   size={20} color={theme.tintTextColor}
                 />
               </View>
