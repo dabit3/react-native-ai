@@ -18,7 +18,7 @@ import { ThemeContext, AppContext } from '../context'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import MaterialIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import { useActionSheet } from '@expo/react-native-action-sheet'
-import * as FileSystem from 'expo-file-system'
+import { File, Paths } from 'expo-file-system'
 import * as ImagePicker from 'expo-image-picker'
 import * as Clipboard from 'expo-clipboard'
 
@@ -202,15 +202,11 @@ export function Images() {
 
   async function downloadImageToDevice(url: string) {
     try {
-      const downloadResumable = FileSystem.createDownloadResumable(
+      await File.downloadFileAsync(
         url,
-        FileSystem.documentDirectory + uuid() + '.png',
+        new File(Paths.document, uuid() + '.png'),
+        { idempotent: true },
       )
-      try {
-        await downloadResumable.downloadAsync()
-      } catch (e) {
-        console.error(e)
-      }
     } catch (err) {
       console.log('error saving image ...', err)
     }
