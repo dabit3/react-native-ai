@@ -11,7 +11,8 @@ import {
   Keyboard
 } from 'react-native'
 import 'react-native-get-random-values'
-import { useContext, useState, useRef } from 'react'
+import { useContext, useState, useRef, useEffect, useCallback } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { ThemeContext, AppContext } from '../context'
 import { getEventSource, getFirstNCharsOrLess, getChatType } from '../utils'
 import { v4 as uuid } from 'uuid'
@@ -40,6 +41,31 @@ export function Chat() {
 
   // Per-model chat state - each model has its own conversation history
   const [chatStates, setChatStates] = useState<Record<string, ChatState>>({})
+  const [chatLoaded, setChatLoaded] = useState(false)
+
+  // Load persisted chat history on mount
+  useEffect(() => {
+    async function loadChatHistory() {
+      try {
+        const stored = await AsyncStorage.getItem('rnai-chatStates')
+        if (stored) {
+          setChatStates(JSON.parse(stored))
+        }
+      } catch (err) {
+        console.log('error loading chat history', err)
+      } finally {
+        setChatLoaded(true)
+      }
+    }
+    loadChatHistory()
+  }, [])
+
+  // Persist chat history when it changes
+  const saveChatHistory = useCallback((states: Record<string, ChatState>) => {
+    AsyncStorage.setItem('rnai-chatStates', JSON.stringify(states)).catch(err =>
+      console.log('error saving chat history', err)
+    )
+  }, [])
 
   // Helper to get or create chat state for current model
   const getChatState = (modelLabel: string): ChatState => {
@@ -54,12 +80,20 @@ export function Chat() {
     }))
   }
 
+  // Persist the current chat states to AsyncStorage
+  const persistChatStates = () => {
+    setChatStates(current => {
+      saveChatHistory(current)
+      return current
+    })
+  }
+
   const { theme } = useContext(ThemeContext)
   const { chatType } = useContext(AppContext)
   const styles = getStyles(theme)
 
   async function chat() {
-    if (!input) return
+    if (!input || !chatLoaded) return
     Keyboard.dismiss()
     if (chatType.label.includes('claude')) {
       generateClaudeResponse()
@@ -137,6 +171,7 @@ export function Chat() {
           }))
         } else {
           setLoading(false)
+          persistChatStates()
           es.close()
         }
       } else if (event.type === "error") {
@@ -215,6 +250,7 @@ export function Chat() {
             ...prev,
             apiMessages: `${prev.apiMessages}\n\nPrompt: ${input}\n\nResponse:${localResponse}`
           }))
+          persistChatStates()
           es.close()
         }
       } else if (event.type === "error") {
@@ -292,6 +328,7 @@ export function Chat() {
             ...prev,
             apiMessages: `${prev.apiMessages}\n\nHuman: ${input}\n\nAssistant:${getFirstNCharsOrLess(localResponse, 2000)}`
           }))
+          persistChatStates()
           es.close()
         }
       } else if (event.type === "error") {
@@ -329,7 +366,12 @@ export function Chat() {
   async function clearChat() {
     if (loading) return
     const modelLabel = chatType.label
-    updateChatState(modelLabel, () => createEmptyChatState())
+    setChatStates(prev => {
+      const next = { ...prev }
+      delete next[modelLabel]
+      saveChatHistory(next)
+      return next
+    })
   }
 
   function renderItem({
