@@ -74,13 +74,17 @@ export function Chat() {
 
   // Helper to update chat state for a specific model
   const updateChatState = (modelLabel: string, updater: (prev: ChatState) => ChatState) => {
-    setChatStates(prev => {
-      const next = {
-        ...prev,
-        [modelLabel]: updater(prev[modelLabel] || createEmptyChatState())
-      }
-      saveChatHistory(next)
-      return next
+    setChatStates(prev => ({
+      ...prev,
+      [modelLabel]: updater(prev[modelLabel] || createEmptyChatState())
+    }))
+  }
+
+  // Persist the current chat states to AsyncStorage
+  const persistChatStates = () => {
+    setChatStates(current => {
+      saveChatHistory(current)
+      return current
     })
   }
 
@@ -89,7 +93,7 @@ export function Chat() {
   const styles = getStyles(theme)
 
   async function chat() {
-    if (!input) return
+    if (!input || !chatLoaded) return
     Keyboard.dismiss()
     if (chatType.label.includes('claude')) {
       generateClaudeResponse()
@@ -167,6 +171,7 @@ export function Chat() {
           }))
         } else {
           setLoading(false)
+          persistChatStates()
           es.close()
         }
       } else if (event.type === "error") {
@@ -245,6 +250,7 @@ export function Chat() {
             ...prev,
             apiMessages: `${prev.apiMessages}\n\nPrompt: ${input}\n\nResponse:${localResponse}`
           }))
+          persistChatStates()
           es.close()
         }
       } else if (event.type === "error") {
@@ -322,6 +328,7 @@ export function Chat() {
             ...prev,
             apiMessages: `${prev.apiMessages}\n\nHuman: ${input}\n\nAssistant:${getFirstNCharsOrLess(localResponse, 2000)}`
           }))
+          persistChatStates()
           es.close()
         }
       } else if (event.type === "error") {

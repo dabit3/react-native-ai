@@ -86,7 +86,7 @@ export function Images() {
   const showImagePickerButton = !hideInput
 
   async function generate() {
-    if (loading) return
+    if (loading || !imagesLoaded) return
     if (hideInput && !image) {
       console.log('no image selected')
       return
