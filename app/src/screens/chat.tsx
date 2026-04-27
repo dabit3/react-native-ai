@@ -11,7 +11,8 @@ import {
   Keyboard
 } from 'react-native'
 import 'react-native-get-random-values'
-import { useContext, useState, useRef } from 'react'
+import { useContext, useState, useRef, useEffect, useCallback } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { ThemeContext, AppContext } from '../context'
 import { getEventSource, getFirstNCharsOrLess, getChatType } from '../utils'
 import { v4 as uuid } from 'uuid'
@@ -40,6 +41,31 @@ export function Chat() {
 
   // Per-model chat state - each model has its own conversation history
   const [chatStates, setChatStates] = useState<Record<string, ChatState>>({})
+  const [chatLoaded, setChatLoaded] = useState(false)
+
+  // Load persisted chat history on mount
+  useEffect(() => {
+    async function loadChatHistory() {
+      try {
+        const stored = await AsyncStorage.getItem('rnai-chatStates')
+        if (stored) {
+          setChatStates(JSON.parse(stored))
+        }
+      } catch (err) {
+        console.log('error loading chat history', err)
+      } finally {
+        setChatLoaded(true)
+      }
+    }
+    loadChatHistory()
+  }, [])
+
+  // Persist chat history when it changes
+  const saveChatHistory = useCallback((states: Record<string, ChatState>) => {
+    AsyncStorage.setItem('rnai-chatStates', JSON.stringify(states)).catch(err =>
+      console.log('error saving chat history', err)
+    )
+  }, [])
 
   // Helper to get or create chat state for current model
   const getChatState = (modelLabel: string): ChatState => {
@@ -48,10 +74,14 @@ export function Chat() {
 
   // Helper to update chat state for a specific model
   const updateChatState = (modelLabel: string, updater: (prev: ChatState) => ChatState) => {
-    setChatStates(prev => ({
-      ...prev,
-      [modelLabel]: updater(prev[modelLabel] || createEmptyChatState())
-    }))
+    setChatStates(prev => {
+      const next = {
+        ...prev,
+        [modelLabel]: updater(prev[modelLabel] || createEmptyChatState())
+      }
+      saveChatHistory(next)
+      return next
+    })
   }
 
   const { theme } = useContext(ThemeContext)
@@ -329,7 +359,12 @@ export function Chat() {
   async function clearChat() {
     if (loading) return
     const modelLabel = chatType.label
-    updateChatState(modelLabel, () => createEmptyChatState())
+    setChatStates(prev => {
+      const next = { ...prev }
+      delete next[modelLabel]
+      saveChatHistory(next)
+      return next
+    })
   }
 
   function renderItem({

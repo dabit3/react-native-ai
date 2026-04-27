@@ -11,7 +11,7 @@ import {
   Keyboard,
   Image
 } from 'react-native'
-import { useState, useRef, useContext } from 'react'
+import { useState, useRef, useContext, useEffect, useCallback } from 'react'
 import { DOMAIN, IMAGE_MODELS } from '../../constants'
 import { v4 as uuid } from 'uuid'
 import { ThemeContext, AppContext } from '../context'
@@ -21,6 +21,7 @@ import { useActionSheet } from '@expo/react-native-action-sheet'
 import * as FileSystem from 'expo-file-system'
 import * as ImagePicker from 'expo-image-picker'
 import * as Clipboard from 'expo-clipboard'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const { width } = Dimensions.get('window')
 
@@ -41,6 +42,35 @@ export function Images() {
     index: uuid,
     values: []
   })
+  const [imagesLoaded, setImagesLoaded] = useState(false)
+
+  // Load persisted image history on mount
+  useEffect(() => {
+    async function loadImageHistory() {
+      try {
+        const stored = await AsyncStorage.getItem('rnai-imageHistory')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          setImages(parsed)
+          if (parsed.values.length > 0) {
+            setCallMade(true)
+          }
+        }
+      } catch (err) {
+        console.log('error loading image history', err)
+      } finally {
+        setImagesLoaded(true)
+      }
+    }
+    loadImageHistory()
+  }, [])
+
+  // Persist image history when it changes
+  const saveImageHistory = useCallback((state: ImagesState) => {
+    AsyncStorage.setItem('rnai-imageHistory', JSON.stringify(state)).catch(err =>
+      console.log('error saving image history', err)
+    )
+  }, [])
   const {
     handlePresentModalPress,
     closeModal,
@@ -128,10 +158,12 @@ export function Images() {
         imagesArray[imagesArray.length - 1].image = response.image
         imagesArray[imagesArray.length - 1].model = currentModel
         imagesArray[imagesArray.length - 1].provider = providerLabel
-        setImages(i => ({
-          index: i.index,
+        const newState = {
+          index: images.index,
           values: imagesArray          
-        }))
+        }
+        setImages(newState)
+        saveImageHistory(newState)
         setLoading(false)
         setTimeout(() => {
           scrollViewRef.current?.scrollToEnd({
@@ -177,10 +209,14 @@ export function Images() {
 
   function clearPrompts() {
     setCallMade(false)
-    setImages({
+    const emptyState = {
       index: uuid,
       values: []
-    })
+    }
+    setImages(emptyState)
+    AsyncStorage.removeItem('rnai-imageHistory').catch(err =>
+      console.log('error clearing image history', err)
+    )
   }
 
   async function showClipboardActionsheet(d) {
