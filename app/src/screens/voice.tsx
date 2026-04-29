@@ -181,9 +181,9 @@ export function VoiceChat() {
               localResponse += data.content
             }
           }
-          const updated = [...newMessages]
+          const updated = JSON.parse(JSON.stringify(newMessages))
           updated[updated.length - 1].assistant = localResponse
-          setMessages([...updated])
+          setMessages(updated)
         } else {
           es.close()
           setVoiceState('idle')
