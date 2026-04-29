@@ -186,6 +186,11 @@ export function VoiceChat() {
           setMessages(updated)
         } else {
           es.close()
+          if (!localResponse) {
+            const updated = JSON.parse(JSON.stringify(newMessages))
+            updated[updated.length - 1].assistant = '(No response received)'
+            setMessages(updated)
+          }
           setVoiceState('idle')
           if (chatTypeStr === 'claude') {
             setApiMessages(prev =>
