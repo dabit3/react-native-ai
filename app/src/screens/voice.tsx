@@ -202,6 +202,9 @@ export function VoiceChat() {
           }
         }
       } else if (event.type === 'error' || event.type === 'exception') {
+        const updated = JSON.parse(JSON.stringify(newMessages))
+        updated[updated.length - 1].assistant = localResponse || '(Error occurred)'
+        setMessages(updated)
         setVoiceState('idle')
         es.close()
       }
