@@ -27,10 +27,10 @@ type VoiceState = 'idle' | 'recording' | 'transcribing' | 'responding'
 export function VoiceChat() {
   const [messages, setMessages] = useState<VoiceMessage[]>([])
   const [voiceState, setVoiceState] = useState<VoiceState>('idle')
-  const [currentTranscription, setCurrentTranscription] = useState('')
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [apiMessages, setApiMessages] = useState('')
   const recordingRef = useRef<Audio.Recording | null>(null)
+  const isStartingRef = useRef(false)
   const scrollViewRef = useRef<ScrollView | null>(null)
   const pulseAnim = useRef(new Animated.Value(1)).current
 
@@ -62,9 +62,14 @@ export function VoiceChat() {
   }, [voiceState])
 
   async function startRecording() {
+    if (isStartingRef.current) return
+    isStartingRef.current = true
     try {
       const { granted } = await Audio.requestPermissionsAsync()
-      if (!granted) return
+      if (!granted) {
+        isStartingRef.current = false
+        return
+      }
 
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
@@ -78,6 +83,8 @@ export function VoiceChat() {
       setVoiceState('recording')
     } catch (err) {
       console.log('Failed to start recording:', err)
+    } finally {
+      isStartingRef.current = false
     }
   }
 
@@ -117,7 +124,6 @@ export function VoiceChat() {
       const data = await response.json()
 
       if (data.text && data.text.trim()) {
-        setCurrentTranscription(data.text)
         sendToModel(data.text)
       } else {
         setVoiceState('idle')
@@ -136,7 +142,6 @@ export function VoiceChat() {
 
     const newMessages: VoiceMessage[] = [...messages, { user: text }]
     setMessages([...newMessages])
-    setCurrentTranscription('')
 
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true })
@@ -252,7 +257,6 @@ export function VoiceChat() {
 
   function clearConversation() {
     setMessages([])
-    setCurrentTranscription('')
     setApiMessages('')
     if (isSpeaking) stopSpeaking()
   }
@@ -335,17 +339,7 @@ export function VoiceChat() {
             )}
           </View>
         ))}
-        {currentTranscription ? (
-          <View style={styles.userBubble}>
-            <Ionicons
-              name="mic"
-              size={14}
-              color={theme.tintTextColor}
-              style={styles.micIcon}
-            />
-            <Text style={styles.userText}>{currentTranscription}</Text>
-          </View>
-        ) : null}
+
       </ScrollView>
 
       <View style={styles.controlsContainer}>
