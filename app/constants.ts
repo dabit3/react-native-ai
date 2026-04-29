@@ -43,6 +43,7 @@ export const MODELS = {
     label: 'claudeSonnet4',
     icon: AnthropicIcon
   },
+  gpt55: { name: 'GPT 5.5', label: 'gpt55', icon: OpenAIIcon },
   gpt52: { name: 'GPT 5.2', label: 'gpt52', icon: OpenAIIcon },
   gpt5Mini: { name: 'GPT 5 Mini', label: 'gpt5Mini', icon: OpenAIIcon },
   gemini: { name: 'Gemini', label: 'gemini', icon: GeminiIcon },
