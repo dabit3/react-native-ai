@@ -221,6 +221,7 @@ export function VoiceChat() {
     Speech.speak(cleanText, {
       onDone: () => setIsSpeaking(false),
       onStopped: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false),
       rate: 1.0,
     })
   }
