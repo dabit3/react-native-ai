@@ -83,6 +83,7 @@ export function VoiceChat() {
       setVoiceState('recording')
     } catch (err) {
       console.log('Failed to start recording:', err)
+      try { await Audio.setAudioModeAsync({ allowsRecordingIOS: false }) } catch (e) {}
     } finally {
       isStartingRef.current = false
     }
