@@ -34,6 +34,7 @@ export const transcribe = asyncHandler(async (req: Request, res: Response) => {
     }
   } catch (err) {
     console.log('error in transcription: ', err)
+    if (req.file?.path) { try { fs.unlinkSync(req.file.path) } catch (e) {} }
     res.status(500).json({ error: 'Transcription failed' })
   }
 })
