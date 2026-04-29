@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler'
 
 export const gpt = asyncHandler(async (req: Request, res: Response) => {
   const models:any = {
+    gpt55: 'gpt-5.5',
     gpt52: 'gpt-5.2-2025-12-11',
     gpt5Mini: 'gpt-5-mini-2025-08-07'
   }
