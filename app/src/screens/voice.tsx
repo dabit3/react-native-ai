@@ -124,6 +124,8 @@ export function VoiceChat() {
       }
     } catch (err) {
       console.log('Failed to transcribe:', err)
+      recordingRef.current = null
+      try { await Audio.setAudioModeAsync({ allowsRecordingIOS: false }) } catch (e) {}
       setVoiceState('idle')
     }
   }
