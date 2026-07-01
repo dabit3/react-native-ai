@@ -1,6 +1,8 @@
 import { AnthropicIcon } from './src/components/AnthropicIcon'
 import { GeminiIcon } from './src/components/GeminiIcon'
 import { OpenAIIcon } from './src/components/OpenAIIcon'
+import { GLMIcon } from './src/components/GLMIcon'
+import { KimiIcon } from './src/components/KimiIcon'
 
 const normalizeDomain = (value?: string) => {
   if (!value) return ''
@@ -18,6 +20,16 @@ const rawDomain = env === 'DEVELOPMENT' ? devUrl : prodUrl
 export const DOMAIN = normalizeDomain(rawDomain || devUrl || prodUrl || '')
 
 export const MODELS = {
+  claudeFable5: {
+    name: 'Claude Fable 5',
+    label: 'claudeFable5',
+    icon: AnthropicIcon
+  },
+  claudeSonnet5: {
+    name: 'Claude Sonnet 5',
+    label: 'claudeSonnet5',
+    icon: AnthropicIcon
+  },
   claudeOpus47: {
     name: 'Claude Opus 4.7',
     label: 'claudeOpus47',
@@ -46,6 +58,8 @@ export const MODELS = {
   gpt52: { name: 'GPT 5.2', label: 'gpt52', icon: OpenAIIcon },
   gpt5Mini: { name: 'GPT 5 Mini', label: 'gpt5Mini', icon: OpenAIIcon },
   gemini: { name: 'Gemini', label: 'gemini', icon: GeminiIcon },
+  glm52: { name: 'GLM 5.2', label: 'glm52', icon: GLMIcon },
+  kimiK27: { name: 'Kimi K2.7', label: 'kimiK27', icon: KimiIcon },
 }
 
 export const IMAGE_MODELS = {
