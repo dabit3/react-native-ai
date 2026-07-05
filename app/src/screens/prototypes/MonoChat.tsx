@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView,
   StyleSheet,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   TextInput,
   ScrollView,
   Dimensions,
@@ -66,6 +67,7 @@ export function MonoChat() {
           activeOpacity={1}
           onPress={() => setShowSidebar(false)}
         >
+          <TouchableWithoutFeedback onPress={() => {}}>
           <View style={styles.sidebar}>
             <View style={styles.sidebarHeader}>
               <Text style={styles.sidebarTitle}>Conversations</Text>
@@ -85,6 +87,7 @@ export function MonoChat() {
               </TouchableOpacity>
             ))}
           </View>
+          </TouchableWithoutFeedback>
         </TouchableOpacity>
       )}
 
