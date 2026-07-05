@@ -15,11 +15,11 @@
     "url": "https://github.com/dabit3/react-native-ai"
   },
   "dependencies": {
-    "@inquirer/prompts": "^3.1.1",
-    "chalk": "^5.3.0",
-    "cli-spinners": "^2.9.0",
-    "commander": "^11.0.0",
-    "execa": "^8.0.1",
-    "ora": "^7.0.1"
+    "@inquirer/prompts": "^8.5.2",
+    "chalk": "^5.6.2",
+    "cli-spinners": "^3.4.0",
+    "commander": "^15.0.0",
+    "execa": "^9.6.1",
+    "ora": "^9.4.1"
   }
 }
