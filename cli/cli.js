@@ -155,16 +155,16 @@ GEMINI_API_KEY=${gemeni_api_key}
 
     if (isBunInstalled()) {
       spinner.text = 'Installing server dependencies'
-      await execaCommand('bun install').pipeStdout(process.stdout)
+      await execaCommand('bun install', {stdout: 'inherit'})
       spinner.text = ''
       serverStartCommand = 'bun dev'
       console.log('\n')
     } else if (isYarnInstalled()) {
-      await execaCommand('yarn').pipeStdout(process.stdout)
+      await execaCommand('yarn', {stdout: 'inherit'})
       serverStartCommand = 'yarn dev'
     } else {
       spinner.text = 'Installing server dependencies'
-      await execa('npm', ['install', '--verbose']).pipeStdout(process.stdout)
+      await execa('npm', ['install', '--verbose'], {stdout: 'inherit'})
       spinner.text = ''
       serverStartCommand = 'npm run dev'
     }
@@ -177,16 +177,16 @@ GEMINI_API_KEY=${gemeni_api_key}
 
     if (isBunInstalled()) {
       spinner.text = 'Installing app dependencies'
-      await execaCommand('bun install').pipeStdout(process.stdout)
+      await execaCommand('bun install', {stdout: 'inherit'})
       spinner.text = ''
       appStartCommand = 'bun start'
       console.log('\n')
     } else if (isYarnInstalled()) {
-      await execaCommand('yarn').pipeStdout(process.stdout)
+      await execaCommand('yarn', {stdout: 'inherit'})
       appStartCommand = 'yarn start'
     } else {
       spinner.text = 'Installing app dependencies'
-      await execa('npm', ['install', '--verbose']).pipeStdout(process.stdout)
+      await execa('npm', ['install', '--verbose'], {stdout: 'inherit'})
       spinner.text = ''
       appStartCommand = 'npm start'
     }
