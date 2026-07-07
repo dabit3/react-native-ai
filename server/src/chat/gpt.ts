@@ -6,6 +6,9 @@ export const gpt = asyncHandler(async (req: Request, res: Response) => {
     gpt52: 'gpt-5.2-2025-12-11',
     gpt5Mini: 'gpt-5-mini-2025-08-07'
   }
+  const baseUrl = process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
+  const apiKey = process.env.OPENAI_API_KEY
+
   try {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -13,7 +16,7 @@ export const gpt = asyncHandler(async (req: Request, res: Response) => {
       'Cache-Control': 'no-cache'
     })
     const { model, messages } = req.body
-    const selectedModel = models[model]
+    const selectedModel = models[model] || model
 
     if (!selectedModel) {
       res.write('data: [DONE]\n\n')
@@ -21,11 +24,11 @@ export const gpt = asyncHandler(async (req: Request, res: Response) => {
       return
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(`${baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         model: selectedModel,
