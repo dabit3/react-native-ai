@@ -127,6 +127,32 @@ const pink = {
   borderColor: 'rgba(233, 30, 140, .2)',
 }
 
+const aurora = {
+  ...darkTheme,
+  name: 'Aurora',
+  label: 'aurora',
+  backgroundColor: '#0f0c29',
+  tintColor: '#7c3aed',
+  tintTextColor: colors.white,
+  tabBarActiveTintColor: '#7c3aed',
+  tabBarInactiveTintColor: 'rgba(124, 58, 237, .4)',
+  borderColor: 'rgba(124, 58, 237, .25)',
+  secondaryBackgroundColor: '#1a1040',
+}
+
+const mono = {
+  ...lightTheme,
+  name: 'Mono',
+  label: 'mono',
+  backgroundColor: '#fafafa',
+  tintColor: '#0a0a0a',
+  tintTextColor: colors.white,
+  tabBarActiveTintColor: '#0a0a0a',
+  tabBarInactiveTintColor: '#a3a3a3',
+  borderColor: '#e5e5e5',
+  secondaryBackgroundColor: '#f5f5f5',
+}
+
 export {
-  lightTheme, darkTheme, hackerNews, miami, vercel, cyberpunk, matrix, pink
+  lightTheme, darkTheme, hackerNews, miami, vercel, cyberpunk, matrix, pink, aurora, mono
 }
