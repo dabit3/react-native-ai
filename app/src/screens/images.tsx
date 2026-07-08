@@ -9,18 +9,20 @@ import {
   TextInput,
   Dimensions,
   Keyboard,
-  Image
+  Image,
+  Alert
 } from 'react-native'
 import { useState, useRef, useContext } from 'react'
 import { DOMAIN, IMAGE_MODELS } from '../../constants'
 import { v4 as uuid } from 'uuid'
 import { ThemeContext, AppContext } from '../context'
-import Ionicons from '@expo/vector-icons/Ionicons'
-import MaterialIcons from '@expo/vector-icons/MaterialCommunityIcons'
+import { Theme } from '../../types'
+import { Ionicons, MaterialCommunityIcons as MaterialIcons } from '@expo/vector-icons'
 import { useActionSheet } from '@expo/react-native-action-sheet'
-import * as FileSystem from 'expo-file-system'
+import * as FileSystem from 'expo-file-system/legacy'
 import * as ImagePicker from 'expo-image-picker'
-import * as Clipboard from 'expo-clipboard'
+import * as MediaLibrary from 'expo-media-library'
+import * as Sharing from 'expo-sharing'
 
 const { width } = Dimensions.get('window')
 
@@ -66,7 +68,7 @@ export function Images() {
     }
     Keyboard.dismiss()
     const imageCopy = image
-    const currentModel = IMAGE_MODELS[imageModel].name
+    const currentModel = IMAGE_MODELS[imageModel as keyof typeof IMAGE_MODELS].name
     const providerLabel = 'Gemini'
     try {
       setTimeout(() => {
@@ -140,10 +142,11 @@ export function Images() {
         }, 50)
       } else {
         setLoading(false)
-        console.log('error generating image ...', response)
+        Alert.alert('Image generation failed', response?.error || 'The model did not return an image. Please try again.')
       }
     } catch (err) {
       setLoading(false)
+      Alert.alert('Image generation failed', 'Unable to reach the server. Check your connection and try again.')
       console.log('error generating image ...', err)
     }
   }
@@ -171,10 +174,6 @@ export function Images() {
     )
   }
 
-  async function copyToClipboard(text:string) {
-    await Clipboard.setStringAsync(text)
-  }
-
   function clearPrompts() {
     setCallMade(false)
     setImages({
@@ -183,36 +182,61 @@ export function Images() {
     })
   }
 
-  async function showClipboardActionsheet(d) {
+  async function showClipboardActionsheet(d: { image: string }) {
     closeModal()
-    const cancelButtonIndex = 2
+    const cancelButtonIndex = 3
     showActionSheetWithOptions({
-      options: ['Save image', 'Clear prompts', 'cancel'],
+      options: ['Save to camera roll', 'Share image', 'Clear prompts', 'Cancel'],
       cancelButtonIndex
     }, selectedIndex => {
-      if (selectedIndex === Number(0)) {
-        console.log('saving image ...')
-        downloadImageToDevice(d.image)
+      if (selectedIndex === 0) {
+        saveImageToCameraRoll(d.image)
       }
-      if (selectedIndex === Number(1)) {
+      if (selectedIndex === 1) {
+        shareImage(d.image)
+      }
+      if (selectedIndex === 2) {
         clearPrompts()
       }
     })
   }
 
-  async function downloadImageToDevice(url: string) {
+  async function imageToLocalFile(image: string): Promise<string> {
+    if (!image.startsWith('data:')) return image
+    const base64 = image.split(',')[1]
+    const fileUri = FileSystem.cacheDirectory + uuid() + '.png'
+    await FileSystem.writeAsStringAsync(fileUri, base64, {
+      encoding: FileSystem.EncodingType.Base64
+    })
+    return fileUri
+  }
+
+  async function saveImageToCameraRoll(image: string) {
     try {
-      const downloadResumable = FileSystem.createDownloadResumable(
-        url,
-        FileSystem.documentDirectory + uuid() + '.png',
-      )
-      try {
-        await downloadResumable.downloadAsync()
-      } catch (e) {
-        console.error(e)
+      const { status } = await MediaLibrary.requestPermissionsAsync()
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Allow photo library access to save images.')
+        return
       }
+      const fileUri = await imageToLocalFile(image)
+      await MediaLibrary.saveToLibraryAsync(fileUri)
+      Alert.alert('Saved', 'Image saved to your camera roll.')
     } catch (err) {
       console.log('error saving image ...', err)
+      Alert.alert('Save failed', 'Unable to save the image. Please try again.')
+    }
+  }
+
+  async function shareImage(image: string) {
+    try {
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert('Sharing unavailable', 'Sharing is not available on this device.')
+        return
+      }
+      const fileUri = await imageToLocalFile(image)
+      await Sharing.shareAsync(fileUri, { mimeType: 'image/png' })
+    } catch (err) {
+      console.log('error sharing image ...', err)
     }
   }
 
@@ -470,7 +494,7 @@ export function Images() {
   )
 }
 
-const getStyles = theme => StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   midButtonRow: {
     flexDirection: 'row',
     alignItems: 'center',

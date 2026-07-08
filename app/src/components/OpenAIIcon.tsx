@@ -1,9 +1,9 @@
 import Svg, { Path } from 'react-native-svg';
 
 interface IOpenAIIcon {
-  size: number
+  size?: number
   theme: any
-  selected: boolean
+  selected?: boolean
 }
 
 export function OpenAIIcon({

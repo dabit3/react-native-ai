@@ -1,14 +1,26 @@
 import { DOMAIN } from '../constants'
 import EventSource from 'react-native-sse'
-import { Model } from '../types'
+import { Model, Provider } from '../types'
+
+const PROVIDER_ROUTES: Record<Provider, string> = {
+  anthropic: 'claude',
+  openai: 'gpt',
+  google: 'gemini',
+  zai: 'glm',
+  moonshot: 'kimi'
+}
+
+export function getChatRoute(model: Model): string {
+  return PROVIDER_ROUTES[model.provider] || 'claude'
+}
 
 export function getEventSource({
   headers,
   body,
   type
 } : {
-  headers?: any,
-  body: any,
+  headers?: Record<string, string>,
+  body: object,
   type: string
 }) {
   const es = new EventSource(`${DOMAIN}/chat/${type}`, {
@@ -21,39 +33,4 @@ export function getEventSource({
   })
 
   return es;
-}
-
-export function getFirstNCharsOrLess(text:string, numChars:number = 1000) {
-  if (text.length <= numChars) {
-    return text;
-  }
-  return text.substring(0, numChars);
-}
-
-export function getFirstN({ messages, size = 10 } : { size?: number, messages: any[] }) {
-  if (messages.length > size) {
-    const firstN = new Array()
-    for(let i = 0; i < size; i++) {
-      firstN.push(messages[i])
-    }
-    return firstN
-  } else {
-    return messages
-  }
-}
-
-export function getChatType(type: Model) {
-  if (type.label.includes('gpt')) {
-    return 'gpt'
-  }
-  if (type.label.includes('gemini')) {
-    return 'gemini'
-  }
-  if (type.label.includes('glm')) {
-    return 'glm'
-  }
-  if (type.label.includes('kimi')) {
-    return 'kimi'
-  }
-  else return 'claude'
 }
