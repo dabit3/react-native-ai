@@ -1,26 +1,43 @@
-import { Request, Response } from "express"
+import { Request, Response } from 'express'
+import { Provider, getChatModel } from '../models'
+import { ChatMessage, ChatRequest } from '../types'
+import { initSSE, sendToken, sendError, sendDone, createSSEParser, pumpStream } from '../sse'
 
 interface StreamArgs {
-  req: Request;
-  res: Response;
-  models: Record<string, string>;
-  apiUrl: string;
-  apiKey: string;
+  req: Request
+  res: Response
+  provider: Provider
+  apiUrl: string
+  apiKey: string
 }
 
-export async function streamOpenAICompatible({ req, res, models, apiUrl, apiKey }: StreamArgs) {
-  try {
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Connection': 'keep-alive',
-      'Cache-Control': 'no-cache'
-    })
-    const { model, messages } = req.body
-    const selectedModel = models[model]
+function toOpenAIMessages(messages: ChatMessage[], supportsVision: boolean) {
+  return messages.map(m => {
+    if (m.image && supportsVision) {
+      return {
+        role: m.role,
+        content: [
+          ...(m.content ? [{ type: 'text', text: m.content }] : []),
+          {
+            type: 'image_url',
+            image_url: { url: `data:${m.image.mimeType};base64,${m.image.data}` }
+          }
+        ]
+      }
+    }
+    return { role: m.role, content: m.content }
+  })
+}
 
-    if (!selectedModel) {
-      res.write('data: [DONE]\n\n')
-      res.end()
+export async function streamOpenAICompatible({ req, res, provider, apiUrl, apiKey }: StreamArgs) {
+  initSSE(res)
+  try {
+    const { model, messages }: ChatRequest = req.body
+    const chatModel = getChatModel(model)
+
+    if (!chatModel || chatModel.provider !== provider) {
+      sendError(res, `unsupported model: ${model}`)
+      sendDone(res)
       return
     }
 
@@ -31,66 +48,34 @@ export async function streamOpenAICompatible({ req, res, models, apiUrl, apiKey 
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: selectedModel,
-        messages,
+        model: chatModel.modelId,
+        messages: toOpenAIMessages(messages, chatModel.supportsVision),
         stream: true
       })
     })
-    const reader = response.body?.getReader()
-    const decoder = new TextDecoder()
-    let brokenLine = ''
-    if (reader) {
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) {
-          break
-        }
 
-        let chunk = decoder.decode(value)
-        if (brokenLine) {
-          try {
-            const { choices } = JSON.parse(brokenLine)
-            const { delta } = choices[0]
-            const { content } = delta
-            if (content) {
-              res.write(`data: ${JSON.stringify(content)}\n\n`)
-            }
-            brokenLine = ''
-          } catch (err) {}
-        }
-
-        const lines = chunk.split("data: ")
-        const parsedLines = lines
-          .filter(line => line !== "" && line !== "[DONE]")
-          .filter(l => {
-            try {
-              JSON.parse(l)
-              return true
-            } catch (err) {
-              if (!l.includes('[DONE]')) {
-                brokenLine = brokenLine + l
-              }
-              return false
-            }
-          })
-          .map(l => JSON.parse(l))
-
-        for (const parsedLine of parsedLines) {
-          const { choices } = parsedLine
-          const { delta } = choices[0]
-          const { content } = delta
-          if (content) {
-            res.write(`data: ${JSON.stringify(delta)}\n\n`)
-          }
-        }
-      }
+    if (!response.ok) {
+      const detail = await response.text()
+      console.error(`${provider} error:`, response.status, detail)
+      sendError(res, `provider error (${response.status})`)
+      sendDone(res)
+      return
     }
 
-    res.write('data: [DONE]\n\n')
-    res.end()
+    const parse = createSSEParser(data => {
+      if (data === '[DONE]') return
+      try {
+        const parsed = JSON.parse(data)
+        const content = parsed.choices?.[0]?.delta?.content
+        if (content) sendToken(res, content)
+      } catch {}
+    })
+
+    await pumpStream(response.body, parse)
+    sendDone(res)
   } catch (err) {
-    console.log('error in openai-compatible chat: ', err)
-    res.write('data: [DONE]\n\n')
-    res.end()
+    console.error(`error in ${provider} chat:`, err)
+    sendError(res, 'unexpected server error')
+    sendDone(res)
   }
 }

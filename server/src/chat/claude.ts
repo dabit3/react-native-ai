@@ -1,106 +1,85 @@
-import { Request, Response, NextFunction } from "express"
+import { Request, Response } from 'express'
 import asyncHandler from 'express-async-handler'
+import { getChatModel } from '../models'
+import { ChatMessage, ChatRequest } from '../types'
+import { initSSE, sendToken, sendError, sendDone, createSSEParser, pumpStream } from '../sse'
 
-type ModelLabel = 'claudeOpus' | 'claudeOpus47' | 'claudeSonnet' | 'claudeHaiku' | 'claudeSonnet4' | 'claudeFable5' | 'claudeSonnet5'
-type ModelName =
-  | 'claude-opus-4-5-20251101'
-  | 'claude-opus-4-7'
-  | 'claude-sonnet-4-5-20250929'
-  | 'claude-haiku-4-5-20251001'
-  | 'claude-sonnet-4-6-20260201'
-  | 'claude-fable-5'
-  | 'claude-sonnet-5';
-
-const models: Record<ModelLabel, ModelName> = {
-  claudeFable5: 'claude-fable-5',
-  claudeSonnet5: 'claude-sonnet-5',
-  claudeOpus: 'claude-opus-4-5-20251101',
-  claudeOpus47: 'claude-opus-4-7',
-  claudeSonnet: 'claude-sonnet-4-5-20250929',
-  claudeHaiku: 'claude-haiku-4-5-20251001',
-  claudeSonnet4: 'claude-sonnet-4-6-20260201'
-}
-
-interface RequestBody {
-  prompt: any;
-  model: ModelLabel;
+function toAnthropicMessages(messages: ChatMessage[]) {
+  return messages
+    .filter(m => m.role !== 'system')
+    .map(m => {
+      if (m.image) {
+        return {
+          role: m.role,
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: m.image.mimeType,
+                data: m.image.data
+              }
+            },
+            ...(m.content ? [{ type: 'text', text: m.content }] : [])
+          ]
+        }
+      }
+      return { role: m.role, content: m.content }
+    })
 }
 
 export const claude = asyncHandler(async (req: Request, res: Response) => {
+  initSSE(res)
   try {
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Connection': 'keep-alive',
-      'Cache-Control': 'no-cache'
-    })
+    const { messages, model }: ChatRequest = req.body
+    const chatModel = getChatModel(model)
 
-    const { prompt, model }: RequestBody = req.body
-    const selectedModel = models[model]
-
-    if (!selectedModel) {
-      res.write('data: [DONE]\n\n')
-      res.end()
+    if (!chatModel || chatModel.provider !== 'anthropic') {
+      sendError(res, `unsupported model: ${model}`)
+      sendDone(res)
       return
     }
 
-    const decoder = new TextDecoder()
+    const system = messages.filter(m => m.role === 'system').map(m => m.content).join('\n')
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'messages-2023-12-15',
         'x-api-key': process.env.ANTHROPIC_API_KEY || ''
       },
       body: JSON.stringify({
-        model: selectedModel,
-        "messages": [{"role": "user", "content": prompt }],
-        "max_tokens": 4096,
+        model: chatModel.modelId,
+        messages: toAnthropicMessages(messages),
+        ...(system ? { system } : {}),
+        max_tokens: 4096,
         stream: true
       })
     })
 
-    const reader = response.body?.getReader()
-    if (reader) {
-      let index = 0
-
-      while (true) {
-        const { done, value } = await reader.read()
-
-        if (done) {
-          break
-        }
-  
-        let chunk = decoder.decode(value)
-
-        const lines = chunk.split("\n")
-  
-        const parsedLines = lines
-          .filter(line => line.startsWith('data: '))
-          .map(line => {
-            try {
-              return JSON.parse(line.replace('data: ', ''))
-            } catch {
-              return null
-            }
-          })
-          .filter(Boolean)
-
-        for (const parsedLine of parsedLines) {
-          if (parsedLine) {
-            if (parsedLine.delta && parsedLine.delta.text) {
-              res.write(`data: ${JSON.stringify(parsedLine.delta)}\n\n`)
-            }
-          }
-        }
-      }
-  
-      res.write('data: [DONE]\n\n')
-      res.end()
+    if (!response.ok) {
+      const detail = await response.text()
+      console.error('anthropic error:', response.status, detail)
+      sendError(res, `provider error (${response.status})`)
+      sendDone(res)
+      return
     }
+
+    const parse = createSSEParser(data => {
+      try {
+        const parsed = JSON.parse(data)
+        if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+          sendToken(res, parsed.delta.text)
+        }
+      } catch {}
+    })
+
+    await pumpStream(response.body, parse)
+    sendDone(res)
   } catch (err) {
-    console.log('error in claude chat: ', err)
-    res.write('data: [DONE]\n\n')
-    res.end()
+    console.error('error in claude chat:', err)
+    sendError(res, 'unexpected server error')
+    sendDone(res)
   }
 })
