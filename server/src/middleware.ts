@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import { timingSafeEqual } from 'crypto'
 import { ZodSchema } from 'zod'
 
 /**
@@ -9,7 +10,12 @@ export function auth(req: Request, res: Response, next: NextFunction) {
   const token = process.env.API_AUTH_TOKEN
   if (!token) return next()
   const header = req.headers.authorization || ''
-  if (header === `Bearer ${token}`) return next()
+  const expected = Buffer.from(`Bearer ${token}`)
+  const provided = Buffer.from(header)
+  if (
+    expected.length === provided.length &&
+    timingSafeEqual(expected, provided)
+  ) return next()
   res.status(401).json({ error: 'unauthorized' })
 }
 

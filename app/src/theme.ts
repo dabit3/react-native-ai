@@ -35,7 +35,7 @@ const lightTheme: Theme = {
   name: 'Light',
   label: 'light',
   quoteBackgroundColor: 'rgba(0, 0, 0, .05)',
-  codeBorderColor: 'rgba(255, 255, 255, .2)',
+  codeBorderColor: 'rgba(0, 0, 0, .15)',
   statusBarStyle: 'dark',
   textColor: colors.black,
   secondaryTextColor: colors.white,
