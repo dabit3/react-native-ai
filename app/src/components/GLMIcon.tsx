@@ -1,3 +1,4 @@
+import { IconProps } from '../../types';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 
 export function GLMIcon({
@@ -5,7 +6,7 @@ export function GLMIcon({
   theme,
   selected,
   ...props
-}) {
+}: IconProps) {
   const fill = selected ? theme.tintTextColor : theme.textColor
   return (
     <Svg

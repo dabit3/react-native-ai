@@ -1,15 +1,15 @@
 import { useContext } from 'react'
 import { ThemeContext, AppContext } from '../context'
-import { MODELS } from '../../constants'
 import { View, Text, StyleSheet, TouchableHighlight } from 'react-native'
+import { Model, Theme } from '../../types'
 
-export function ChatModelModal({ handlePresentModalPress }) {
+export function ChatModelModal({ handlePresentModalPress }: { handlePresentModalPress: () => void }) {
   const { theme } = useContext(ThemeContext)
-  const { setChatType, chatType } = useContext(AppContext)
+  const { setChatType, chatType, models } = useContext(AppContext)
   const styles = getStyles(theme)
-  const options = Object.values(MODELS)
+  const options = models
 
-  function _setChatType(v) {
+  function _setChatType(v: Model) {
     setChatType(v)
     handlePresentModalPress()
   }
@@ -27,6 +27,8 @@ export function ChatModelModal({ handlePresentModalPress }) {
             <TouchableHighlight
               underlayColor={'transparent'}
               onPress={() => _setChatType(option)}
+              accessibilityRole="button"
+              accessibilityLabel={`Select model ${option.name}`}
               key={index}>
               <View style={optionContainer(theme, chatType.label, option.label)}>
                 <option.icon
@@ -46,7 +48,7 @@ export function ChatModelModal({ handlePresentModalPress }) {
   )
 }
 
-function getStyles(theme) {
+function getStyles(theme: Theme) {
   return StyleSheet.create({
     closeIconContainer: {
       position: 'absolute',
@@ -82,7 +84,7 @@ function getStyles(theme) {
   })
 }
 
-function optionContainer(theme, baseType, type) {
+function optionContainer(theme: Theme, baseType: string, type: string) {
   const selected = baseType === type
   return {
     backgroundColor: selected ? theme.tintColor : theme.backgroundColor,
@@ -95,7 +97,7 @@ function optionContainer(theme, baseType, type) {
   }
 }
 
-function optionText(theme, baseType, type) {
+function optionText(theme: Theme, baseType: string, type: string) {
   const selected = baseType === type
   return {
     color: selected ? theme.tintTextColor : theme.textColor,

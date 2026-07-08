@@ -1,9 +1,9 @@
 import Svg, { Path, G } from 'react-native-svg';
 
 interface ICohereIcon {
-  size: number
+  size?: number
   theme: any
-  selected: boolean
+  selected?: boolean
 }
 
 export function CohereIcon({

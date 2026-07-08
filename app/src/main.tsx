@@ -1,9 +1,9 @@
-import { useContext, useRef, useCallback } from 'react';
-import { StyleSheet, Text, View, Button } from 'react-native';
+import { useContext } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Chat, Images, Settings } from './screens'
 import { Header } from './components'
-import FeatherIcon from '@expo/vector-icons/Feather'
+import { Feather as FeatherIcon } from '@expo/vector-icons'
 import {
   SafeAreaProvider,
   useSafeAreaInsets,

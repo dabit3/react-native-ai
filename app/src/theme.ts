@@ -1,3 +1,5 @@
+import { Theme } from '../types'
+
 const colors = {
   white: '#fff',
   black: '#000',
@@ -28,10 +30,13 @@ const fonts = {
   ultraBlackFont: 'Geist-Ultrablack',
 }
 
-const lightTheme = {
+const lightTheme: Theme = {
   ...fonts,
   name: 'Light',
   label: 'light',
+  quoteBackgroundColor: 'rgba(0, 0, 0, .05)',
+  codeBorderColor: 'rgba(0, 0, 0, .15)',
+  statusBarStyle: 'dark',
   textColor: colors.black,
   secondaryTextColor: colors.white,
   mutedForegroundColor: colors.gray,
@@ -45,10 +50,13 @@ const lightTheme = {
   tabBarInactiveTintColor: colors.gray,
 }
 
-const darkTheme = {
+const darkTheme: Theme = {
   ...fonts,
   name: 'Dark',
   label: 'dark',
+  quoteBackgroundColor: 'rgba(255, 255, 255, .06)',
+  codeBorderColor: 'rgba(255, 255, 255, .2)',
+  statusBarStyle: 'light',
   textColor: colors.white,
   secondaryTextColor: colors.black,
   mutedForegroundColor: colors.lightWhite,
@@ -62,7 +70,7 @@ const darkTheme = {
   tabBarInactiveTintColor: colors.lightWhite,
 }
 
-const hackerNews = {
+const hackerNews: Theme = {
   ...lightTheme,
   name: 'Hacker News',
   label: 'hackerNews',
@@ -70,7 +78,7 @@ const hackerNews = {
   tintColor: '#ed702d',
 }
 
-const miami = {
+const miami: Theme = {
   ...darkTheme,
   name: 'Miami',
   label: 'miami',
@@ -80,7 +88,7 @@ const miami = {
   tabBarActiveTintColor: colors.lightPink
 }
 
-const vercel = {
+const vercel: Theme = {
   ...darkTheme,
   name: 'Vercel',
   label: 'vercel',
@@ -91,7 +99,7 @@ const vercel = {
   secondaryTextColor: colors.white,
 }
 
-const cyberpunk = {
+const cyberpunk: Theme = {
   ...darkTheme,
   name: 'Cyberpunk',
   label: 'cyberpunk',
@@ -103,7 +111,7 @@ const cyberpunk = {
   borderColor: 'rgba(0, 240, 255, .3)',
 }
 
-const matrix = {
+const matrix: Theme = {
   ...darkTheme,
   name: 'Matrix',
   label: 'matrix',
@@ -115,7 +123,7 @@ const matrix = {
   borderColor: 'rgba(0, 255, 65, .3)',
 }
 
-const pink = {
+const pink: Theme = {
   ...lightTheme,
   name: 'Pink',
   label: 'pink',
@@ -127,6 +135,24 @@ const pink = {
   borderColor: 'rgba(233, 30, 140, .2)',
 }
 
+const THEMES: Record<string, Theme> = {
+  light: lightTheme,
+  dark: darkTheme,
+  hackerNews,
+  miami,
+  vercel,
+  cyberpunk,
+  matrix,
+  pink
+}
+
+function getTheme(label: string, systemColorScheme?: 'light' | 'dark' | null): Theme {
+  if (label === 'system') {
+    return systemColorScheme === 'dark' ? darkTheme : lightTheme
+  }
+  return THEMES[label] || lightTheme
+}
+
 export {
-  lightTheme, darkTheme, hackerNews, miami, vercel, cyberpunk, matrix, pink
+  lightTheme, darkTheme, hackerNews, miami, vercel, cyberpunk, matrix, pink, THEMES, getTheme
 }

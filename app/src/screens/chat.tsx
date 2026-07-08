@@ -4,478 +4,595 @@ import {
   KeyboardAvoidingView,
   StyleSheet,
   TouchableHighlight,
+  TouchableOpacity,
   TextInput,
-  ScrollView,
   ActivityIndicator,
   FlatList,
-  Keyboard
+  Keyboard,
+  Share,
+  Platform,
+  Image
 } from 'react-native'
 import 'react-native-get-random-values'
-import { useContext, useState, useRef } from 'react'
+import { useContext, useState, useRef, useEffect, useCallback, memo } from 'react'
 import { ThemeContext, AppContext } from '../context'
-import { getEventSource, getFirstNCharsOrLess, getChatType } from '../utils'
-import { v4 as uuid } from 'uuid'
-import Ionicons from '@expo/vector-icons/Ionicons'
+import { useChatStream } from '../hooks/useChatStream'
+import { PROMPT_SUGGESTIONS } from '../../constants'
+import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
+import * as Haptics from 'expo-haptics'
+import * as ImagePicker from 'expo-image-picker'
+import * as Speech from 'expo-speech'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useActionSheet } from '@expo/react-native-action-sheet'
 import Markdown from '@ronradtke/react-native-markdown-display'
+import { ChatMessage, ImageAttachment, Theme } from '../../types'
 
-type ChatState = {
-  messages: Array<{user: string, assistant?: string}>,
-  index: string,
-  apiMessages: string
+const STORAGE_KEY = 'rnai-chats-v1'
+
+type ChatStates = Record<string, ChatMessage[]>
+
+function stripMarkdown(text: string) {
+  return text
+    .replace(/```[\s\S]*?```/g, ' code block ')
+    .replace(/[*_~`#>]/g, '')
 }
 
-const createEmptyChatState = (): ChatState => ({
-  messages: [],
-  index: uuid(),
-  apiMessages: ''
+const MessageBubble = memo(function MessageBubble({
+  item,
+  theme,
+  streaming,
+  isLast,
+  onOptions,
+  onRetry
+}: {
+  item: ChatMessage,
+  theme: Theme,
+  streaming: boolean,
+  isLast: boolean,
+  onOptions: (message: ChatMessage) => void,
+  onRetry: () => void
+}) {
+  const styles = getStyles(theme)
+  if (item.role === 'user') {
+    return (
+      <View style={styles.promptResponse}>
+        <View style={styles.promptTextContainer}>
+          <View style={styles.promptTextWrapper}>
+            {
+              item.image && (
+                <Image
+                  source={{ uri: item.image.uri }}
+                  style={styles.promptImage}
+                  accessibilityLabel="Attached image"
+                />
+              )
+            }
+            {
+              !!item.content && (
+                <Text style={styles.promptText}>
+                  {item.content}
+                </Text>
+              )
+            }
+          </View>
+        </View>
+      </View>
+    )
+  }
+  if (item.error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{item.error}</Text>
+        <TouchableOpacity
+          onPress={onRetry}
+          accessibilityRole="button"
+          accessibilityLabel="Retry"
+          style={styles.retryButton}
+        >
+          <Ionicons name="refresh" size={16} color={theme.tintTextColor} />
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+  return (
+    <View style={styles.textStyleContainer}>
+      {
+        streaming && isLast && !item.content ? (
+          <ActivityIndicator
+            style={styles.typingIndicator}
+            color={theme.textColor}
+          />
+        ) : (
+          <Markdown style={styles.markdownStyle as any}>{item.content}</Markdown>
+        )
+      }
+      {
+        !(streaming && isLast) && !!item.content && (
+          <TouchableHighlight
+            onPress={() => onOptions(item)}
+            underlayColor={'transparent'}
+            accessibilityRole="button"
+            accessibilityLabel="Message options"
+          >
+            <View style={styles.optionsIconWrapper}>
+              <Ionicons
+                name="ellipsis-horizontal"
+                size={20}
+                color={theme.textColor}
+              />
+            </View>
+          </TouchableHighlight>
+        )
+      }
+    </View>
+  )
 })
 
 export function Chat() {
-  const [loading, setLoading] = useState<boolean>(false)
   const [input, setInput] = useState<string>('')
-  const scrollViewRef = useRef<ScrollView | null>(null)
+  const [attachment, setAttachment] = useState<ImageAttachment | null>(null)
+  const [chatStates, setChatStates] = useState<ChatStates>({})
+  const [hydrated, setHydrated] = useState(false)
+  const flatListRef = useRef<FlatList | null>(null)
+  const autoScrollRef = useRef(true)
   const { showActionSheetWithOptions } = useActionSheet()
-
-  // Per-model chat state - each model has its own conversation history
-  const [chatStates, setChatStates] = useState<Record<string, ChatState>>({})
-
-  // Helper to get or create chat state for current model
-  const getChatState = (modelLabel: string): ChatState => {
-    return chatStates[modelLabel] || createEmptyChatState()
-  }
-
-  // Helper to update chat state for a specific model
-  const updateChatState = (modelLabel: string, updater: (prev: ChatState) => ChatState) => {
-    setChatStates(prev => ({
-      ...prev,
-      [modelLabel]: updater(prev[modelLabel] || createEmptyChatState())
-    }))
-  }
+  const { streaming, send, stop } = useChatStream()
 
   const { theme } = useContext(ThemeContext)
-  const { chatType } = useContext(AppContext)
+  const { chatType, systemPrompt } = useContext(AppContext)
   const styles = getStyles(theme)
 
-  async function chat() {
-    if (!input) return
-    Keyboard.dismiss()
-    if (chatType.label.includes('claude')) {
-      generateClaudeResponse()
-    } else if (chatType.label.includes('gpt')) {
-      generateGptResponse()
-    } else if (chatType.label.includes('gemini')) {
-      generateGeminiResponse()
-    } else if (chatType.label.includes('glm') || chatType.label.includes('kimi')) {
-      generateGptResponse()
-    }
-  }
-  async function generateGptResponse() {
-    if (!input) return
-    Keyboard.dismiss()
-    let localResponse = ''
-    const modelLabel = chatType.label
-    const currentState = getChatState(modelLabel)
+  const messages = chatStates[chatType.label] || []
 
-    let messageArray = [
-      ...currentState.messages, {
-        user: input,
-      }
-    ] as [{user: string, assistant?: string}]
-
-    updateChatState(modelLabel, prev => ({
-      ...prev,
-      messages: JSON.parse(JSON.stringify(messageArray))
-    }))
-
-    setLoading(true)
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({
-        animated: true
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then(value => {
+        if (value) setChatStates(JSON.parse(value))
       })
-    }, 1)
-    setInput('')
+      .catch(err => console.log('error restoring chats', err))
+      .finally(() => setHydrated(true))
+  }, [])
 
-    const messages = messageArray.reduce((acc: any[], message) => {
-      acc.push({ role: 'user', content: message.user })
-      if (message.assistant) {
-        acc.push({ role: 'assistant', content: message.assistant })
+  useEffect(() => {
+    if (!hydrated) return
+    const timer = setTimeout(() => {
+      const sanitized: ChatStates = {}
+      for (const [label, msgs] of Object.entries(chatStates)) {
+        sanitized[label] = msgs
+          .filter(m => !m.error)
+          .map(m => m.image ? { ...m, image: { ...m.image, base64: undefined } } : m)
       }
-      return acc
-    }, [])
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized))
+        .catch(err => console.log('error persisting chats', err))
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [chatStates, hydrated])
 
-    const eventSourceArgs = {
-      body: {
-        messages,
-        model: chatType.label
-      },
-      type: getChatType(chatType)
-    }
-
-    const es = await getEventSource(eventSourceArgs)
-
-    const listener = (event) => {
-      if (event.type === "open") {
-        console.log("Open SSE connection.")
-        setLoading(false)
-      } else if (event.type === "message") {
-        if (event.data !== "[DONE]") {
-          if (localResponse.length < 850) {
-            scrollViewRef.current?.scrollToEnd({
-              animated: true
-            })
-          }
-          const data = JSON.parse(event.data)
-          if (typeof data === 'string') {
-            localResponse = localResponse + data
-          } else if (data?.content) {
-            localResponse = localResponse + data.content
-          }
-          messageArray[messageArray.length - 1].assistant = localResponse
-          updateChatState(modelLabel, prev => ({
-            ...prev,
-            messages: JSON.parse(JSON.stringify(messageArray))
-          }))
-        } else {
-          setLoading(false)
-          es.close()
-        }
-      } else if (event.type === "error") {
-        console.error("Connection error:", event.message)
-        setLoading(false)
-      } else if (event.type === "exception") {
-        console.error("Error:", event.message, event.error)
-        setLoading(false)
-      }
-    }
-
-    es.addEventListener("open", listener)
-    es.addEventListener("message", listener)
-    es.addEventListener("error", listener)
-  }
-  async function generateGeminiResponse() {
-    if (!input) return
-    Keyboard.dismiss()
-    let localResponse = ''
-    const modelLabel = chatType.label
-    const currentState = getChatState(modelLabel)
-    const geminiInput = `${input}`
-
-    let messageArray = [
-      ...currentState.messages, {
-        user: input,
-      }
-    ] as [{user: string, assistant?: string}]
-
-    updateChatState(modelLabel, prev => ({
+  const updateMessages = useCallback((modelLabel: string, updater: (prev: ChatMessage[]) => ChatMessage[]) => {
+    setChatStates(prev => ({
       ...prev,
-      messages: JSON.parse(JSON.stringify(messageArray))
+      [modelLabel]: updater(prev[modelLabel] || [])
     }))
+  }, [])
 
-    setLoading(true)
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({
-        animated: true
-      })
-    }, 1)
-    setInput('')
-
-    const eventSourceArgs = {
-      body: {
-        prompt: geminiInput,
-        model: chatType.label
+  function streamResponse(modelLabel: string, history: ChatMessage[]) {
+    autoScrollRef.current = true
+    updateMessages(modelLabel, () => [
+      ...history,
+      { role: 'assistant', content: '', model: modelLabel }
+    ])
+    send(chatType, history, systemPrompt, {
+      onToken: response => {
+        updateMessages(modelLabel, prev => [
+          ...prev.slice(0, -1),
+          { role: 'assistant', content: response, model: modelLabel }
+        ])
       },
-      type: getChatType(chatType)
-    }
-
-    const es = await getEventSource(eventSourceArgs)
-
-   
-    const listener = (event) => {
-      if (event.type === "open") {
-        console.log("Open SSE connection.")
-        setLoading(false)
-      } else if (event.type === "message") {
-        if (event.data !== "[DONE]") {
-          if (localResponse.length < 850) {
-            scrollViewRef.current?.scrollToEnd({
-              animated: true
-            })
-          }
-        
-          const data = event.data
-          localResponse = localResponse + JSON.parse(data)
-          messageArray[messageArray.length - 1].assistant = localResponse
-          updateChatState(modelLabel, prev => ({
-            ...prev,
-            messages: JSON.parse(JSON.stringify(messageArray))
-          }))
-        } else {
-          setLoading(false)
-          updateChatState(modelLabel, prev => ({
-            ...prev,
-            apiMessages: `${prev.apiMessages}\n\nPrompt: ${input}\n\nResponse:${localResponse}`
-          }))
-          es.close()
-        }
-      } else if (event.type === "error") {
-        console.error("Connection error:", event.message)
-        setLoading(false)
-      } else if (event.type === "exception") {
-        console.error("Error:", event.message, event.error)
-        setLoading(false)
-      }
-    }
-   
-    es.addEventListener("open", listener);
-    es.addEventListener("message", listener);
-    es.addEventListener("error", listener);
-  }
-
-  async function generateClaudeResponse() {
-    if (!input) return
-    Keyboard.dismiss()
-    let localResponse = ''
-    const modelLabel = chatType.label
-    const currentState = getChatState(modelLabel)
-    const claudeInput = `${currentState.apiMessages}\n\nHuman: ${input}\n\nAssistant:`
-
-    let messageArray = [
-      ...currentState.messages, {
-        user: input,
-      }
-    ] as [{user: string, assistant?: string}]
-
-    updateChatState(modelLabel, prev => ({
-      ...prev,
-      messages: JSON.parse(JSON.stringify(messageArray))
-    }))
-
-    setLoading(true)
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({
-        animated: true
-      })
-    }, 1)
-    setInput('')
-
-    const eventSourceArgs = {
-      body: {
-        prompt: claudeInput,
-        model: chatType.label
+      onDone: response => {
+        updateMessages(modelLabel, prev => [
+          ...prev.slice(0, -1),
+          { role: 'assistant', content: response, model: modelLabel }
+        ])
       },
-      type: getChatType(chatType),
-    }
-
-    const es = await getEventSource(eventSourceArgs)
-
-    const listener = (event) => {
-      if (event.type === "open") {
-        console.log("Open SSE connection.")
-        setLoading(false)
-      } else if (event.type === "message") {
-        if (event.data !== "[DONE]") {
-          if (localResponse.length < 850) {
-            scrollViewRef.current?.scrollToEnd({
-              animated: true
-            })
-          }
-          const data = event.data
-          localResponse = localResponse + JSON.parse(data).text
-          messageArray[messageArray.length - 1].assistant = localResponse
-          updateChatState(modelLabel, prev => ({
-            ...prev,
-            messages: JSON.parse(JSON.stringify(messageArray))
-          }))
-        } else {
-          setLoading(false)
-          updateChatState(modelLabel, prev => ({
-            ...prev,
-            apiMessages: `${prev.apiMessages}\n\nHuman: ${input}\n\nAssistant:${getFirstNCharsOrLess(localResponse, 2000)}`
-          }))
-          es.close()
-        }
-      } else if (event.type === "error") {
-        console.error("Connection error:", event.message)
-        setLoading(false)
-      } else if (event.type === "exception") {
-        console.error("Error:", event.message, event.error)
-        setLoading(false)
-      }
-    }
-    es.addEventListener("open", listener)
-    es.addEventListener("message", listener)
-    es.addEventListener("error", listener)
-  }
-
-  async function copyToClipboard(text) {
-    await Clipboard.setStringAsync(text)
-  }
-
-  async function showClipboardActionsheet(text) {
-    const cancelButtonIndex = 2
-    showActionSheetWithOptions({
-      options: ['Copy to clipboard', 'Clear chat', 'cancel'],
-      cancelButtonIndex
-    }, selectedIndex => {
-      if (selectedIndex === Number(0)) {
-        copyToClipboard(text)
-      }
-      if (selectedIndex === 1) {
-        clearChat()
+      onError: message => {
+        updateMessages(modelLabel, prev => [
+          ...prev.slice(0, -1),
+          { role: 'assistant', content: '', error: message, model: modelLabel }
+        ])
       }
     })
   }
 
-  async function clearChat() {
-    if (loading) return
-    const modelLabel = chatType.label
-    updateChatState(modelLabel, () => createEmptyChatState())
+  function chat(text?: string) {
+    const value = (text ?? input).trim()
+    if (!value && !attachment) return
+    if (streaming) return
+    Keyboard.dismiss()
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => null)
+
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: value,
+      ...(attachment ? { image: attachment } : {})
+    }
+    const history = [...messages.filter(m => !m.error), userMessage]
+    setInput('')
+    setAttachment(null)
+    streamResponse(chatType.label, history)
   }
 
-  function renderItem({
-    item, index
-  } : {
-    item: any, index: number
-  }) {
-    return (
-      <View style={styles.promptResponse} key={index}>
-        <View style={styles.promptTextContainer}>
-          <View style={styles.promptTextWrapper}>
-            <Text style={styles.promptText}>
-              {item.user}
-            </Text>
-          </View>
-        </View>
-      {
-        item.assistant && (
-          <View style={styles.textStyleContainer}>
-            <Markdown
-              style={styles.markdownStyle as any}
-            >{item.assistant}</Markdown>
-            <TouchableHighlight
-              onPress={() => showClipboardActionsheet(item.assistant)}
-              underlayColor={'transparent'}
-            >
-              <View style={styles.optionsIconWrapper}>
-                <Ionicons
-                  name="apps"
-                  size={20}
-                  color={theme.textColor}
-                />
-              </View>
-            </TouchableHighlight>
-          </View>
-        )
+  function retryLast() {
+    if (streaming) return
+    const history = messages.filter(m => !m.error)
+    const lastUserIndex = history.map(m => m.role).lastIndexOf('user')
+    if (lastUserIndex === -1) return
+    streamResponse(chatType.label, history.slice(0, lastUserIndex + 1))
+  }
+
+  function regenerate() {
+    retryLast()
+  }
+
+  async function attachImage() {
+    try {
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+        base64: true
+      })
+      if (res.canceled || !res.assets?.length) return
+      const asset = res.assets[0]
+      setAttachment({
+        uri: asset.uri,
+        mimeType: asset.mimeType || 'image/jpeg',
+        base64: asset.base64 || undefined
+      })
+    } catch (err) {
+      console.log('error picking image:', err)
+    }
+  }
+
+  async function copyToClipboard(text: string) {
+    await Clipboard.setStringAsync(text)
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => null)
+  }
+
+  async function shareConversation() {
+    const transcript = messages
+      .filter(m => !m.error)
+      .map(m => `**${m.role === 'user' ? 'You' : chatType.name}**: ${m.content}`)
+      .join('\n\n')
+    try {
+      await Share.share({ message: transcript })
+    } catch {}
+  }
+
+  function clearChat() {
+    if (streaming) return
+    Speech.stop()
+    updateMessages(chatType.label, () => [])
+  }
+
+  function showMessageOptions(message: ChatMessage) {
+    const options = [
+      'Copy to clipboard',
+      'Speak aloud',
+      'Regenerate response',
+      'Share conversation',
+      'Clear chat',
+      'Cancel'
+    ]
+    showActionSheetWithOptions({
+      options,
+      cancelButtonIndex: options.length - 1,
+      destructiveButtonIndex: 4
+    }, index => {
+      switch (index) {
+        case 0: copyToClipboard(message.content); break
+        case 1: Speech.speak(stripMarkdown(message.content)); break
+        case 2: regenerate(); break
+        case 3: shareConversation(); break
+        case 4: clearChat(); break
       }
+    })
+  }
+
+  const callMade = messages.length > 0
+
+  function renderItem({ item, index }: { item: ChatMessage, index: number }) {
+    return (
+      <MessageBubble
+        item={item}
+        theme={theme}
+        streaming={streaming}
+        isLast={index === messages.length - 1}
+        onOptions={showMessageOptions}
+        onRetry={retryLast}
+      />
+    )
+  }
+
+  function renderAttachmentPreview() {
+    if (!attachment) return null
+    return (
+      <View style={styles.attachmentPreview}>
+        <Image source={{ uri: attachment.uri }} style={styles.attachmentThumbnail} />
+        <Text style={styles.attachmentText} numberOfLines={1}>Image attached</Text>
+        <TouchableOpacity
+          onPress={() => setAttachment(null)}
+          accessibilityRole="button"
+          accessibilityLabel="Remove attached image"
+          style={styles.attachmentRemove}
+        >
+          <Ionicons name="close-circle" size={20} color={theme.textColor} />
+        </TouchableOpacity>
       </View>
     )
   }
 
-  const currentChatState = getChatState(chatType.label)
-  const callMade = currentChatState.messages.length > 0
+  function renderInputRow(midScreen: boolean) {
+    return (
+      <View style={midScreen ? undefined : styles.chatInputContainer}>
+        {
+          chatType.supportsVision && !midScreen && (
+            <TouchableOpacity
+              onPress={attachImage}
+              accessibilityRole="button"
+              accessibilityLabel="Attach an image"
+              style={styles.attachIconButton}
+            >
+              <Ionicons name="image-outline" size={18} color={theme.textColor} />
+            </TouchableOpacity>
+          )
+        }
+        <TextInput
+          style={midScreen ? styles.midInput : styles.input}
+          onChangeText={setInput}
+          placeholder='Message'
+          multiline
+          placeholderTextColor={theme.placeholderTextColor}
+          autoCorrect={true}
+          value={input}
+          accessibilityLabel="Message input"
+        />
+        {
+          !midScreen && (
+            streaming ? (
+              <TouchableOpacity
+                onPress={stop}
+                accessibilityRole="button"
+                accessibilityLabel="Stop generating"
+              >
+                <View style={styles.chatButton}>
+                  <Ionicons
+                    name="stop"
+                    size={20} color={theme.tintTextColor}
+                  />
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={() => chat()}
+                accessibilityRole="button"
+                accessibilityLabel="Send message"
+              >
+                <View style={styles.chatButton}>
+                  <Ionicons
+                    name="arrow-up-outline"
+                    size={20} color={theme.tintTextColor}
+                  />
+                </View>
+              </TouchableOpacity>
+            )
+          )
+        }
+      </View>
+    )
+  }
 
   return (
     <KeyboardAvoidingView
-      behavior="padding"
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
       keyboardVerticalOffset={110}
     >
-      <ScrollView
-        keyboardShouldPersistTaps='handled'
-        ref={scrollViewRef}
-        contentContainerStyle={!callMade && styles.scrollContentContainer}
-      >
-        {
-          !callMade && (
-            <View style={styles.midChatInputWrapper}>
-              <View style={styles.midChatInputContainer}>
-                
-                <TextInput
-                  onChangeText={v => setInput(v)}
-                  style={styles.midInput}
-                  placeholder='Message'
-                  placeholderTextColor={theme.placeholderTextColor}
-                  autoCorrect={true}
-                />
-                <TouchableHighlight
-                  onPress={chat}
-                  underlayColor={'transparent'}
-                >
-                  <View style={styles.midButtonStyle}>
-                    <Ionicons
-                      name="chatbox-ellipses-outline"
-                      size={22} color={theme.tintTextColor}
-                    />
-                    <Text style={styles.midButtonText}>
-                      Start chat
-                    </Text>
-                  </View>
-                </TouchableHighlight>
-                <Text style={styles.chatDescription}>
-                  Chat with a variety of different language models.
-                </Text>
+      {
+        !callMade ? (
+          <View style={styles.midChatInputWrapper}>
+            <View style={styles.midChatInputContainer}>
+              {renderInputRow(true)}
+              <TouchableHighlight
+                onPress={() => chat()}
+                underlayColor={'transparent'}
+                accessibilityRole="button"
+                accessibilityLabel="Start chat"
+              >
+                <View style={styles.midButtonStyle}>
+                  <Ionicons
+                    name="chatbox-ellipses-outline"
+                    size={22} color={theme.tintTextColor}
+                  />
+                  <Text style={styles.midButtonText}>
+                    Start chat
+                  </Text>
+                </View>
+              </TouchableHighlight>
+              {renderAttachmentPreview()}
+              {
+                chatType.supportsVision && !attachment && (
+                  <TouchableOpacity
+                    onPress={attachImage}
+                    accessibilityRole="button"
+                    accessibilityLabel="Attach an image"
+                    style={styles.midAttachButton}
+                  >
+                    <Ionicons name="image-outline" size={16} color={theme.textColor} />
+                    <Text style={styles.midAttachButtonText}>Attach an image</Text>
+                  </TouchableOpacity>
+                )
+              }
+              <Text style={styles.chatDescription}>
+                Chat with a variety of different language models.
+              </Text>
+              <View style={styles.suggestionsContainer}>
+                {
+                  PROMPT_SUGGESTIONS.map(suggestion => (
+                    <TouchableOpacity
+                      key={suggestion}
+                      onPress={() => chat(suggestion)}
+                      accessibilityRole="button"
+                      style={styles.suggestionChip}
+                    >
+                      <Text style={styles.suggestionText}>{suggestion}</Text>
+                    </TouchableOpacity>
+                  ))
+                }
               </View>
             </View>
-          )
-        }
-        {
-          callMade && (
-            <FlatList
-              data={currentChatState.messages}
-              renderItem={renderItem}
-              scrollEnabled={false}
-            />
-          )
-        }
-        {
-          loading && (
-            <ActivityIndicator style={styles.loadingContainer} />
-          )
-        }
-      </ScrollView>
-      {
-        callMade && (
-          <View
-              style={styles.chatInputContainer}
-            >
-            <TextInput
-              style={styles.input}
-              onChangeText={v => setInput(v)}
-              placeholder='Message'
-              placeholderTextColor={theme.placeholderTextColor}
-              value={input}
-            />
-            <TouchableHighlight
-              underlayColor={'transparent'}
-              activeOpacity={0.65}
-              onPress={chat}
-            >
-              <View
-                style={styles.chatButton}
-              >
-                <Ionicons
-                  name="arrow-up-outline"
-                  size={20} color={theme.tintTextColor}
-                />
-              </View>
-            </TouchableHighlight>
           </View>
+        ) : (
+          <>
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              renderItem={renderItem}
+              keyExtractor={(_, index) => `${chatType.label}-${index}`}
+              keyboardShouldPersistTaps='handled'
+              contentContainerStyle={styles.listContent}
+              onScrollBeginDrag={() => { autoScrollRef.current = false }}
+              onScroll={event => {
+                const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent
+                const distanceFromBottom = contentSize.height - layoutMeasurement.height - contentOffset.y
+                if (distanceFromBottom < 40) autoScrollRef.current = true
+              }}
+              scrollEventThrottle={100}
+              onContentSizeChange={() => {
+                if (autoScrollRef.current) {
+                  flatListRef.current?.scrollToEnd({ animated: true })
+                }
+              }}
+            />
+            {renderAttachmentPreview()}
+            {renderInputRow(false)}
+          </>
         )
       }
     </KeyboardAvoidingView>
   )
 }
 
-const getStyles = (theme: any) => StyleSheet.create({
+const getStyles = (theme: Theme) => StyleSheet.create({
   optionsIconWrapper: {
     padding: 10,
     paddingTop: 9,
     alignItems: 'flex-end'
   },
-  scrollContentContainer: {
+  listContent: {
+    paddingBottom: 10
+  },
+  typingIndicator: {
+    marginVertical: 10,
+    alignSelf: 'flex-start',
+    marginLeft: 5
+  },
+  errorContainer: {
+    marginHorizontal: 10,
+    marginTop: 10,
+    padding: 13,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: theme.borderColor,
+  },
+  errorText: {
+    color: theme.textColor,
+    fontFamily: theme.regularFont,
+    marginBottom: 10
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    alignItems: 'center',
+    backgroundColor: theme.tintColor,
+    borderRadius: 99,
+    paddingVertical: 6,
+    paddingHorizontal: 14
+  },
+  retryButtonText: {
+    color: theme.tintTextColor,
+    fontFamily: theme.mediumFont,
+    marginLeft: 6
+  },
+  suggestionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: 18,
+    paddingHorizontal: 14,
+    gap: 8
+  },
+  suggestionChip: {
+    borderWidth: 1,
+    borderColor: theme.borderColor,
+    borderRadius: 99,
+    paddingVertical: 8,
+    paddingHorizontal: 14
+  },
+  suggestionText: {
+    color: theme.textColor,
+    fontFamily: theme.regularFont,
+    fontSize: 13
+  },
+  attachmentPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 10,
+    marginTop: 8,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: theme.borderColor,
+    borderRadius: 10
+  },
+  attachmentThumbnail: {
+    width: 36,
+    height: 36,
+    borderRadius: 6,
+    marginRight: 10
+  },
+  attachmentText: {
     flex: 1,
+    color: theme.textColor,
+    fontFamily: theme.regularFont,
+    fontSize: 13
+  },
+  attachmentRemove: {
+    padding: 6
+  },
+  attachIconButton: {
+    marginLeft: 10,
+    padding: 8,
+    borderRadius: 99,
+    borderWidth: 1,
+    borderColor: theme.borderColor
+  },
+  midAttachButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: theme.borderColor,
+    borderRadius: 99,
+    paddingVertical: 7,
+    paddingHorizontal: 14
+  },
+  midAttachButtonText: {
+    color: theme.textColor,
+    fontFamily: theme.mediumFont,
+    fontSize: 13,
+    marginLeft: 7
   },
   chatDescription: {
     color: theme.textColor,
@@ -492,7 +609,7 @@ const getStyles = (theme: any) => StyleSheet.create({
     paddingHorizontal: 25,
     marginHorizontal: 10,
     paddingVertical: 15,
-    borderRadius: 99,
+    borderRadius: 24,
     color: theme.textColor,
     borderColor: theme.borderColor,
     fontFamily: theme.mediumFont,
@@ -523,9 +640,6 @@ const getStyles = (theme: any) => StyleSheet.create({
     paddingTop: 5,
     paddingBottom: 5
   },
-  loadingContainer: {
-    marginTop: 25
-  },
   promptResponse: {
     marginTop: 10,
   },
@@ -549,6 +663,13 @@ const getStyles = (theme: any) => StyleSheet.create({
     borderRadius: 8,
     borderTopRightRadius: 0,
     backgroundColor: theme.tintColor,
+    overflow: 'hidden'
+  },
+  promptImage: {
+    width: 180,
+    height: 180,
+    borderRadius: 4,
+    margin: 5
   },
   promptText: {
     color: theme.tintTextColor,
@@ -574,12 +695,13 @@ const getStyles = (theme: any) => StyleSheet.create({
   input: {
     flex: 1,
     borderWidth: 1,
-    borderRadius: 99,
+    borderRadius: 24,
     color: theme.textColor,
     marginHorizontal: 10,
     paddingVertical: 10,
     paddingHorizontal: 21,
     paddingRight: 39,
+    maxHeight: 110,
     borderColor: theme.borderColor,
     fontFamily: theme.semiBoldFont,
   },
@@ -657,11 +779,11 @@ const getStyles = (theme: any) => StyleSheet.create({
       color: theme.secondaryTextColor,
       backgroundColor: theme.secondaryBackgroundColor,
       borderWidth: 1,
-      borderColor: 'rgba(255, 255, 255, .1)',
+      borderColor: theme.codeBorderColor,
       fontFamily: theme.lightFont
     },
     hr: {
-      backgroundColor: 'rgba(255, 255, 255, .1)',
+      backgroundColor: theme.codeBorderColor,
       height: 1,
     },
     fence: {
@@ -669,23 +791,23 @@ const getStyles = (theme: any) => StyleSheet.create({
       padding: 10,
       color: theme.secondaryTextColor,
       backgroundColor: theme.secondaryBackgroundColor,
-      borderColor: 'rgba(255, 255, 255, .1)',
+      borderColor: theme.codeBorderColor,
       fontFamily: theme.regularFont
     },
     tr: {
       borderBottomWidth: 1,
-      borderColor: 'rgba(255, 255, 255, .2)',
+      borderColor: theme.borderColor,
       flexDirection: 'row',
     },
     table: {
       marginTop: 7,
       borderWidth: 1,
-      borderColor: 'rgba(255, 255, 255, .2)',
+      borderColor: theme.borderColor,
       borderRadius: 3,
     },
     blockquote: {
-      backgroundColor: '#312e2e',
-      borderColor: '#CCC',
+      backgroundColor: theme.quoteBackgroundColor,
+      borderColor: theme.tintColor,
       borderLeftWidth: 4,
       marginLeft: 5,
       paddingHorizontal: 5,

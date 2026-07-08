@@ -1,13 +1,7 @@
-import { Request, Response } from "express"
+import { Request, Response } from 'express'
+import { getImageModel } from '../models'
 
-type GeminiImageModel = "nanoBanana" | "nanoBananaPro"
-
-const geminiModels: Record<GeminiImageModel, string> = {
-  nanoBanana: "gemini-2.5-flash-image",
-  nanoBananaPro: "gemini-3-pro-image-preview"
-}
-
-const geminiApiBase = "https://generativelanguage.googleapis.com/v1beta/models"
+const geminiApiBase = 'https://generativelanguage.googleapis.com/v1beta/models'
 
 function getInlineData(part: any) {
   return part?.inlineData || part?.inline_data
@@ -16,18 +10,14 @@ function getInlineData(part: any) {
 export async function geminiImage(req: Request, res: Response) {
   try {
     const { prompt, model } = req.body
-    const selectedModel = geminiModels[model as GeminiImageModel]
+    const imageModel = getImageModel(model)
 
-    if (!selectedModel) {
-      return res.json({
-        error: "unsupported model"
-      })
+    if (!imageModel) {
+      return res.status(400).json({ error: `unsupported model: ${model}` })
     }
 
     if (!prompt && !req.file) {
-      return res.json({
-        error: "no prompt"
-      })
+      return res.status(400).json({ error: 'a prompt or image is required' })
     }
 
     const parts: any[] = []
@@ -39,51 +29,50 @@ export async function geminiImage(req: Request, res: Response) {
       parts.push({
         inline_data: {
           mime_type: req.file.mimetype,
-          data: req.file.buffer.toString("base64")
+          data: req.file.buffer.toString('base64')
         }
       })
     }
 
-    const response = await fetch(`${geminiApiBase}/${selectedModel}:generateContent`, {
-      method: "POST",
+    const response = await fetch(`${geminiApiBase}/${imageModel.modelId}:generateContent`, {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": process.env.GEMINI_API_KEY || ""
+        'Content-Type': 'application/json',
+        'x-goog-api-key': process.env.GEMINI_API_KEY || ''
       },
       body: JSON.stringify({
-        contents: [{
-          parts
-        }],
+        contents: [{ parts }],
         generationConfig: {
-          responseModalities: ["TEXT", "IMAGE"]
+          responseModalities: ['TEXT', 'IMAGE']
         }
       })
     })
 
+    if (!response.ok) {
+      const detail = await response.text()
+      console.error('gemini image error:', response.status, detail)
+      return res.status(502).json({ error: `provider error (${response.status})` })
+    }
+
     const data = await response.json()
     const responseParts = data?.candidates?.[0]?.content?.parts || []
-    const imagePart = responseParts.find((part: any) => {
-      const inlineData = getInlineData(part)
-      return inlineData?.data
-    })
+    const imagePart = responseParts.find((part: any) => getInlineData(part)?.data)
     const inlineData = getInlineData(imagePart)
 
     if (!inlineData?.data) {
-      return res.json({
-        error: "error generating image",
+      return res.status(502).json({
+        error: 'the model did not return an image',
         details: data
       })
     }
 
-    const mimeType = inlineData.mimeType || inlineData.mime_type || "image/png"
+    const mimeType = inlineData.mimeType || inlineData.mime_type || 'image/png'
 
     return res.json({
       image: `data:${mimeType};base64,${inlineData.data}`
     })
   } catch (err) {
-    console.log("error generating Gemini image: ", err)
-    return res.json({
-      error: "error generating image"
-    })
+    console.error('error generating Gemini image:', err)
+    return res.status(500).json({ error: 'error generating image' })
   }
 }

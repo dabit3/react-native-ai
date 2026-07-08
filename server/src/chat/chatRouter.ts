@@ -4,8 +4,12 @@ import { gpt } from './gpt'
 import { gemini } from './gemini'
 import { glm } from './glm'
 import { kimi } from './kimi'
+import { validateBody } from '../middleware'
+import { chatRequestSchema } from '../types'
 
 const router = express.Router()
+
+router.use(validateBody(chatRequestSchema))
 
 router.post('/claude', claude)
 router.post('/gpt', gpt)

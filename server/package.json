@@ -9,34 +9,31 @@
     "ngrok": "ngrok http 3050",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon --exitcrash dist/index.js\"",
     "ngrokfixed": "ngrok http --domain=f82f850f17ee-443370837071186036.ngrok-free.app 3050",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
-    "@types/body-parser": "^1.19.6",
     "@types/express": "^5.0.6",
     "@types/node": "^26.1.0",
-    "body-parser": "^2.3.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "eventsource": "^4.1.0",
     "express": "^5.2.1",
     "express-async-handler": "^1.2.0",
+    "express-rate-limit": "^8.2.1",
     "multer": "^2.2.0",
-    "node-fetch": "2.7.0",
-    "stream": "^0.0.3",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
-    "@types/eventsource": "^3.0.0",
     "@types/multer": "^2.2.0",
-    "@types/node-fetch": "^2.6.13",
+    "@types/supertest": "^6.0.3",
     "concurrently": "^10.0.3",
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "supertest": "^7.1.4",
+    "vitest": "^3.2.4"
   }
 }
