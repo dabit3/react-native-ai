@@ -146,7 +146,7 @@ const THEMES: Record<string, Theme> = {
   pink
 }
 
-function getTheme(label: string, systemColorScheme?: 'light' | 'dark' | null): Theme {
+function getTheme(label: string, systemColorScheme?: 'light' | 'dark' | 'unspecified' | null): Theme {
   if (label === 'system') {
     return systemColorScheme === 'dark' ? darkTheme : lightTheme
   }
