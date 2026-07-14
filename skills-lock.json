@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "lightning": {
+      "source": "dabit3/lightning-orchestrator",
+      "sourceType": "github",
+      "skillPath": ".devin/skills/lightning/SKILL.md",
+      "computedHash": "bf19d21f709eb7de4149533a115bc4b2b60a65afced7371f4e9114588f28f7ac"
+    }
+  }
+}
