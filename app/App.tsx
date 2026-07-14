@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { Main } from './src/main'
 import { useFonts } from 'expo-font'
+import { requireOptionalNativeModule } from 'expo'
 import { ThemeContext, AppContext } from './src/context'
 import { getTheme } from './src/theme'
 import { IMAGE_MODELS, MODELS, fetchModels } from './constants'
@@ -19,6 +20,10 @@ import {
   BottomSheetView,
 } from '@gorhom/bottom-sheet'
 import { StyleSheet, LogBox, useColorScheme } from 'react-native'
+
+const DevMenuPreferences = requireOptionalNativeModule<{
+  setPreferencesAsync: (preferences: { showFloatingActionButton: boolean }) => Promise<void>
+}>('DevMenuPreferences')
 
 LogBox.ignoreLogs([
   'Key "cancelled" in the image picker result is deprecated and will be removed in SDK 48, use "canceled" instead',
@@ -46,6 +51,7 @@ export default function App() {
   })
 
   useEffect(() => {
+    void DevMenuPreferences?.setPreferencesAsync({ showFloatingActionButton: false })
     configureStorage()
     fetchModels().then(remoteModels => {
       setModels(remoteModels)
