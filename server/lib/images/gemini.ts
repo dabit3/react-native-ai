@@ -1,23 +1,30 @@
-import { Request, Response } from 'express'
 import { getImageModel } from '../models'
 
 const geminiApiBase = 'https://generativelanguage.googleapis.com/v1beta/models'
+
+interface GeminiImageInput {
+  model: string
+  prompt?: string
+  file?: {
+    mimeType: string
+    data: string
+  }
+}
 
 function getInlineData(part: any) {
   return part?.inlineData || part?.inline_data
 }
 
-export async function geminiImage(req: Request, res: Response) {
+export async function geminiImage({ model, prompt, file }: GeminiImageInput): Promise<Response> {
   try {
-    const { prompt, model } = req.body
     const imageModel = getImageModel(model)
 
     if (!imageModel) {
-      return res.status(400).json({ error: `unsupported model: ${model}` })
+      return Response.json({ error: `unsupported model: ${model}` }, { status: 400 })
     }
 
-    if (!prompt && !req.file) {
-      return res.status(400).json({ error: 'a prompt or image is required' })
+    if (!prompt && !file) {
+      return Response.json({ error: 'a prompt or image is required' }, { status: 400 })
     }
 
     const parts: any[] = []
@@ -25,11 +32,11 @@ export async function geminiImage(req: Request, res: Response) {
       parts.push({ text: prompt })
     }
 
-    if (req.file) {
+    if (file) {
       parts.push({
         inline_data: {
-          mime_type: req.file.mimetype,
-          data: req.file.buffer.toString('base64')
+          mime_type: file.mimeType,
+          data: file.data
         }
       })
     }
@@ -51,7 +58,7 @@ export async function geminiImage(req: Request, res: Response) {
     if (!response.ok) {
       const detail = await response.text()
       console.error('gemini image error:', response.status, detail)
-      return res.status(502).json({ error: `provider error (${response.status})` })
+      return Response.json({ error: `provider error (${response.status})` }, { status: 502 })
     }
 
     const data = await response.json()
@@ -60,19 +67,22 @@ export async function geminiImage(req: Request, res: Response) {
     const inlineData = getInlineData(imagePart)
 
     if (!inlineData?.data) {
-      return res.status(502).json({
-        error: 'the model did not return an image',
-        details: data
-      })
+      return Response.json(
+        {
+          error: 'the model did not return an image',
+          details: data
+        },
+        { status: 502 }
+      )
     }
 
     const mimeType = inlineData.mimeType || inlineData.mime_type || 'image/png'
 
-    return res.json({
+    return Response.json({
       image: `data:${mimeType};base64,${inlineData.data}`
     })
   } catch (err) {
     console.error('error generating Gemini image:', err)
-    return res.status(500).json({ error: 'error generating image' })
+    return Response.json({ error: 'error generating image' }, { status: 500 })
   }
 }

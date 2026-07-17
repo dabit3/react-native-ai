@@ -1,8 +1,6 @@
-import { Request, Response } from 'express'
-import asyncHandler from 'express-async-handler'
 import { getChatModel } from '../models'
 import { ChatMessage, ChatRequest } from '../types'
-import { initSSE, sendToken, sendError, sendDone, createSSEParser, pumpStream } from '../sse'
+import { sseResponse, createSSEParser, pumpStream } from '../sse'
 
 function toGeminiContents(messages: ChatMessage[]) {
   return messages
@@ -25,15 +23,12 @@ function toGeminiContents(messages: ChatMessage[]) {
     })
 }
 
-export const gemini = asyncHandler(async (req: Request, res: Response) => {
-  initSSE(res)
-  try {
-    const { messages, model }: ChatRequest = req.body
+export function gemini({ messages, model }: ChatRequest): Response {
+  return sseResponse(async writer => {
     const chatModel = getChatModel(model)
 
     if (!chatModel || chatModel.provider !== 'google') {
-      sendError(res, `unsupported model: ${model}`)
-      sendDone(res)
+      writer.sendError(`unsupported model: ${model}`)
       return
     }
 
@@ -57,8 +52,7 @@ export const gemini = asyncHandler(async (req: Request, res: Response) => {
     if (!response.ok) {
       const detail = await response.text()
       console.error('gemini error:', response.status, detail)
-      sendError(res, `provider error (${response.status})`)
-      sendDone(res)
+      writer.sendError(`provider error (${response.status})`)
       return
     }
 
@@ -68,15 +62,10 @@ export const gemini = asyncHandler(async (req: Request, res: Response) => {
         const text = parsed.candidates?.[0]?.content?.parts
           ?.map((p: any) => p.text || '')
           .join('')
-        if (text) sendToken(res, text)
+        if (text) writer.sendToken(text)
       } catch {}
     })
 
     await pumpStream(response.body, parse)
-    sendDone(res)
-  } catch (err) {
-    console.error('error in gemini chat:', err)
-    sendError(res, 'unexpected server error')
-    sendDone(res)
-  }
-})
+  })
+}

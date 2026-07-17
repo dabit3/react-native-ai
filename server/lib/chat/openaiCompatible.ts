@@ -1,11 +1,9 @@
-import { Request, Response } from 'express'
 import { Provider, getChatModel } from '../models'
 import { ChatMessage, ChatRequest } from '../types'
-import { initSSE, sendToken, sendError, sendDone, createSSEParser, pumpStream } from '../sse'
+import { sseResponse, createSSEParser, pumpStream } from '../sse'
 
 interface StreamArgs {
-  req: Request
-  res: Response
+  body: ChatRequest
   provider: Provider
   apiUrl: string
   apiKey: string
@@ -29,15 +27,13 @@ function toOpenAIMessages(messages: ChatMessage[], supportsVision: boolean) {
   })
 }
 
-export async function streamOpenAICompatible({ req, res, provider, apiUrl, apiKey }: StreamArgs) {
-  initSSE(res)
-  try {
-    const { model, messages }: ChatRequest = req.body
+export function streamOpenAICompatible({ body, provider, apiUrl, apiKey }: StreamArgs): Response {
+  return sseResponse(async writer => {
+    const { model, messages } = body
     const chatModel = getChatModel(model)
 
     if (!chatModel || chatModel.provider !== provider) {
-      sendError(res, `unsupported model: ${model}`)
-      sendDone(res)
+      writer.sendError(`unsupported model: ${model}`)
       return
     }
 
@@ -45,7 +41,7 @@ export async function streamOpenAICompatible({ req, res, provider, apiUrl, apiKe
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        Authorization: `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         model: chatModel.modelId,
@@ -57,8 +53,7 @@ export async function streamOpenAICompatible({ req, res, provider, apiUrl, apiKe
     if (!response.ok) {
       const detail = await response.text()
       console.error(`${provider} error:`, response.status, detail)
-      sendError(res, `provider error (${response.status})`)
-      sendDone(res)
+      writer.sendError(`provider error (${response.status})`)
       return
     }
 
@@ -67,15 +62,10 @@ export async function streamOpenAICompatible({ req, res, provider, apiUrl, apiKe
       try {
         const parsed = JSON.parse(data)
         const content = parsed.choices?.[0]?.delta?.content
-        if (content) sendToken(res, content)
+        if (content) writer.sendToken(content)
       } catch {}
     })
 
     await pumpStream(response.body, parse)
-    sendDone(res)
-  } catch (err) {
-    console.error(`error in ${provider} chat:`, err)
-    sendError(res, 'unexpected server error')
-    sendDone(res)
-  }
+  })
 }
