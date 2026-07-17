@@ -6,9 +6,22 @@ interface Bucket {
 }
 
 const buckets = new Map<string, Bucket>()
+let lastSweep = Date.now()
 
 function getLimit(): number {
   return Number(process.env.RATE_LIMIT_PER_MINUTE || 60)
+}
+
+/**
+ * Amortized cleanup: at most once per window, drop buckets whose window has
+ * fully elapsed so keys from one-time clients don't accumulate forever.
+ */
+function sweepExpired(now: number) {
+  if (now - lastSweep < WINDOW_MS) return
+  lastSweep = now
+  for (const [key, bucket] of buckets) {
+    if (bucket.resetAt <= now) buckets.delete(key)
+  }
 }
 
 function getClientKey(req: Request): string {
@@ -25,6 +38,8 @@ export function checkRateLimit(req: Request): Response | null {
   const limit = getLimit()
   const key = getClientKey(req)
   const now = Date.now()
+
+  sweepExpired(now)
 
   let bucket = buckets.get(key)
   if (!bucket || bucket.resetAt <= now) {
