@@ -38,11 +38,13 @@ npm start
 
 ### Running the server
 
-Change into the server directory and run:
+The server is a [Next.js](https://nextjs.org/) app (App Router) that proxies requests to the AI providers. Change into the server directory and run:
 
 ```sh
 npm run dev
 ```
+
+It starts on port `3050` (matching the bundled `ngrok` scripts). Use `npm run build && npm start` for a production server.
 
 ### Environment variables
 
@@ -108,9 +110,9 @@ For adding models, once the model definition is added to the `MODELS` array, you
 
 ### On the server
 
-Create a new file in the `server/src/chat` folder that corresponds to the model type you created in the mobile app. You can probably copy and re-use a lot of the streaming code from the other existing paths to get you started.
+Create a new file in the `server/lib/chat` folder that corresponds to the model type you created in the mobile app. Each handler is a function that takes the parsed `ChatRequest` and returns a streaming SSE `Response` (see `sseResponse` in `server/lib/sse.ts`). You can copy and re-use a lot of the streaming code from the other existing handlers to get you started.
 
-Next, update `server/src/chat/chatRouter` to use the new route.
+Next, register the handler in `server/lib/chat/index.ts` (the `CHAT_HANDLERS` map). The map key becomes the path segment, e.g. a `myModel` key is served at `POST /chat/myModel` by `server/app/chat/[provider]/route.ts`.
 
 ## Configuring Image Models
 
@@ -132,10 +134,10 @@ The app is configured to handle both, but you must update the `generate` functio
 
 #### Gemini (Nano Banana)
 
-Gemini image generation is handled in `server/src/images/gemini.ts`. Configure `GEMINI_API_KEY` and select the Nano Banana image models from the settings screen.
+Gemini image generation is handled in `server/lib/images/gemini.ts`. Configure `GEMINI_API_KEY` and select the Nano Banana image models from the settings screen.
 
 #### Other API providers
 
-Create a new file in `server/src/images/modelName`, update the handler function to handle the new API call.
+Create a new file in `server/lib/images/modelName`, exporting a handler that returns a JSON `Response`.
 
-Next, update `server/src/images/imagesRouter` to use the new route.
+Next, register it in the `IMAGE_HANDLERS` map in `server/app/images/[provider]/route.ts` so it is served at `POST /images/modelName`.
