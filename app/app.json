@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "app",
+    "name": "React Native AI",
     "slug": "app",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -25,6 +25,22 @@
     },
     "plugins": [
       "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose images to discuss or use as creative references.",
+          "cameraPermission": "Take a photo to include in your conversation.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Choose images for your workspace.",
+          "savePhotosPermission": "Save images from your workspace to your photo library.",
+          "granularPermissions": ["photo"]
+        }
+      ],
       [
         "expo-splash-screen",
         {

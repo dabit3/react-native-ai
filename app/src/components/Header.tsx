@@ -21,7 +21,7 @@ export function Header() {
       <Icon size={34} fill={theme.textColor} />
       <TouchableOpacity
         style={styles.modelPill}
-        onPress={handlePresentModalPress}
+        onPress={() => handlePresentModalPress()}
         accessibilityRole="button"
         accessibilityLabel={`Current model: ${chatType.name}. Tap to change model.`}
       >
@@ -34,7 +34,7 @@ export function Header() {
         style={styles.buttonContainer}
         underlayColor={'transparent'}
         activeOpacity={0.6}
-        onPress={handlePresentModalPress}
+        onPress={() => handlePresentModalPress()}
         accessibilityRole="button"
         accessibilityLabel="Open model selector"
       >

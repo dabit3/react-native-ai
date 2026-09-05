@@ -1,725 +1,626 @@
+import { useContext, useEffect, useRef, useState } from 'react'
 import {
-  View,
-  Text,
-  TouchableHighlight,
-  KeyboardAvoidingView,
-  StyleSheet,
-  ScrollView,
   ActivityIndicator,
-  TextInput,
-  Dimensions,
+  FlatList,
   Keyboard,
-  Image,
-  Alert
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  useWindowDimensions,
+  View
 } from 'react-native'
-import { useState, useRef, useContext } from 'react'
-import { DOMAIN, IMAGE_MODELS } from '../../constants'
-import { v4 as uuid } from 'uuid'
-import { ThemeContext, AppContext } from '../context'
-import { Theme } from '../../types'
-import { Ionicons, MaterialCommunityIcons as MaterialIcons } from '@expo/vector-icons'
-import { useActionSheet } from '@expo/react-native-action-sheet'
-import * as FileSystem from 'expo-file-system/legacy'
-import * as ImagePicker from 'expo-image-picker'
-import * as MediaLibrary from 'expo-media-library'
-import * as Sharing from 'expo-sharing'
+import Ionicons from '@expo/vector-icons/Ionicons'
+import { AppContext, ThemeContext } from '../context'
+import { AspectRatio, Creation, ImageAttachment } from '../../types'
+import { ASPECT_RATIOS, PROVIDER_ICONS } from '../../constants'
+import { useGallery } from '../hooks/useGallery'
+import { getImageUri, putImage } from '../mediaStore'
+import { newId, pickImages, saveImage, shareImage } from '../media'
+import { errorMessage, responseError } from '../utils'
+import { AppText, Button, IconButton, Notice, Sheet, Tag } from '../components/ui'
+import { MediaImage } from '../components/MediaImage'
+import { PromptArt } from '../components/PromptArt'
 
-const { width } = Dimensions.get('window')
+const ideas = [
+  {
+    title: 'The beauty in the everyday',
+    prompt:
+      'An editorial photograph of a handmade ivory ceramic vase with a single olive branch, warm morning light, limestone backdrop, subtle film grain, quiet minimal composition.'
+  },
+  {
+    title: 'Somewhere a little quieter',
+    prompt:
+      'An atmospheric landscape of layered green mountains with a winding path, a pale golden sun, soft morning haze, a restrained natural palette, fine art print.'
+  },
+  {
+    title: 'A different point of view',
+    prompt:
+      'A surreal architectural study of terracotta arches, a deep sage doorway, a single ivory sphere, long afternoon shadows, warm tones, precise geometric composition.'
+  }
+]
+const looks = ['Natural', 'Photography', 'Illustration', 'Cinematic', 'Minimal']
 
-type ImagesState = {
-  index: typeof uuid,
-  values: any[]
-}
-
-export function Images() {
-  const [callMade, setCallMade] = useState(false)
+export function Images({ onSettings }: { onSettings: () => void }) {
   const { theme } = useContext(ThemeContext)
-  const styles = getStyles(theme)
+  const { apiUrl, token, imageModel, imageModels, handlePresentModalPress, notify, connection } =
+    useContext(AppContext)
+  const { creations, setCreations, hydrated } = useGallery()
+  const { width } = useWindowDimensions()
+  const compact = width < 650
   const [input, setInput] = useState('')
-  const scrollViewRef = useRef<ScrollView | null>(null)
+  const [references, setReferences] = useState<ImageAttachment[]>([])
+  const [ratio, setRatio] = useState<AspectRatio>('1:1')
+  const [look, setLook] = useState('Natural')
   const [loading, setLoading] = useState(false)
-  const [image, setImage] = useState<any>(null)
-  const [images, setImages] = useState<ImagesState>({
-    index: uuid,
-    values: []
-  })
-  const {
-    handlePresentModalPress,
-    closeModal,
-    imageModel
-  } = useContext(AppContext)
+  const [picking, setPicking] = useState(false)
+  const [error, setError] = useState('')
+  const [selected, setSelected] = useState<Creation | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const generation = useRef<AbortController | null>(null)
+  const listRef = useRef<FlatList<Creation>>(null)
+  const inputRef = useRef<TextInput>(null)
+  const model = imageModels.find((m) => m.label === imageModel) || imageModels[0]
+  const ModelIcon = PROVIDER_ICONS[model?.provider || 'google']
+  const ratios = model?.aspectRatios || ASPECT_RATIOS
+  const chosenRatio = ratios.includes(ratio) ? ratio : ratios[0]
 
-  const { showActionSheetWithOptions } = useActionSheet()
+  useEffect(
+    () => () => {
+      generation.current?.abort()
+      generation.current = null
+    },
+    []
+  )
 
-  const hideInput = false
-  const buttonLabel = 'Generate'
-
-  const imageEndpoint = 'gemini'
-  const showImagePickerButton = !hideInput
-
-  async function generate() {
-    if (loading) return
-    if (hideInput && !image) {
-      console.log('no image selected')
-      return
-    } else if (!hideInput && !input) {
-      console.log('no input')
-      return
-    }
-    Keyboard.dismiss()
-    const imageCopy = image
-    const currentModel = IMAGE_MODELS[imageModel as keyof typeof IMAGE_MODELS].name
-    const providerLabel = 'Gemini'
+  async function attach() {
+    if (loading || picking) return
+    setPicking(true)
     try {
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({
-          animated: true
-        })
-      }, 1)
-      setCallMade(true)
-      let imagesArray = [
-        ...images.values, {
-          user: input,
-        }
-      ]
-      setImages(images => ({
-        index: images.index,
-        values: JSON.parse(JSON.stringify(imagesArray))
-      }))
-
-      let response
-
-      const body = {
-        prompt: input,
-        model: imageModel
-      } as any
-
-      setLoading(true)
-      setImage(null)
-      setInput('')
-
-      if (imageCopy) {
-        const formData = new FormData()
-        // @ts-ignore
-        formData.append('file', {
-          uri: imageCopy.uri.replace('file://', ''),
-          name: uuid(),
-          type: imageCopy.mimeType
-        })
-        for (const key in body) {
-          formData.append(key, body[key])
-        }
-
-        response = await fetch(`${DOMAIN}/images/${imageEndpoint}`, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }).then(res => res.json())
-      } else {
-        response = await fetch(`${DOMAIN}/images/${imageEndpoint}`, {
-          method: "POST",
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(body)
-        }).then(res => res.json())
-      }
-      if (response.image) {
-        imagesArray[imagesArray.length - 1].image = response.image
-        imagesArray[imagesArray.length - 1].model = currentModel
-        imagesArray[imagesArray.length - 1].provider = providerLabel
-        setImages(i => ({
-          index: i.index,
-          values: imagesArray          
-        }))
-        setLoading(false)
-        setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({
-            animated: true
-          })
-        }, 50)
-      } else {
-        setLoading(false)
-        Alert.alert('Image generation failed', response?.error || 'The model did not return an image. Please try again.')
-      }
-    } catch (err) {
-      setLoading(false)
-      Alert.alert('Image generation failed', 'Unable to reach the server. Check your connection and try again.')
-      console.log('error generating image ...', err)
+      const images = await pickImages(4 - references.length)
+      setReferences((current) => [...current, ...images])
+    } catch (failure) {
+      setError(errorMessage(failure))
+    } finally {
+      setPicking(false)
     }
   }
 
-  function renderSelectedImage() {
-    if (!image) return null
-    return (
-      <View style={styles.midFileNameContainer}>
-        <Text style={styles.fileName}>
-          {image.name || 'Image from Camera Roll'}
-        </Text>
-        <TouchableHighlight
-          onPress={() => setImage(null)}
-          style={styles.closeIconContainer}
-          underlayColor={'transparent'}
-        >
-          <MaterialIcons
-            style={styles.closeIcon}
-            name="close"
-            color={theme.textColor}
-            size={14}
-          />
-        </TouchableHighlight>
-      </View>
+  function cancel() {
+    generation.current?.abort()
+    generation.current = null
+    setLoading(false)
+    notify(
+      'Image request stopped. Your prompt is unchanged. The provider may still bill work already started.'
     )
   }
 
-  function clearPrompts() {
-    setCallMade(false)
-    setImages({
-      index: uuid,
-      values: []
-    })
-  }
-
-  async function showClipboardActionsheet(d: { image: string }) {
-    closeModal()
-    const cancelButtonIndex = 3
-    showActionSheetWithOptions({
-      options: ['Save to camera roll', 'Share image', 'Clear prompts', 'Cancel'],
-      cancelButtonIndex
-    }, selectedIndex => {
-      if (selectedIndex === 0) {
-        saveImageToCameraRoll(d.image)
-      }
-      if (selectedIndex === 1) {
-        shareImage(d.image)
-      }
-      if (selectedIndex === 2) {
-        clearPrompts()
-      }
-    })
-  }
-
-  async function imageToLocalFile(image: string): Promise<string> {
-    if (!image.startsWith('data:')) return image
-    const base64 = image.split(',')[1]
-    const fileUri = FileSystem.cacheDirectory + uuid() + '.png'
-    await FileSystem.writeAsStringAsync(fileUri, base64, {
-      encoding: FileSystem.EncodingType.Base64
-    })
-    return fileUri
-  }
-
-  async function saveImageToCameraRoll(image: string) {
-    try {
-      const { status } = await MediaLibrary.requestPermissionsAsync()
-      if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Allow photo library access to save images.')
-        return
-      }
-      const fileUri = await imageToLocalFile(image)
-      await MediaLibrary.saveToLibraryAsync(fileUri)
-      Alert.alert('Saved', 'Image saved to your camera roll.')
-    } catch (err) {
-      console.log('error saving image ...', err)
-      Alert.alert('Save failed', 'Unable to save the image. Please try again.')
+  async function generate() {
+    if (generation.current || picking || !input.trim() || !model) return
+    if (!apiUrl) {
+      onSettings()
+      return
     }
-  }
-
-  async function shareImage(image: string) {
-    try {
-      if (!(await Sharing.isAvailableAsync())) {
-        Alert.alert('Sharing unavailable', 'Sharing is not available on this device.')
-        return
-      }
-      const fileUri = await imageToLocalFile(image)
-      await Sharing.shareAsync(fileUri, { mimeType: 'image/png' })
-    } catch (err) {
-      console.log('error sharing image ...', err)
+    if (model.available === false) {
+      handlePresentModalPress('image')
+      return
     }
-  }
-
-  function onChangeText(val: string) {
-    setInput(val)
-  }
-
-  async function chooseImage() {
+    const controller = new AbortController()
+    generation.current = controller
+    setLoading(true)
+    setError('')
+    Keyboard.dismiss()
+    const prompt =
+      look === 'Natural' ? input.trim() : `${input.trim()}\n\nVisual style: ${look.toLowerCase()}.`
+    const id = newId()
+    let timedOut = false
+    const timeout = setTimeout(() => {
+      timedOut = true
+      controller.abort()
+    }, 180000)
     try {
-      let res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 1,
+      let body: FormData | string
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
+      if (references.length) {
+        const formData = new FormData()
+        formData.append('prompt', prompt)
+        formData.append('model', model.label)
+        formData.append('aspectRatio', chosenRatio)
+        for (const image of references) {
+          const uri = await getImageUri(image)
+          if (Platform.OS === 'web')
+            formData.append('files', await (await fetch(uri)).blob(), `${image.id}.png`)
+          else {
+            // @ts-ignore
+            formData.append('files', { uri, name: `${image.id}.png`, type: image.mimeType })
+          }
+        }
+        body = formData
+      } else {
+        headers['Content-Type'] = 'application/json'
+        body = JSON.stringify({ prompt, model: model.label, aspectRatio: chosenRatio })
+      }
+      if (generation.current !== controller) return
+      const response = await fetch(`${apiUrl}/images/generate`, {
+        method: 'POST',
+        headers,
+        body,
+        signal: controller.signal
       })
-      if (!res || !res.assets) return
-      setImage(res.assets[0])
-    } catch (err) {
-      console.log('error:', err)
+      if (!response.ok) throw new Error(await responseError(response))
+      const data = await response.json()
+      const match =
+        typeof data.image === 'string' &&
+        data.image.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/)
+      if (!match) throw new Error('The model did not return an image. Try a different prompt.')
+      if (generation.current !== controller) return
+      const image = await putImage(id, match[2], match[1])
+      if (generation.current !== controller) return
+      const creation: Creation = {
+        id,
+        prompt,
+        model: model.label,
+        modelName: model.name,
+        aspectRatio: chosenRatio,
+        image: { ...image, name: input.trim().slice(0, 100) },
+        createdAt: Date.now()
+      }
+      setCreations((current) => [creation, ...current])
+      setReferences([])
+      setInput('')
+      setSelected(creation)
+    } catch (failure) {
+      if (generation.current !== controller) return
+      setError(
+        timedOut
+          ? 'The image request timed out. Your prompt is still here. Try again.'
+          : failure instanceof TypeError
+            ? 'The server could not be reached. Check your connection in Settings.'
+            : errorMessage(failure)
+      )
+    } finally {
+      clearTimeout(timeout)
+      if (generation.current === controller) {
+        generation.current = null
+        setLoading(false)
+      }
     }
   }
+
+  function editCreation(creation: Creation) {
+    setReferences([creation.image])
+    setInput('')
+    setRatio(creation.aspectRatio)
+    setSelected(null)
+    setLook('Natural')
+    setError('')
+    listRef.current?.scrollToOffset({ offset: 0, animated: true })
+    inputRef.current?.focus()
+  }
+
+  async function exportImage(share = false) {
+    if (!selected || saving) return
+    setSaving(true)
+    try {
+      if (share) await shareImage(selected.image)
+      else {
+        await saveImage(selected.image)
+        notify('Image saved.')
+      }
+    } catch (failure) {
+      if (!(failure instanceof Error && failure.name === 'AbortError')) notify(errorMessage(failure))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const header = (
+    <View style={{ gap: 28 }}>
+      <View style={[styles.titleRow, compact && { alignItems: 'flex-start' }]}>
+        <View style={{ gap: 12, flex: 1 }}>
+          <AppText muted style={{ fontSize: 10, letterSpacing: 1.8 }}>
+            THE IMAGE STUDIO
+          </AppText>
+          <AppText
+            style={{
+              fontFamily: theme.mediumFont,
+              fontSize: compact ? 32 : 40,
+              lineHeight: compact ? 40 : 49,
+              letterSpacing: -1.5
+            }}
+          >
+            From a thought{'\n'}to something you can see.
+          </AppText>
+          <AppText muted>Make it. Refine it. Make it yours.</AppText>
+        </View>
+        {!compact && <Tag accent>Images, reimagined</Tag>}
+      </View>
+      <View style={[styles.editor, { borderColor: theme.borderColor, backgroundColor: theme.elevatedColor }]}>
+        <TextInput
+          ref={inputRef}
+          multiline
+          value={input}
+          onChangeText={setInput}
+          editable={!loading}
+          maxLength={8000}
+          accessibilityLabel="Image prompt"
+          placeholder={
+            references.length
+              ? 'Describe the changes you want to make…'
+              : 'A place, a feeling, an idea. What do you want to create?'
+          }
+          placeholderTextColor={theme.placeholderTextColor}
+          style={[styles.prompt, { fontFamily: theme.regularFont, color: theme.textColor }]}
+        />
+        {!!references.length && (
+          <ScrollView horizontal contentContainerStyle={styles.references}>
+            {references.map((image) => (
+              <View key={image.id}>
+                <MediaImage image={image} style={{ width: 78, height: 78, borderRadius: 12 }} />
+                <IconButton
+                  label="Remove reference image"
+                  icon="close"
+                  disabled={loading}
+                  onPress={() => setReferences((current) => current.filter((i) => i.id !== image.id))}
+                  style={{
+                    position: 'absolute',
+                    top: -8,
+                    right: -8,
+                    width: 30,
+                    height: 30,
+                    backgroundColor: theme.elevatedColor
+                  }}
+                />
+              </View>
+            ))}
+          </ScrollView>
+        )}
+        <View style={[styles.controls, { borderColor: theme.borderColor }]}>
+          <View style={styles.controlGroup}>
+            <AppText muted style={styles.controlLabel}>
+              FRAME
+            </AppText>
+            <View style={styles.row}>
+              {ratios.map((value) => (
+                <Pressable
+                  key={value}
+                  onPress={() => setRatio(value)}
+                  disabled={loading}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Aspect ratio ${value}`}
+                  accessibilityState={{ selected: chosenRatio === value }}
+                  style={[
+                    styles.ratio,
+                    compact && { paddingHorizontal: 7 },
+                    {
+                      borderColor: chosenRatio === value ? theme.tintColor : theme.borderColor,
+                      backgroundColor: chosenRatio === value ? theme.accentSoft : 'transparent'
+                    }
+                  ]}
+                >
+                  <View
+                    style={{
+                      width: value === '9:16' || value === '2:3' ? 11 : 16,
+                      height: value === '16:9' || value === '3:2' ? 11 : 16,
+                      borderRadius: 2,
+                      borderWidth: 1,
+                      borderColor: chosenRatio === value ? theme.tintColor : theme.mutedForegroundColor
+                    }}
+                  />
+                  <AppText style={{ fontSize: 11 }}>{value}</AppText>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+          <View style={styles.controlGroup}>
+            <AppText muted style={styles.controlLabel}>
+              FEEL
+            </AppText>
+            <View style={styles.row}>
+              {looks.map((value) => (
+                <Pressable
+                  key={value}
+                  onPress={() => setLook(value)}
+                  disabled={loading}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: look === value }}
+                  style={[
+                    styles.look,
+                    {
+                      backgroundColor: look === value ? theme.surfaceColor : 'transparent',
+                      borderColor: look === value ? theme.borderColor : 'transparent'
+                    }
+                  ]}
+                >
+                  <AppText muted={look !== value} style={{ fontSize: 12 }}>
+                    {value}
+                  </AppText>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </View>
+        <View style={styles.editorFooter}>
+          <View style={styles.row}>
+            <Button
+              variant="ghost"
+              icon="image-outline"
+              disabled={loading || references.length >= 4 || picking}
+              loading={picking}
+              onPress={() => void attach()}
+            >
+              {references.length
+                ? `${references.length} reference${references.length === 1 ? '' : 's'}`
+                : 'Add reference'}
+            </Button>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Choose image model"
+              disabled={loading}
+              onPress={() => handlePresentModalPress('image')}
+              style={styles.model}
+            >
+              <ModelIcon size={16} theme={theme} />
+              <AppText style={{ fontSize: 12 }}>{model?.name || 'Choose model'}</AppText>
+              <Ionicons name="chevron-down" size={13} color={theme.mutedForegroundColor} />
+            </Pressable>
+          </View>
+          <Button
+            onPress={loading ? cancel : () => void generate()}
+            icon={loading ? 'stop-outline' : 'arrow-forward'}
+            disabled={!loading && (!input.trim() || picking || !hydrated)}
+          >
+            {loading ? 'Stop' : references.length ? 'Create edit' : 'Create image'}
+          </Button>
+        </View>
+      </View>
+      {!!error && <Notice>{error}</Notice>}
+      {loading && (
+        <View
+          accessibilityLiveRegion="polite"
+          style={[styles.progress, { backgroundColor: theme.accentSoft }]}
+        >
+          <ActivityIndicator color={theme.tintColor} />
+          <View style={{ gap: 3 }}>
+            <AppText style={{ fontFamily: theme.mediumFont }}>Your idea is taking shape.</AppText>
+            <AppText muted style={{ fontSize: 12 }}>
+              You can explore the app while the model works.
+            </AppText>
+          </View>
+        </View>
+      )}
+      {(connection !== 'connected' || model?.available === false) && (
+        <Notice action="Settings" onAction={onSettings}>
+          {connection === 'connected'
+            ? 'This image provider needs an API key on your server.'
+            : 'Connect your server to create images with Google or OpenAI.'}
+        </Notice>
+      )}
+      {!creations.length && (
+        <View style={{ gap: 18 }}>
+          <View style={styles.galleryHeading}>
+            <AppText style={{ fontFamily: theme.mediumFont, fontSize: 16 }}>A few places to start</AppText>
+            <AppText muted style={{ fontSize: 11 }}>
+              Illustrated prompt ideas
+            </AppText>
+          </View>
+          <View style={[styles.ideas, compact && { flexDirection: 'column' }]}>
+            {ideas.map((idea, index) => (
+              <Pressable
+                key={idea.title}
+                accessibilityRole="button"
+                accessibilityLabel={`Use prompt: ${idea.title}`}
+                disabled={loading}
+                onPress={() => {
+                  setInput(idea.prompt)
+                  inputRef.current?.focus()
+                }}
+                style={({ hovered }: { pressed: boolean; hovered?: boolean }) => [
+                  styles.idea,
+                  { borderColor: hovered ? theme.tintColor : theme.borderColor }
+                ]}
+              >
+                <View style={{ height: compact ? 160 : 160, overflow: 'hidden' }}>
+                  <PromptArt variant={index} />
+                </View>
+                <View style={{ padding: 14, gap: 6 }}>
+                  <AppText style={{ fontSize: 12, fontFamily: theme.mediumFont }}>{idea.title}</AppText>
+                  <AppText muted style={{ fontSize: 11 }}>
+                    Use this idea ↗
+                  </AppText>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
+      {!!creations.length && (
+        <View style={styles.galleryHeading}>
+          <AppText style={{ fontSize: 20, fontFamily: theme.mediumFont }}>Your collection</AppText>
+          <AppText muted style={{ fontSize: 12 }}>
+            {creations.length} image{creations.length === 1 ? '' : 's'} · Saved on this device
+          </AppText>
+        </View>
+      )}
+    </View>
+  )
 
   return (
-    <View style={styles.container}>
-      <KeyboardAvoidingView
-        behavior="padding"
-        style={styles.container}
-        keyboardVerticalOffset={110}
-        >
-        <ScrollView
-          contentContainerStyle={!callMade && styles.scrollContentContainer}
-          ref={scrollViewRef}
-          keyboardShouldPersistTaps='handled'
-          style={styles.scrollContainer}
-        >
-          {
-            !callMade && (
-              <View style={styles.midChatInputWrapper}>
-                <View style={styles.midChatInputContainer}>
-                  {
-                    !hideInput && (
-                      <>
-                        <TextInput
-                          onChangeText={onChangeText}
-                          style={styles.midInput}
-                          placeholder='What do you want to create?'
-                          placeholderTextColor={theme.placeholderTextColor}
-                          autoCorrect={true}
-                          value={input}
-                        />
-                        <View style={styles.midButtonRow}>
-                          <TouchableHighlight
-                            onPress={generate}
-                            underlayColor={'transparent'}
-                            style={styles.midButtonWrapper}
-                            onLongPress={
-                              () => {
-                                Keyboard.dismiss()
-                                handlePresentModalPress()
-                              }
-                            }
-                          >
-                            <View style={styles.midButtonStyle}>
-                              <Ionicons
-                                name="images-outline"
-                                size={22} color={theme.tintTextColor}
-                              />
-                              <Text style={styles.midButtonText}>
-                                Create
-                              </Text>
-                            </View>
-                          </TouchableHighlight>
-                          {showImagePickerButton && (
-                            <TouchableHighlight
-                              onPress={chooseImage}
-                              underlayColor={'transparent'}
-                            >
-                              <View style={styles.addImageIconButton}>
-                                <Ionicons
-                                  name={image ? 'checkmark-circle' : 'camera-outline'}
-                                  size={20}
-                                  color={theme.textColor}
-                                />
-                              </View>
-                            </TouchableHighlight>
-                          )}
-                        </View>
-                      </>
-                    )
-                  }
-                  {
-                    hideInput && (
-                      <TouchableHighlight
-                        onPress={image ? generate : chooseImage}
-                        underlayColor={'transparent'}
-                      >
-                        <View style={styles.midButtonStyle}>
-                          <Ionicons
-                            name="images-outline"
-                            size={22} color={theme.tintTextColor}
-                          />
-                          <Text style={styles.midButtonText}>
-                            {
-                              image ? buttonLabel : 'Choose image'
-                            }
-                          </Text>
-                        </View>
-                      </TouchableHighlight>
-                    )
-                  }
-                  {renderSelectedImage()}
-                  <Text style={styles.chatDescription}>
-                    Generate images and art using natural language.
-                  </Text>
-                </View>
-              </View>
-            )
-          }
-          {
-            images.values.map((v, index) => (
-              <View key={index} style={styles.imageContainer}>
-                {
-                  v.user && (
-                    <View style={styles.promptTextContainer}>
-                      <TouchableHighlight
-                        underlayColor={'transparent'}
-                      >
-                        <View style={styles.promptTextWrapper}>
-                          <Text style={styles.promptText}>
-                            {v.user}
-                          </Text>
-                        </View>
-                      </TouchableHighlight>
-                    </View>
-                  )
-                }
-                {
-                  v.image && (
-                    <View>
-                      <TouchableHighlight
-                        onPress={() => showClipboardActionsheet(v)}
-                        underlayColor={'transparent'}
-                      >
-                        <Image
-                          source={{ uri: v.image }}
-                          style={styles.image}
-                        />
-                      </TouchableHighlight>
-                      <View style={styles.modelLabelContainer}>
-                          <Text style={
-                            styles.modelLabelText
-                          }>
-                            Created with {v.provider || 'Gemini'} model {v.model}
-                          </Text>
-                        </View>
-                    </View>
-                  )
-                }
-              </View>
-            ))
-          }
-          { loading && (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator />
-            </View>
-          ) }
-        </ScrollView>
-        {
-          callMade && (
-            <>
-              {
-                !hideInput && (
-                  <>
-                    {renderSelectedImage()}
-                    <View style={styles.chatInputContainer}>
-                      <TouchableHighlight
-                        onPress={clearPrompts}
-                        underlayColor={'transparent'}
-                      >
-                        <View style={styles.clearButton}>
-                          <Ionicons
-                            name="trash-outline"
-                            size={18}
-                            color={theme.textColor}
-                          />
-                        </View>
-                      </TouchableHighlight>
-                      <TextInput
-                        onChangeText={onChangeText}
-                        style={styles.input}
-                        placeholder='What else do you want to create?'
-                        placeholderTextColor={theme.placeholderTextColor}
-                        autoCorrect={true}
-                        value={input}
-                      />
-                      {showImagePickerButton && (
-                        <TouchableHighlight
-                          onPress={chooseImage}
-                          underlayColor={'transparent'}
-                        >
-                          <View style={styles.attachIconButton}>
-                            <Ionicons
-                              name="images-outline"
-                              size={18}
-                              color={theme.tintTextColor}
-                            />
-                          </View>
-                        </TouchableHighlight>
-                      )}
-                      <TouchableHighlight
-                        onPress={generate}
-                        underlayColor={'transparent'}
-                        onLongPress={
-                          () => {
-                            Keyboard.dismiss()
-                            handlePresentModalPress()
-                          }
-                        }
-                      >
-                        <View style={styles.buttonStyle}>
-                          <Ionicons
-                            name="arrow-up"
-                            size={20} color={theme.tintTextColor}
-                          />
-                        </View>
-                      </TouchableHighlight>
-                    </View>
-                  </>
-                )
-              }
-              {
-                hideInput && (
-                  <TouchableHighlight
-                    onPress={image ? generate : chooseImage}
-                    underlayColor={'transparent'}
-                  >
-                    <View style={styles.bottomButtonStyle}>
-                      <Ionicons
-                        name="images-outline"
-                        size={22} color={theme.tintTextColor}
-                      />
-                      <Text style={styles.midButtonText}>
-                        {
-                          image ? buttonLabel : 'Choose image'
-                        }
-                      </Text>
-                    </View>
-                  </TouchableHighlight>
-                )
-              }
-            </>
-          )
+    <View style={{ flex: 1 }}>
+      <FlatList
+        ref={listRef}
+        data={creations}
+        numColumns={compact ? 1 : 2}
+        key={compact ? 'single' : 'double'}
+        keyExtractor={(item) => item.id}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+        initialNumToRender={6}
+        maxToRenderPerBatch={4}
+        windowSize={5}
+        contentContainerStyle={[styles.page, compact && { padding: 20 }]}
+        ListHeaderComponent={header}
+        ListFooterComponent={
+          <AppText muted style={{ fontSize: 11, textAlign: 'center', paddingTop: 30 }}>
+            Created by AI. Directed by you. Always review before you share.
+          </AppText>
         }
-      </KeyboardAvoidingView>
+        renderItem={({ item }) => (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`View image: ${item.prompt}`}
+            onPress={() => setSelected(item)}
+            style={[
+              styles.creation,
+              {
+                borderColor: theme.borderColor,
+                backgroundColor: theme.elevatedColor,
+                maxWidth: compact ? '100%' : '49%'
+              }
+            ]}
+          >
+            <MediaImage image={item.image} style={{ width: '100%', aspectRatio: 1, borderRadius: 14 }} />
+            <View style={{ padding: 14, gap: 7 }}>
+              <AppText numberOfLines={2} style={{ fontSize: 13 }}>
+                {item.prompt}
+              </AppText>
+              <View style={styles.galleryHeading}>
+                <AppText muted style={{ fontSize: 11 }}>
+                  {item.modelName}
+                </AppText>
+                <Tag>{item.aspectRatio}</Tag>
+              </View>
+            </View>
+          </Pressable>
+        )}
+      />
+      <Sheet
+        visible={!!selected}
+        onClose={() => setSelected(null)}
+        title="Made from your imagination."
+        subtitle={
+          selected
+            ? `${selected.modelName} · ${selected.aspectRatio} · ${new Date(selected.createdAt).toLocaleDateString()}`
+            : ''
+        }
+        wide
+      >
+        {selected && (
+          <ScrollView contentContainerStyle={{ padding: 24, paddingTop: 0, gap: 18 }}>
+            <MediaImage
+              image={selected.image}
+              contain
+              style={{ width: '100%', height: compact ? 300 : 470, borderRadius: 14 }}
+            />
+            <AppText selectable style={{ fontSize: 13 }}>
+              {selected.prompt}
+            </AppText>
+            <View style={styles.viewerActions}>
+              <Button
+                variant="secondary"
+                icon="download-outline"
+                loading={saving}
+                onPress={() => void exportImage()}
+              >
+                Save image
+              </Button>
+              <Button
+                variant="secondary"
+                icon="share-outline"
+                disabled={saving}
+                onPress={() => void exportImage(true)}
+              >
+                Share
+              </Button>
+              <Button icon="create-outline" disabled={loading} onPress={() => editCreation(selected)}>
+                Edit image
+              </Button>
+              <IconButton
+                icon="trash-outline"
+                label="Delete image"
+                disabled={loading || saving}
+                onPress={() => {
+                  setDeleteId(selected.id)
+                  setSelected(null)
+                }}
+              />
+            </View>
+          </ScrollView>
+        )}
+      </Sheet>
+      <Sheet
+        visible={!!deleteId}
+        title="Remove this image?"
+        subtitle="This removes the image from your collection. Export a copy first if you want to keep it."
+        onClose={() => setDeleteId(null)}
+      >
+        <View style={{ padding: 24, paddingTop: 0, gap: 12 }}>
+          <Button
+            variant="danger"
+            onPress={() => {
+              setCreations((current) => current.filter((c) => c.id !== deleteId))
+              setDeleteId(null)
+            }}
+          >
+            Remove from collection
+          </Button>
+          <Button variant="secondary" onPress={() => setDeleteId(null)}>
+            Keep image
+          </Button>
+        </View>
+      </Sheet>
     </View>
   )
 }
 
-const getStyles = (theme: Theme) => StyleSheet.create({
-  midButtonRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginHorizontal: 14
-  },
-  midButtonWrapper: {
-    flex: 1
-  },
-  addImageIconButton: {
-    padding: 10,
-    borderRadius: 99,
-    borderWidth: 1,
-    borderColor: theme.borderColor
-  },
-  clearButton: {
-    marginLeft: 10,
-    padding: 8,
-    borderRadius: 99,
-    borderWidth: 1,
-    borderColor: theme.borderColor
-  },
-  closeIcon: {
-    borderWidth: 1,
+const styles = StyleSheet.create({
+  page: { width: '100%', maxWidth: 980, alignSelf: 'center', padding: 36, paddingTop: 48, paddingBottom: 40 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 20 },
+  editor: { borderWidth: 1, borderRadius: 20, padding: 18 },
+  prompt: {
+    fontSize: 16,
+    lineHeight: 26,
     padding: 4,
-    backgroundColor: theme.backgroundColor,
-    borderColor: theme.borderColor,
-    borderRadius: 15
+    minHeight: 90,
+    maxHeight: 220,
+    textAlignVertical: 'top'
   },
-  closeIconContainer: {
-    position: 'absolute',
-    right: -15,
-    top: -17,
-    padding: 10,
-    backgroundColor: 'transparent',
-    borderRadius: 25,
-  },
-  fileName: {
-    color: theme.textColor,
-  },
-  midFileNameContainer: {
-    marginTop: 20,
-    marginHorizontal: 10,
-    marginRight: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: theme.borderColor,
-    borderRadius: 7,
-  },
-  imageContainer: {
-    marginBottom: 15
-  },
-  chatDescription: {
-    color: theme.textColor,
-    textAlign: 'center',
-    marginTop: 15,
-    fontSize: 13,
-    paddingHorizontal: 34,
-    opacity: .8,
-    fontFamily: theme.regularFont
-  },
-  modelLabelContainer: {
-    padding: 9,
-    borderWidth: 1,
-    borderTopWidth: 0,
-    borderColor: theme.borderColor,
-    paddingLeft: 13,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-    marginHorizontal: 5,
-  },
-  modelLabelText: {
-    color: theme.mutedForegroundColor,
-    fontFamily: theme.regularFont,
-    fontSize: 13
-  },
-  loadingContainer: {
-    marginVertical: 25,
-    justifyContent: 'center',
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  image: {
-    width: width - 10,
-    height: width - 10,
-    marginTop: 5,
-    marginHorizontal: 5,
-    borderRadius: 8,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-  },
-  promptTextContainer: {
-    flex: 1,
-    alignItems: 'flex-end',
-    marginRight: 5,
-    marginLeft: 24,
-    marginBottom: 5
-  },
-  promptTextWrapper: {
-    borderRadius: 8,
-    borderTopRightRadius: 0,
-    backgroundColor: theme.tintColor,
-  },
-  promptText: {
-    color: theme.tintTextColor,
-    fontFamily: theme.regularFont,
-    paddingVertical: 5,
-    paddingHorizontal: 9,
-    fontSize: 16
-  },
-  container: {
-    flex: 1,
-    backgroundColor: theme.backgroundColor,
-  },
-  scrollContentContainer: {
-    flex: 1,
-  },
-  scrollContainer: {
-    paddingTop: 10
-  },
-  chatInputContainer: {
-    paddingTop: 5,
-    borderColor: theme.borderColor,
-    width: '100%',
+  references: { gap: 14, paddingTop: 12, paddingBottom: 18, paddingRight: 10 },
+  controls: { gap: 16, borderTopWidth: 1, paddingTop: 18, paddingBottom: 12 },
+  controlGroup: { gap: 8 },
+  controlLabel: { fontSize: 9, letterSpacing: 1.5 },
+  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
+  ratio: {
+    minHeight: 42,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingBottom: 5
+    paddingHorizontal: 11,
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 9
   },
-  midButtonStyle: {
-    flex: 1,
+  look: { minHeight: 40, borderRadius: 9, borderWidth: 1, paddingHorizontal: 12, justifyContent: 'center' },
+  editorFooter: {
     flexDirection: 'row',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderRadius: 99,
-    backgroundColor: theme.tintColor,
-    justifyContent: 'center',
-    alignItems: 'center'
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingTop: 8
   },
-  midButtonText: {
-    color: theme.tintTextColor,
-    marginLeft: 10,
-    fontFamily: theme.boldFont,
-    fontSize: 16
-  },
-  attachButton: {
+  model: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 8 },
+  progress: { flexDirection: 'row', gap: 16, alignItems: 'center', padding: 20, borderRadius: 16 },
+  galleryHeading: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    alignSelf: 'center',
-    borderWidth: 1,
-    borderColor: theme.borderColor,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 99,
-    marginBottom: 8
+    gap: 8
   },
-  attachButtonText: {
-    color: theme.textColor,
-    marginLeft: 8,
-    fontFamily: theme.mediumFont,
-    fontSize: 14
-  },
-  midChatInputWrapper: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  midChatInputContainer: {
-    width: '100%',
-    paddingTop: 5,
-    paddingBottom: 5
-  },
-  midInput: {
-    marginBottom: 8,
-    borderWidth: 1,
-    paddingHorizontal: 25,
-    marginHorizontal: 10,
-    paddingVertical: 15,
-    borderRadius: 99,
-    color: theme.textColor,
-    borderColor: theme.borderColor,
-    fontFamily: theme.mediumFont,
-  },
-  iconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 99,
-    color: theme.textColor,
-    marginHorizontal: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 21,
-    paddingRight: 39,
-    borderColor: theme.borderColor,
-    fontFamily: theme.semiBoldFont,
-  },
-  attachIconButton: {
-    marginRight: 8,
-    padding: 6,
-    borderRadius: 99,
-    borderWidth: 1,
-    borderColor: theme.borderColor
-  },
-  bottomButtonStyle: {
-    marginVertical: 5,
-    flexDirection: 'row',
-    marginHorizontal: 6,
-    paddingHorizontal: 7,
-    paddingVertical: 7,
-    borderRadius: 4,
-    backgroundColor: theme.tintColor,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  buttonStyle: {
-    marginRight: 14,
-    padding: 5,
-    borderRadius: 99,
-    backgroundColor: theme.tintColor
-  },
-  buttonText: {
-    color: theme.textColor,
-    fontFamily: theme.mediumFont,
-  },
+  ideas: { flexDirection: 'row', gap: 14 },
+  idea: { flex: 1, borderRadius: 16, borderWidth: 1, overflow: 'hidden' },
+  creation: { flex: 1, marginTop: 20, marginRight: 12, borderWidth: 1, borderRadius: 16, overflow: 'hidden' },
+  viewerActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }
 })

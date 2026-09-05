@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
-import { Provider, getChatModel } from '../models'
-import { ChatMessage, ChatRequest } from '../types'
-import { initSSE, sendToken, sendError, sendDone, createSSEParser, pumpStream } from '../sse'
+import { Provider } from '../models'
+import { ChatMessage, ChatRequest, messageImages } from '../types'
+import { streamProvider } from '../provider'
 
 interface StreamArgs {
   req: Request
@@ -11,71 +11,51 @@ interface StreamArgs {
   apiKey: string
 }
 
-function toOpenAIMessages(messages: ChatMessage[], supportsVision: boolean) {
-  return messages.map(m => {
-    if (m.image && supportsVision) {
-      return {
-        role: m.role,
-        content: [
-          ...(m.content ? [{ type: 'text', text: m.content }] : []),
-          {
-            type: 'image_url',
-            image_url: { url: `data:${m.image.mimeType};base64,${m.image.data}` }
-          }
-        ]
-      }
+export function toOpenAIMessages(messages: ChatMessage[]) {
+  return messages.map((message) => {
+    const images = messageImages(message)
+    return {
+      role: message.role,
+      content: images.length
+        ? [
+            ...(message.content ? [{ type: 'text', text: message.content }] : []),
+            ...images.map((image) => ({
+              type: 'image_url',
+              image_url: { url: `data:${image.mimeType};base64,${image.data}` }
+            }))
+          ]
+        : message.content
     }
-    return { role: m.role, content: m.content }
   })
 }
 
 export async function streamOpenAICompatible({ req, res, provider, apiUrl, apiKey }: StreamArgs) {
-  initSSE(res)
-  try {
-    const { model, messages }: ChatRequest = req.body
-    const chatModel = getChatModel(model)
-
-    if (!chatModel || chatModel.provider !== provider) {
-      sendError(res, `unsupported model: ${model}`)
-      sendDone(res)
-      return
+  const request: ChatRequest = req.body
+  await streamProvider(
+    res,
+    request,
+    provider,
+    (model, signal) =>
+      fetch(apiUrl, {
+        method: 'POST',
+        signal,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: model.modelId,
+          messages: toOpenAIMessages(request.messages),
+          stream: true,
+          ...(provider === 'openai' ? { max_completion_tokens: 16384 } : { max_tokens: 16384 }),
+          ...(model.label === 'kimi26' ? { thinking: { type: 'disabled' } } : {})
+        })
+      }),
+    (data) => {
+      if (data === '[DONE]') return { done: true }
+      const parsed = JSON.parse(data)
+      if (parsed.error) return { error: 'The provider reported a stream error. Try again.' }
+      const choice = parsed.choices?.[0]
+      if (choice?.finish_reason === 'content_filter')
+        return { error: 'The provider could not answer this prompt. Try a different prompt.' }
+      return { content: choice?.delta?.content || '', done: !!choice?.finish_reason }
     }
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: chatModel.modelId,
-        messages: toOpenAIMessages(messages, chatModel.supportsVision),
-        stream: true
-      })
-    })
-
-    if (!response.ok) {
-      const detail = await response.text()
-      console.error(`${provider} error:`, response.status, detail)
-      sendError(res, `provider error (${response.status})`)
-      sendDone(res)
-      return
-    }
-
-    const parse = createSSEParser(data => {
-      if (data === '[DONE]') return
-      try {
-        const parsed = JSON.parse(data)
-        const content = parsed.choices?.[0]?.delta?.content
-        if (content) sendToken(res, content)
-      } catch {}
-    })
-
-    await pumpStream(response.body, parse)
-    sendDone(res)
-  } catch (err) {
-    console.error(`error in ${provider} chat:`, err)
-    sendError(res, 'unexpected server error')
-    sendDone(res)
-  }
+  )
 }

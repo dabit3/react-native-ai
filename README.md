@@ -2,140 +2,182 @@
 
 # React Native AI
 
-Full stack framework for building cross-platform mobile AI apps supporting LLM real-time / streaming text and chat UIs, image services and natural language to images with multiple models, and image processing.
+A quiet workspace for conversations and images. Built with Expo, React Native, and a TypeScript server. Runs on iOS, Android, and the web.
 
-![React Native AI](https://i.imgur.com/AOOgBM0.png)
+## The experience
 
-> Check out the video tutorial [here](https://www.youtube.com/watch?v=zf3NnTU5pr4)
+- **One conversation, many models.** Switch providers without losing the conversation context. Search models by name, provider, speed, or vision support.
+- **A focused interface.** A desktop sidebar, mobile navigation, readable typography, light and dark modes, and three subtle color variants.
+- **Responsive chat.** Batched streaming updates, virtualized messages, stop and retry controls, Markdown, copy, read aloud, and transcript export.
+- **An image studio.** Generate images, use up to four references, choose a frame and visual style, and refine a result with a new prompt.
+- **Local history.** Rename, search, and remove conversations. Browse generated images, inspect them, and save or share them.
+- **Clear connection status.** Configure the server address in Settings. The model picker shows which providers have server keys.
 
-## Features
+Provider status reflects key configuration, not successful authentication, billing, or model access. The provider account must permit the selected model.
 
-- LLM support for [OpenAI](https://openai.com/) GPT-5.2 + GPT-5 mini, [Anthropic](https://anthropic.com) Claude Fable 5, Sonnet 5, and Opus/Sonnet/Haiku 4.5, [Gemini](https://makersuite.google.com), [Z.ai](https://z.ai) GLM 5.2, and [Moonshot](https://platform.moonshot.ai) Kimi K2.7
-- Image generation with Gemini (Nano Banana)
-- Real-time / streaming responses from all providers
-- Server proxy to easily enable authentication and authorization with auth provider of choice.
-- Theming (comes out of the box with 5 themes) - easily add additional themes with just a few lines of code.
+## Run locally
 
-![React Native AI Preview](https://i.imgur.com/D4LIVal.png)
+Use Node.js 22.6 or later. CI uses Node.js 22 and pnpm 10. The checked-in pnpm lockfiles define the dependency versions.
 
-## Usage
-
-Generate a new project by running:
-
-```sh
-npx rn-ai
-```
-
-Next, either configure your environment variables with the CLI, or do so later.
-
-### Running the app
-
-Change into the app directory and run:
+### Server
 
 ```sh
-npm start
+cd server
+pnpm install --frozen-lockfile
+cp .env.example .env
 ```
 
-### Running the server
-
-Change into the server directory and run:
+Add at least one provider key to `server/.env`. Then start the server:
 
 ```sh
-npm run dev
+pnpm build
+pnpm dev
 ```
 
-### Environment variables
+The server listens on port `3050` by default. `GET /health` returns its status. `GET /models` returns the public model registry.
 
-The server environment variables are available in `server/.env.example`. If already not present, update this file name to `.env` and configure server environment variables. Gemini image generation requires `GEMINI_API_KEY`.
+### App
 
-## Theming
+In a separate terminal:
 
-To add a new theme, open `app/src/theme.ts` and add a new theme with the following configuration:
-
-```ts
-const christmas = {
-  // extend an existing theme or start from scratch
-  ...lightTheme,
-  name: 'Christmas',
-  label: 'christmas',
-  tintColor: '#ff0000',
-  textColor: '#378b29',
-  tabBarActiveTintColor: '#378b29',
-  tabBarInactiveTintColor: '#ff0000',
-  placeholderTextColor: '#378b29',
-}
+```sh
+cd app
+pnpm install --frozen-lockfile
+pnpm web
 ```
 
-At the bottom of the file, export the new theme:
+Open **Settings → Your AI connection**. Enter `http://localhost:3050` and select **Save connection**.
 
-```ts
-export {
-  lightTheme, darkTheme, hackerNews, miami, vercel, christmas
-}
+You can also configure the default address through `app/.env`, using the variables in `app/.env.example`.
+
+For native development builds:
+
+```sh
+pnpm ios
+pnpm android
 ```
 
-![React Native AI Themes](https://i.imgur.com/7Gser4F.png)
+Use your computer’s network address or an HTTPS tunnel on a physical phone. `localhost` on a phone refers to the phone itself. The Android emulator uses `http://10.0.2.2:3050` to reach the host.
 
-## Configuring LLM Models
+Camera access, photo saving, and native sharing require device permissions. Use a development build to verify native media features. Expo Go can restrict photo library access.
 
-Here is how to add new or remove existing LLM models.
+If your package manager blocks dependency build scripts, review its approval prompt. Do not disable your dependency security policy.
 
-### In the app
+## Model choices
 
-You can add or configure a model by updating `MODELS` in `constants.ts`.
+The server registry is the source of truth. The app includes an offline catalog so model discovery remains available before connection.
 
-For removing models, just remove the models you do not want to support.
+| Provider | Conversation models | Server variable |
+| --- | --- | --- |
+| Anthropic | Claude Sonnet 5, Opus 5, Fable 5, Haiku 4.5 | `ANTHROPIC_API_KEY` |
+| OpenAI | GPT-5.5, GPT-5.4 mini | `OPENAI_API_KEY` |
+| Google | Gemini 3.5 Flash, Gemini 3.1 Pro (preview) | `GEMINI_API_KEY` |
+| Z.ai | GLM 5.2 | `ZAI_API_KEY` |
+| Moonshot | Kimi K2.6 | `MOONSHOT_API_KEY` |
 
-For adding models, once the model definition is added to the `MODELS` array, you should update `src/screens/chat.tsx` to support the new model:
+GLM 5.2 is text-only in this app. The other catalog entries support images. Kimi K2.6 uses non-thinking mode for this conversational interface.
 
-1. Create local state to hold new model data
-2. Update `chat()` function to handle new model type
-3. Create `generateModelReponse` function to call new model
-4. Update `getChatType` in `utils.ts` to configure the LLM type that will correspond with your server path.
-5. Render new model in UI
+| Image model | Provider | Features |
+| --- | --- | --- |
+| Nano Banana 2 | Google | Generation and reference-based edits |
+| Nano Banana Pro | Google | Detailed compositions and reference-based edits |
+| GPT Image 2 | OpenAI | Generation, typography, and reference-based edits |
 
-```tsx
-{
-  chatType.label.includes('newModel') && (
-    <FlatList
-      data={newModelReponse.messages}
-      renderItem={renderItem}
-      scrollEnabled={false}
-    />
-  )
-}
+Image frames: `1:1`, `3:2`, `2:3`, `16:9`, and `9:16`. OpenAI image output uses medium quality. Image models can require separate account access or organization verification.
+
+Model identifiers were checked against provider documentation during this rewrite. Provider catalogs and retirement dates can change. Update `server/src/models.ts` to change the live catalog. Update `app/constants.ts` to keep its offline catalog aligned.
+
+Existing provider-specific chat routes remain available. The previous Gemini image route also remains available for compatible clients.
+
+## Images and storage
+
+- Attach JPEG, PNG, or WebP images. Large source images resize to a maximum edge of 2,048 pixels before upload.
+- Each optimized image must fit within 4 MB. Image types are detected from their bytes, not just file names.
+- A chat request supports up to four images across its conversation context.
+- The image studio supports up to four reference images per request.
+- Native image files use the app’s document directory. Web images use IndexedDB blobs.
+- Conversation and gallery metadata use AsyncStorage. Image bytes are not serialized into conversation metadata.
+- Previous `rnai-chats-v1` histories migrate without removing the original data. Old temporary image files can be unavailable after migration.
+- Malformed saved histories are not overwritten. Storage errors appear in the app.
+- Removing a creation removes it from the collection. Its underlying image can remain in local storage for existing references.
+
+Chat context is bounded to the most recent 80 messages and 100,000 text characters. Older messages remain in local history. The app shows a notice when older context is omitted.
+
+Drafts remain available while you switch screens or conversations during the current session. Drafts do not survive an app restart.
+
+## Privacy and deployment
+
+Provider keys stay on the server. Never put provider keys in `EXPO_PUBLIC_*` variables.
+
+For a deployed server:
+
+1. Set `API_AUTH_TOKEN` or replace the auth middleware with your identity provider.
+2. Set `CORS_ORIGIN` to your web app origin.
+3. Use HTTPS.
+4. Set a suitable `RATE_LIMIT_PER_MINUTE` and enforce provider spending limits.
+5. Configure proxy timeouts for streaming requests.
+
+Enter the server token in the app’s Settings. This token stays in memory and is not persisted. The built-in shared token is suitable for a private deployment, not a complete multi-user authentication system.
+
+Conversations and images are local and unencrypted. Requests pass through your server to the selected provider. Provider retention policies apply. No cross-device synchronization is included.
+
+The proxy validates request sizes, image types, and image signatures. It cancels upstream requests on client disconnect and limits request duration. Cancellation cannot guarantee that the provider stops billing work already started.
+
+## Verification
+
+### App
+
+```sh
+cd app
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build:web
+pnpm exec playwright install chromium
+pnpm test:e2e
 ```
 
-### On the server
+Browser tests use mocked provider responses. They cover desktop and mobile layouts, model changes, persistence, retries, cancellation, vision uploads, and image editing. They do not incur provider charges.
 
-Create a new file in the `server/src/chat` folder that corresponds to the model type you created in the mobile app. You can probably copy and re-use a lot of the streaming code from the other existing paths to get you started.
+Native JavaScript bundle checks:
 
-Next, update `server/src/chat/chatRouter` to use the new route.
+```sh
+pnpm exec expo export --platform ios --platform android --output-dir dist-native
+```
 
-## Configuring Image Models
+A successful bundle export does not replace native device tests or live provider tests.
 
-Here is how to add new or remove existing Image models.
+### Server
 
-### In the app
+```sh
+cd server
+pnpm typecheck
+pnpm test
+pnpm build
+```
 
-You can add or configure a model by updating `IMAGE_MODELS` in `constants.ts`.
+Server tests cover provider normalization, stream framing, disconnect cancellation, request validation, model availability, and image generation and editing.
 
-For removing models, just remove the models you do not want to support.
+## Project layout
 
-For adding models, once the model definition is added to the `IMAGE_MODELS` array, you should update `src/screens/images.tsx` to support the new model.
+```text
+app/
+  App.tsx                   Settings, fonts, registry, and theme providers
+  constants.ts              Offline model catalog
+  src/main.tsx              Responsive navigation and conversation history
+  src/screens/              Chat, image studio, and settings
+  src/hooks/                Streaming and local persistence
+  src/mediaStore.ts         Native image files
+  src/mediaStore.web.ts     Browser image blobs
+  tests/                    Unit and browser tests
+server/
+  src/models.ts             Provider models and capabilities
+  src/provider.ts           Request lifetimes and normalized streaming
+  src/chat/                 Provider request adapters
+  src/images/               Generation and editing adapters
+  src/types.ts              Request schemas and image validation
+cli/
+  cli.js                    Project scaffolding
+```
 
-Main consideration is input. Does the model take text, image, or both as inputs?
-
-The app is configured to handle both, but you must update the `generate` function to pass the values to the API accordingly.
-
-### On the server
-
-#### Gemini (Nano Banana)
-
-Gemini image generation is handled in `server/src/images/gemini.ts`. Configure `GEMINI_API_KEY` and select the Nano Banana image models from the settings screen.
-
-#### Other API providers
-
-Create a new file in `server/src/images/modelName`, update the handler function to handle the new API call.
-
-Next, update `server/src/images/imagesRouter` to use the new route.
+The client uses native React Native controls and one shared theme system. It does not require a navigation framework, bottom-sheet runtime, or animation engine.

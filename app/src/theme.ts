@@ -1,158 +1,96 @@
 import { Theme } from '../types'
 
-const colors = {
-  white: '#fff',
-  black: '#000',
-  gray: 'rgba(0, 0, 0, .5)',
-  lightWhite: 'rgba(255, 255, 255, .5)',
-  blueTintColor: '#0281ff',
-  lightPink: '#F7B5CD',
-  neonCyan: '#00f0ff',
-  neonMagenta: '#ff00ff',
-  cyberpunkDark: '#0d0221',
-  matrixGreen: '#00ff41',
-  matrixDarkGreen: '#003b00',
-  matrixBlack: '#0d0d0d',
-  pinkPrimary: '#e91e8c',
-  pinkBackground: '#fff0f6',
-  pinkMuted: 'rgba(233, 30, 140, .4)'
-}
-
 const fonts = {
-  ultraLightFont: 'Geist-Ultralight',
-  thinFont: 'Geist-Thin',
+  ultraLightFont: 'Geist-Regular',
+  thinFont: 'Geist-Regular',
   regularFont: 'Geist-Regular',
-  lightFont: 'Geist-Light',
+  lightFont: 'Geist-Regular',
   mediumFont: 'Geist-Medium',
   semiBoldFont: 'Geist-SemiBold',
-  boldFont: 'Geist-Bold',
-  blackFont: 'Geist-Black',
-  ultraBlackFont: 'Geist-Ultrablack',
+  boldFont: 'Geist-SemiBold',
+  blackFont: 'Geist-SemiBold',
+  ultraBlackFont: 'Geist-SemiBold'
 }
 
 const lightTheme: Theme = {
   ...fonts,
   name: 'Light',
   label: 'light',
-  quoteBackgroundColor: 'rgba(0, 0, 0, .05)',
-  codeBorderColor: 'rgba(0, 0, 0, .15)',
-  statusBarStyle: 'dark',
-  textColor: colors.black,
-  secondaryTextColor: colors.white,
-  mutedForegroundColor: colors.gray,
-  backgroundColor: colors.white,
-  placeholderTextColor: colors.gray,
-  secondaryBackgroundColor: colors.black,
-  borderColor: 'rgba(0, 0, 0, .15)',
-  tintColor: '#0281ff',
-  tintTextColor: colors.white,
-  tabBarActiveTintColor: colors.black,
-  tabBarInactiveTintColor: colors.gray,
+  textColor: '#272B26',
+  secondaryTextColor: '#FFFFFF',
+  mutedForegroundColor: '#71756D',
+  backgroundColor: '#FAFAF7',
+  placeholderTextColor: '#7B8076',
+  secondaryBackgroundColor: '#F0F1EB',
+  surfaceColor: '#F1F2EC',
+  elevatedColor: '#FFFFFF',
+  accentSoft: '#E7EDDF',
+  dangerColor: '#A13D36',
+  successColor: '#4A6546',
+  borderColor: '#E2E5DC',
+  tintColor: '#465D3F',
+  tintTextColor: '#FFFFFF',
+  tabBarActiveTintColor: '#465D3F',
+  tabBarInactiveTintColor: '#71756D',
+  quoteBackgroundColor: '#F0F1EB',
+  codeBorderColor: '#E2E5DC',
+  statusBarStyle: 'dark'
 }
 
 const darkTheme: Theme = {
-  ...fonts,
+  ...lightTheme,
   name: 'Dark',
   label: 'dark',
-  quoteBackgroundColor: 'rgba(255, 255, 255, .06)',
-  codeBorderColor: 'rgba(255, 255, 255, .2)',
-  statusBarStyle: 'light',
-  textColor: colors.white,
-  secondaryTextColor: colors.black,
-  mutedForegroundColor: colors.lightWhite,
-  backgroundColor: colors.black,
-  placeholderTextColor: colors.lightWhite,
-  secondaryBackgroundColor: colors.white,
-  borderColor: 'rgba(255, 255, 255, .2)',
-  tintColor: '#0281ff',
-  tintTextColor: colors.white,
-  tabBarActiveTintColor: colors.blueTintColor,
-  tabBarInactiveTintColor: colors.lightWhite,
+  textColor: '#E8EBE3',
+  secondaryTextColor: '#191D18',
+  mutedForegroundColor: '#A0A79B',
+  backgroundColor: '#171B17',
+  placeholderTextColor: '#939B8D',
+  secondaryBackgroundColor: '#232922',
+  surfaceColor: '#1F241E',
+  elevatedColor: '#252C23',
+  accentSoft: '#303E2C',
+  dangerColor: '#F3A69C',
+  successColor: '#BDD4A7',
+  borderColor: '#333B30',
+  tintColor: '#BDD4A7',
+  tintTextColor: '#202B1C',
+  tabBarActiveTintColor: '#BDD4A7',
+  tabBarInactiveTintColor: '#A0A79B',
+  quoteBackgroundColor: '#232922',
+  codeBorderColor: '#333B30',
+  statusBarStyle: 'light'
 }
 
 const hackerNews: Theme = {
   ...lightTheme,
-  name: 'Hacker News',
+  name: 'Sand',
   label: 'hackerNews',
-  backgroundColor: '#e4e4e4',
-  tintColor: '#ed702d',
+  tintColor: '#885439',
+  accentSoft: '#F0E5DB'
 }
-
 const miami: Theme = {
   ...darkTheme,
-  name: 'Miami',
+  name: 'Rose',
   label: 'miami',
-  backgroundColor: '#231F20',
-  tintColor: colors.lightPink,
-  tintTextColor: '#231F20',
-  tabBarActiveTintColor: colors.lightPink
+  tintColor: '#E2B6C2',
+  accentSoft: '#3F2D35'
 }
-
 const vercel: Theme = {
   ...darkTheme,
-  name: 'Vercel',
+  name: 'Mono',
   label: 'vercel',
-  backgroundColor: colors.black,
-  tintColor: '#171717',
-  tintTextColor: colors.white,
-  tabBarActiveTintColor: colors.white,
-  secondaryTextColor: colors.white,
+  tintColor: '#E6E6E6',
+  accentSoft: '#333333'
 }
-
-const cyberpunk: Theme = {
-  ...darkTheme,
-  name: 'Cyberpunk',
-  label: 'cyberpunk',
-  backgroundColor: colors.cyberpunkDark,
-  tintColor: colors.neonCyan,
-  tintTextColor: colors.cyberpunkDark,
-  tabBarActiveTintColor: colors.neonCyan,
-  tabBarInactiveTintColor: colors.neonMagenta,
-  borderColor: 'rgba(0, 240, 255, .3)',
-}
-
-const matrix: Theme = {
-  ...darkTheme,
-  name: 'Matrix',
-  label: 'matrix',
-  backgroundColor: colors.matrixBlack,
-  tintColor: colors.matrixGreen,
-  tintTextColor: colors.matrixBlack,
-  tabBarActiveTintColor: colors.matrixGreen,
-  tabBarInactiveTintColor: colors.matrixDarkGreen,
-  borderColor: 'rgba(0, 255, 65, .3)',
-}
-
-const pink: Theme = {
-  ...lightTheme,
-  name: 'Pink',
-  label: 'pink',
-  backgroundColor: colors.pinkBackground,
-  tintColor: colors.pinkPrimary,
-  tintTextColor: colors.white,
-  tabBarActiveTintColor: colors.pinkPrimary,
-  tabBarInactiveTintColor: colors.pinkMuted,
-  borderColor: 'rgba(233, 30, 140, .2)',
-}
-
-const THEMES: Record<string, Theme> = {
-  light: lightTheme,
-  dark: darkTheme,
-  hackerNews,
-  miami,
-  vercel,
-  cyberpunk,
-  matrix,
-  pink
-}
+const cyberpunk = darkTheme
+const matrix = darkTheme
+const pink = lightTheme
+const THEMES: Record<string, Theme> = { light: lightTheme, dark: darkTheme, hackerNews, miami, vercel }
 
 function getTheme(label: string, systemColorScheme?: 'light' | 'dark' | 'unspecified' | null): Theme {
-  if (label === 'system') {
-    return systemColorScheme === 'dark' ? darkTheme : lightTheme
-  }
+  if (label === 'system') return systemColorScheme === 'dark' ? darkTheme : lightTheme
   return THEMES[label] || lightTheme
 }
 
-export {
-  lightTheme, darkTheme, hackerNews, miami, vercel, cyberpunk, matrix, pink, THEMES, getTheme
-}
+export { lightTheme, darkTheme, hackerNews, miami, vercel, cyberpunk, matrix, pink, THEMES, getTheme }

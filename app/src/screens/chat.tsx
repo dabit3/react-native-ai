@@ -1,817 +1,816 @@
+import { memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  View,
-  Text,
-  KeyboardAvoidingView,
-  StyleSheet,
-  TouchableHighlight,
-  TouchableOpacity,
-  TextInput,
   ActivityIndicator,
   FlatList,
-  Keyboard,
-  Share,
+  KeyboardAvoidingView,
+  Linking,
   Platform,
-  Image
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  useWindowDimensions,
+  View
 } from 'react-native'
-import 'react-native-get-random-values'
-import { useContext, useState, useRef, useEffect, useCallback, memo } from 'react'
-import { ThemeContext, AppContext } from '../context'
-import { useChatStream } from '../hooks/useChatStream'
-import { PROMPT_SUGGESTIONS } from '../../constants'
-import { Ionicons } from '@expo/vector-icons'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import * as Clipboard from 'expo-clipboard'
 import * as Haptics from 'expo-haptics'
-import * as ImagePicker from 'expo-image-picker'
 import * as Speech from 'expo-speech'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useActionSheet } from '@expo/react-native-action-sheet'
 import Markdown from '@ronradtke/react-native-markdown-display'
-import { ChatMessage, ImageAttachment, Theme } from '../../types'
-
-const STORAGE_KEY = 'rnai-chats-v1'
-
-type ChatStates = Record<string, ChatMessage[]>
+import { AppContext, ThemeContext } from '../context'
+import { useChatStream } from '../hooks/useChatStream'
+import { ChatMessage, Conversation, ImageAttachment, Theme } from '../../types'
+import { PROMPT_SUGGESTIONS } from '../../constants'
+import { conversationTitle, getContextMessages, transcript } from '../conversations'
+import { newId, pickImages, saveImage } from '../media'
+import { errorMessage } from '../utils'
+import { AppText, Button, IconButton, Mark, Notice, Sheet, Tag } from '../components/ui'
+import { MediaImage } from '../components/MediaImage'
 
 function stripMarkdown(text: string) {
-  return text
-    .replace(/```[\s\S]*?```/g, ' code block ')
-    .replace(/[*_~`#>]/g, '')
+  return text.replace(/```[\s\S]*?```/g, ' code block ').replace(/[*_~`#>]/g, '')
 }
 
-const MessageBubble = memo(function MessageBubble({
-  item,
+const Message = memo(function Message({
+  message,
   theme,
-  streaming,
-  isLast,
-  onOptions,
-  onRetry
+  live = false,
+  last = false,
+  onCopy,
+  onSpeak,
+  onRetry,
+  onImage
 }: {
-  item: ChatMessage,
-  theme: Theme,
-  streaming: boolean,
-  isLast: boolean,
-  onOptions: (message: ChatMessage) => void,
+  message: ChatMessage
+  theme: Theme
+  live?: boolean
+  last?: boolean
+  onCopy: (text: string) => void
+  onSpeak: (text: string) => void
   onRetry: () => void
+  onImage: (image: ImageAttachment) => void
 }) {
-  const styles = getStyles(theme)
-  if (item.role === 'user') {
-    return (
-      <View style={styles.promptResponse}>
-        <View style={styles.promptTextContainer}>
-          <View style={styles.promptTextWrapper}>
-            {
-              item.image && (
-                <Image
-                  source={{ uri: item.image.uri }}
-                  style={styles.promptImage}
-                  accessibilityLabel="Attached image"
-                />
-              )
-            }
-            {
-              !!item.content && (
-                <Text style={styles.promptText}>
-                  {item.content}
-                </Text>
-              )
-            }
-          </View>
-        </View>
-      </View>
-    )
-  }
-  if (item.error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{item.error}</Text>
-        <TouchableOpacity
-          onPress={onRetry}
-          accessibilityRole="button"
-          accessibilityLabel="Retry"
-          style={styles.retryButton}
-        >
-          <Ionicons name="refresh" size={16} color={theme.tintTextColor} />
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    )
-  }
+  const markdown = useMemo(
+    () => ({
+      body: { color: theme.textColor, fontFamily: theme.regularFont, fontSize: 16, lineHeight: 27 },
+      paragraph: { marginTop: 0, marginBottom: 14 },
+      heading1: {
+        fontFamily: theme.semiBoldFont,
+        fontSize: 25,
+        lineHeight: 34,
+        marginTop: 18,
+        marginBottom: 12
+      },
+      heading2: {
+        fontFamily: theme.semiBoldFont,
+        fontSize: 21,
+        lineHeight: 29,
+        marginTop: 16,
+        marginBottom: 10
+      },
+      heading3: {
+        fontFamily: theme.semiBoldFont,
+        fontSize: 18,
+        lineHeight: 26,
+        marginTop: 14,
+        marginBottom: 8
+      },
+      strong: { fontFamily: theme.semiBoldFont },
+      link: { color: theme.tintColor, textDecorationLine: 'underline' as const },
+      code_inline: {
+        color: theme.textColor,
+        backgroundColor: theme.surfaceColor,
+        fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+        fontSize: 13
+      },
+      fence: {
+        backgroundColor: theme.surfaceColor,
+        borderColor: theme.borderColor,
+        borderWidth: 1,
+        borderRadius: 12,
+        padding: 16,
+        color: theme.textColor,
+        fontSize: 13,
+        lineHeight: 22
+      },
+      code_block: {
+        backgroundColor: theme.surfaceColor,
+        borderColor: theme.borderColor,
+        borderRadius: 12,
+        color: theme.textColor,
+        padding: 16
+      },
+      blockquote: {
+        backgroundColor: theme.surfaceColor,
+        borderColor: theme.tintColor,
+        borderLeftWidth: 3,
+        paddingHorizontal: 16,
+        paddingVertical: 8
+      },
+      table: { borderColor: theme.borderColor, borderRadius: 8 },
+      tr: { borderColor: theme.borderColor },
+      th: { padding: 8 },
+      td: { padding: 8 },
+      hr: { backgroundColor: theme.borderColor, marginVertical: 18 }
+    }),
+    [theme]
+  )
+  const user = message.role === 'user'
   return (
-    <View style={styles.textStyleContainer}>
-      {
-        streaming && isLast && !item.content ? (
-          <ActivityIndicator
-            style={styles.typingIndicator}
-            color={theme.textColor}
-          />
-        ) : (
-          <Markdown style={styles.markdownStyle as any}>{item.content}</Markdown>
-        )
-      }
-      {
-        !(streaming && isLast) && !!item.content && (
-          <TouchableHighlight
-            onPress={() => onOptions(item)}
-            underlayColor={'transparent'}
-            accessibilityRole="button"
-            accessibilityLabel="Message options"
+    <View style={[styles.message, user && styles.userMessage]}>
+      {!user && (
+        <View style={styles.messageLabel}>
+          <Mark size={16} />
+          <AppText muted style={{ fontSize: 12 }}>
+            {message.model || 'Assistant'}
+          </AppText>
+          {message.stopped && <Tag>Stopped</Tag>}
+        </View>
+      )}
+      {!!message.images?.length && (
+        <View style={styles.messageImages}>
+          {message.images.map((image) => (
+            <Pressable
+              key={image.id}
+              onPress={() => onImage(image)}
+              accessibilityRole="button"
+              accessibilityLabel="View attached image"
+            >
+              <MediaImage image={image} style={styles.messageImage} />
+            </Pressable>
+          ))}
+        </View>
+      )}
+      {!!message.content &&
+        (user ? (
+          <View style={[styles.userBubble, { backgroundColor: theme.surfaceColor }]}>
+            <AppText selectable style={{ fontSize: 16, lineHeight: 26 }}>
+              {message.content}
+            </AppText>
+          </View>
+        ) : live ? (
+          <Text
+            selectable
+            style={{ color: theme.textColor, fontFamily: theme.regularFont, fontSize: 16, lineHeight: 27 }}
           >
-            <View style={styles.optionsIconWrapper}>
-              <Ionicons
-                name="ellipsis-horizontal"
-                size={20}
-                color={theme.textColor}
+            {message.content}
+            <Text style={{ color: theme.tintColor }}> ▍</Text>
+          </Text>
+        ) : (
+          <Markdown
+            style={markdown}
+            rules={{ image: () => null }}
+            onLinkPress={(url) => {
+              if (/^https?:\/\//i.test(url)) void Linking.openURL(url)
+              return false
+            }}
+          >
+            {message.content}
+          </Markdown>
+        ))}
+      {live && !message.content && (
+        <View accessibilityLiveRegion="polite" style={styles.thinking}>
+          <ActivityIndicator size="small" color={theme.tintColor} />
+          <AppText muted style={{ fontSize: 13 }}>
+            A moment to think…
+          </AppText>
+        </View>
+      )}
+      {!!message.error && (
+        <View style={{ marginTop: 12 }}>
+          <Notice>{message.error}</Notice>
+        </View>
+      )}
+      {!user && !live && (
+        <View style={styles.messageActions}>
+          {!!message.content && (
+            <>
+              <IconButton icon="copy-outline" label="Copy response" onPress={() => onCopy(message.content)} />
+              <IconButton
+                icon="volume-medium-outline"
+                label="Read response aloud"
+                onPress={() => onSpeak(message.content)}
               />
-            </View>
-          </TouchableHighlight>
-        )
-      }
+            </>
+          )}
+          {last && (
+            <Button variant="ghost" icon="refresh-outline" onPress={onRetry}>
+              {message.error ? 'Try again' : 'Regenerate'}
+            </Button>
+          )}
+        </View>
+      )}
     </View>
   )
 })
 
-export function Chat() {
-  const [input, setInput] = useState<string>('')
-  const [attachment, setAttachment] = useState<ImageAttachment | null>(null)
-  const [chatStates, setChatStates] = useState<ChatStates>({})
-  const [hydrated, setHydrated] = useState(false)
-  const flatListRef = useRef<FlatList | null>(null)
-  const autoScrollRef = useRef(true)
-  const { showActionSheetWithOptions } = useActionSheet()
-  const { streaming, send, stop } = useChatStream()
-
+export function Chat({
+  conversation,
+  onSave,
+  onActivate,
+  onBusy,
+  onSettings
+}: {
+  conversation?: Conversation
+  onSave: (value: Conversation) => void
+  onActivate: (id: string) => void
+  onBusy: (busy: boolean) => void
+  onSettings: () => void
+}) {
   const { theme } = useContext(ThemeContext)
-  const { chatType, systemPrompt } = useContext(AppContext)
-  const styles = getStyles(theme)
-
-  const messages = chatStates[chatType.label] || []
+  const { chatType, systemPrompt, apiUrl, token, handlePresentModalPress, notify, connection } =
+    useContext(AppContext)
+  const { width } = useWindowDimensions()
+  const compact = width < 600
+  const insets = useSafeAreaInsets()
+  const { streaming, send, stop } = useChatStream()
+  const [input, setInput] = useState('')
+  const [images, setImages] = useState<ImageAttachment[]>([])
+  const [live, setLive] = useState<ChatMessage | null>(null)
+  const [picking, setPicking] = useState(false)
+  const [viewImage, setViewImage] = useState<ImageAttachment | null>(null)
+  const [showJump, setShowJump] = useState(false)
+  const [speaking, setSpeaking] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const inputRef = useRef<TextInput>(null)
+  const listRef = useRef<FlatList<ChatMessage>>(null)
+  const atBottom = useRef(true)
+  const locked = useRef(false)
+  const drafts = useRef<Record<string, { input: string; images: ImageAttachment[] }>>({})
+  const currentDraft = useRef('new')
+  const messages = useMemo(
+    () => [...(conversation?.messages || []), ...(live ? [live] : [])],
+    [conversation?.messages, live]
+  )
+  const hasMessages = messages.length > 0
+  const imageCount = (conversation?.messages || []).reduce((count, m) => count + (m.images?.length || 0), 0)
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then(value => {
-        if (value) setChatStates(JSON.parse(value))
+    const key = conversation?.id || 'new'
+    if (currentDraft.current === key) return
+    const draft = drafts.current[key]
+    setInput(draft?.input || '')
+    setImages(draft?.images || [])
+    currentDraft.current = key
+    atBottom.current = true
+    setShowJump(false)
+  }, [conversation?.id])
+
+  useEffect(() => {
+    drafts.current[currentDraft.current] = { input, images }
+  }, [input, images])
+  useEffect(
+    () => () => {
+      void Speech.stop()
+    },
+    []
+  )
+
+  const copy = useCallback(
+    async (text: string) => {
+      try {
+        await Clipboard.setStringAsync(text)
+        notify('Copied to clipboard.')
+      } catch {
+        notify('The text could not be copied. Select it to copy manually.')
+      }
+    },
+    [notify]
+  )
+  const speak = useCallback(
+    (text: string) => {
+      void Speech.stop()
+      setSpeaking(true)
+      Speech.speak(stripMarkdown(text), {
+        onDone: () => setSpeaking(false),
+        onStopped: () => setSpeaking(false),
+        onError: () => {
+          setSpeaking(false)
+          notify('Speech is not available on this device.')
+        }
       })
-      .catch(err => console.log('error restoring chats', err))
-      .finally(() => setHydrated(true))
-  }, [])
+    },
+    [notify]
+  )
 
-  useEffect(() => {
-    if (!hydrated) return
-    const timer = setTimeout(() => {
-      const sanitized: ChatStates = {}
-      for (const [label, msgs] of Object.entries(chatStates)) {
-        sanitized[label] = msgs
-          .filter(m => !m.error)
-          .map(m => m.image ? { ...m, image: { ...m.image, base64: undefined } } : m)
-      }
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized))
-        .catch(err => console.log('error persisting chats', err))
-    }, 400)
-    return () => clearTimeout(timer)
-  }, [chatStates, hydrated])
-
-  const updateMessages = useCallback((modelLabel: string, updater: (prev: ChatMessage[]) => ChatMessage[]) => {
-    setChatStates(prev => ({
-      ...prev,
-      [modelLabel]: updater(prev[modelLabel] || [])
-    }))
-  }, [])
-
-  function streamResponse(modelLabel: string, history: ChatMessage[]) {
-    autoScrollRef.current = true
-    updateMessages(modelLabel, () => [
-      ...history,
-      { role: 'assistant', content: '', model: modelLabel }
-    ])
-    send(chatType, history, systemPrompt, {
-      onToken: response => {
-        updateMessages(modelLabel, prev => [
-          ...prev.slice(0, -1),
-          { role: 'assistant', content: response, model: modelLabel }
-        ])
-      },
-      onDone: response => {
-        updateMessages(modelLabel, prev => [
-          ...prev.slice(0, -1),
-          { role: 'assistant', content: response, model: modelLabel }
-        ])
-      },
-      onError: message => {
-        updateMessages(modelLabel, prev => [
-          ...prev.slice(0, -1),
-          { role: 'assistant', content: '', error: message, model: modelLabel }
-        ])
-      }
-    })
+  async function attach(camera = false) {
+    if (picking || streaming) return
+    setPicking(true)
+    try {
+      const selected = await pickImages(4 - images.length - imageCount, camera)
+      setImages((current) => [...current, ...selected])
+    } catch (error) {
+      notify(errorMessage(error))
+    } finally {
+      setPicking(false)
+    }
   }
 
-  function chat(text?: string) {
-    const value = (text ?? input).trim()
-    if (!value && !attachment) return
-    if (streaming) return
-    Keyboard.dismiss()
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => null)
+  const generate = useCallback(
+    (history: ChatMessage[]) => {
+      if (locked.current) return
+      locked.current = true
+      onBusy(true)
+      atBottom.current = true
+      setShowJump(false)
+      const now = Date.now()
+      const id = conversation?.id || newId()
+      const base: Conversation = {
+        id,
+        title: conversation?.title || conversationTitle(history),
+        model: chatType.label,
+        messages: history,
+        createdAt: conversation?.createdAt || now,
+        updatedAt: now
+      }
+      const assistant: ChatMessage = { id: newId(), role: 'assistant', content: '', model: chatType.name }
+      onSave(base)
+      onActivate(id)
+      setLive(assistant)
+      const complete = (content: string, error?: string, stopped?: boolean) => {
+        onSave({
+          ...base,
+          updatedAt: Date.now(),
+          messages: [
+            ...history,
+            { ...assistant, content, ...(error ? { error } : {}), ...(stopped ? { stopped } : {}) }
+          ]
+        })
+        setLive(null)
+        locked.current = false
+        onBusy(false)
+      }
+      void send(
+        chatType,
+        history,
+        systemPrompt,
+        { url: apiUrl, token },
+        {
+          onToken: (content) => setLive({ ...assistant, content }),
+          onDone: (content, stopped) => complete(content, undefined, stopped),
+          onError: (error, content) => complete(content, error)
+        }
+      )
+    },
+    [conversation, chatType, systemPrompt, apiUrl, token, send, onSave, onActivate, onBusy]
+  )
 
-    const userMessage: ChatMessage = {
+  function submit() {
+    if (locked.current || picking || (!input.trim() && !images.length)) return
+    if (!apiUrl) {
+      onSettings()
+      return
+    }
+    if (chatType.available === false) {
+      handlePresentModalPress()
+      return
+    }
+    if (!chatType.supportsVision && (images.length || imageCount)) {
+      notify('Choose a model with vision support for this conversation.')
+      handlePresentModalPress()
+      return
+    }
+    const user: ChatMessage = {
+      id: newId(),
       role: 'user',
-      content: value,
-      ...(attachment ? { image: attachment } : {})
+      content: input.trim(),
+      ...(images.length ? { images } : {})
     }
-    const history = [...messages.filter(m => !m.error), userMessage]
     setInput('')
-    setAttachment(null)
-    streamResponse(chatType.label, history)
+    setImages([])
+    drafts.current[currentDraft.current] = { input: '', images: [] }
+    if (Platform.OS !== 'web')
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined)
+    generate([
+      ...(conversation?.messages || []).filter((m) => !m.error && (m.content || m.images?.length)),
+      user
+    ])
+    requestAnimationFrame(() => inputRef.current?.focus())
   }
 
-  function retryLast() {
-    if (streaming) return
-    const history = messages.filter(m => !m.error)
-    const lastUserIndex = history.map(m => m.role).lastIndexOf('user')
-    if (lastUserIndex === -1) return
-    streamResponse(chatType.label, history.slice(0, lastUserIndex + 1))
-  }
+  const retry = useCallback(() => {
+    if (!conversation || locked.current) return
+    const index = conversation.messages.map((m) => m.role).lastIndexOf('user')
+    if (index !== -1) generate(conversation.messages.slice(0, index + 1).filter((m) => !m.error))
+  }, [conversation, generate])
 
-  function regenerate() {
-    retryLast()
-  }
+  const renderMessage = useCallback(
+    ({ item, index }: { item: ChatMessage; index: number }) => (
+      <Message
+        message={item}
+        theme={theme}
+        live={item.id === live?.id}
+        last={!streaming && index === messages.length - 1}
+        onCopy={copy}
+        onSpeak={speak}
+        onRetry={retry}
+        onImage={setViewImage}
+      />
+    ),
+    [theme, live?.id, streaming, messages.length, copy, speak, retry]
+  )
 
-  async function attachImage() {
+  async function exportConversation() {
+    if (!conversation) return
+    setExporting(true)
     try {
-      const res = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 0.8,
-        base64: true
-      })
-      if (res.canceled || !res.assets?.length) return
-      const asset = res.assets[0]
-      setAttachment({
-        uri: asset.uri,
-        mimeType: asset.mimeType || 'image/jpeg',
-        base64: asset.base64 || undefined
-      })
-    } catch (err) {
-      console.log('error picking image:', err)
+      const text = transcript(conversation)
+      if (Platform.OS === 'web') {
+        const url = URL.createObjectURL(new Blob([text], { type: 'text/markdown' }))
+        const link = document.createElement('a')
+        link.href = url
+        link.download = 'conversation.md'
+        link.click()
+        setTimeout(() => URL.revokeObjectURL(url), 1000)
+      } else await Share.share({ message: text })
+    } catch {
+      notify('The conversation could not be exported. Try again.')
+    } finally {
+      setExporting(false)
     }
   }
 
-  async function copyToClipboard(text: string) {
-    await Clipboard.setStringAsync(text)
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => null)
-  }
-
-  async function shareConversation() {
-    const transcript = messages
-      .filter(m => !m.error)
-      .map(m => `**${m.role === 'user' ? 'You' : chatType.name}**: ${m.content}`)
-      .join('\n\n')
-    try {
-      await Share.share({ message: transcript })
-    } catch {}
-  }
-
-  function clearChat() {
-    if (streaming) return
-    Speech.stop()
-    updateMessages(chatType.label, () => [])
-  }
-
-  function showMessageOptions(message: ChatMessage) {
-    const options = [
-      'Copy to clipboard',
-      'Speak aloud',
-      'Regenerate response',
-      'Share conversation',
-      'Clear chat',
-      'Cancel'
-    ]
-    showActionSheetWithOptions({
-      options,
-      cancelButtonIndex: options.length - 1,
-      destructiveButtonIndex: 4
-    }, index => {
-      switch (index) {
-        case 0: copyToClipboard(message.content); break
-        case 1: Speech.speak(stripMarkdown(message.content)); break
-        case 2: regenerate(); break
-        case 3: shareConversation(); break
-        case 4: clearChat(); break
-      }
-    })
-  }
-
-  const callMade = messages.length > 0
-
-  function renderItem({ item, index }: { item: ChatMessage, index: number }) {
-    return (
-      <MessageBubble
-        item={item}
-        theme={theme}
-        streaming={streaming}
-        isLast={index === messages.length - 1}
-        onOptions={showMessageOptions}
-        onRetry={retryLast}
+  const composer = (
+    <View style={[styles.composer, { backgroundColor: theme.elevatedColor, borderColor: theme.borderColor }]}>
+      {!!images.length && (
+        <ScrollView horizontal contentContainerStyle={styles.attachments}>
+          {images.map((image) => (
+            <View key={image.id} style={{ position: 'relative' }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Preview attached image"
+                onPress={() => setViewImage(image)}
+              >
+                <MediaImage image={image} style={styles.thumbnail} />
+              </Pressable>
+              <IconButton
+                icon="close"
+                label="Remove attached image"
+                onPress={() => setImages((current) => current.filter((i) => i.id !== image.id))}
+                style={{
+                  position: 'absolute',
+                  right: -5,
+                  top: -5,
+                  width: 30,
+                  height: 30,
+                  backgroundColor: theme.elevatedColor,
+                  borderRadius: 15
+                }}
+              />
+            </View>
+          ))}
+        </ScrollView>
+      )}
+      <TextInput
+        ref={inputRef}
+        value={input}
+        onChangeText={setInput}
+        multiline
+        maxLength={32000}
+        accessibilityLabel="Message"
+        placeholder={
+          images.length ? 'What would you like to know about these images?' : 'What’s on your mind?'
+        }
+        placeholderTextColor={theme.placeholderTextColor}
+        style={[styles.input, { color: theme.textColor, fontFamily: theme.regularFont }]}
+        onKeyPress={(event) => {
+          if (Platform.OS !== 'web') return
+          const key = event.nativeEvent as unknown as {
+            key: string
+            shiftKey?: boolean
+            isComposing?: boolean
+          }
+          if (key.key === 'Enter' && !key.shiftKey && !key.isComposing) {
+            event.preventDefault()
+            submit()
+          }
+        }}
       />
-    )
-  }
-
-  function renderAttachmentPreview() {
-    if (!attachment) return null
-    return (
-      <View style={styles.attachmentPreview}>
-        <Image source={{ uri: attachment.uri }} style={styles.attachmentThumbnail} />
-        <Text style={styles.attachmentText} numberOfLines={1}>Image attached</Text>
-        <TouchableOpacity
-          onPress={() => setAttachment(null)}
+      <View style={styles.composerToolbar}>
+        <View style={styles.toolbarLeft}>
+          <IconButton
+            icon="add"
+            label="Attach images"
+            disabled={picking || streaming || images.length + imageCount >= 4}
+            onPress={() => void attach()}
+          />
+          {Platform.OS !== 'web' && (
+            <IconButton
+              icon="camera-outline"
+              label="Take a photo"
+              disabled={picking || streaming || images.length + imageCount >= 4}
+              onPress={() => void attach(true)}
+            />
+          )}
+          {picking ? (
+            <ActivityIndicator size="small" color={theme.tintColor} />
+          ) : (
+            <AppText muted style={{ fontSize: 11 }}>
+              {images.length
+                ? `${images.length} image${images.length === 1 ? '' : 's'} attached`
+                : 'Text, ideas, or images'}
+            </AppText>
+          )}
+        </View>
+        <Pressable
+          onPress={streaming ? stop : submit}
+          disabled={!streaming && (picking || (!input.trim() && !images.length))}
           accessibilityRole="button"
-          accessibilityLabel="Remove attached image"
-          style={styles.attachmentRemove}
+          accessibilityLabel={streaming ? 'Stop response' : 'Send message'}
+          accessibilityState={{ disabled: !streaming && (picking || (!input.trim() && !images.length)) }}
+          style={({ pressed }) => [
+            styles.send,
+            {
+              backgroundColor: theme.tintColor,
+              opacity: pressed ? 0.7 : !streaming && !input.trim() && !images.length ? 0.35 : 1
+            }
+          ]}
         >
-          <Ionicons name="close-circle" size={20} color={theme.textColor} />
-        </TouchableOpacity>
+          <Ionicons name={streaming ? 'stop' : 'arrow-up'} color={theme.tintTextColor} size={21} />
+        </Pressable>
       </View>
-    )
-  }
-
-  function renderInputRow(midScreen: boolean) {
-    return (
-      <View style={midScreen ? undefined : styles.chatInputContainer}>
-        {
-          chatType.supportsVision && !midScreen && (
-            <TouchableOpacity
-              onPress={attachImage}
-              accessibilityRole="button"
-              accessibilityLabel="Attach an image"
-              style={styles.attachIconButton}
-            >
-              <Ionicons name="image-outline" size={18} color={theme.textColor} />
-            </TouchableOpacity>
-          )
-        }
-        <TextInput
-          style={midScreen ? styles.midInput : styles.input}
-          onChangeText={setInput}
-          placeholder='Message'
-          multiline
-          placeholderTextColor={theme.placeholderTextColor}
-          autoCorrect={true}
-          value={input}
-          accessibilityLabel="Message input"
-        />
-        {
-          !midScreen && (
-            streaming ? (
-              <TouchableOpacity
-                onPress={stop}
-                accessibilityRole="button"
-                accessibilityLabel="Stop generating"
-              >
-                <View style={styles.chatButton}>
-                  <Ionicons
-                    name="stop"
-                    size={20} color={theme.tintTextColor}
-                  />
-                </View>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                onPress={() => chat()}
-                accessibilityRole="button"
-                accessibilityLabel="Send message"
-              >
-                <View style={styles.chatButton}>
-                  <Ionicons
-                    name="arrow-up-outline"
-                    size={20} color={theme.tintTextColor}
-                  />
-                </View>
-              </TouchableOpacity>
-            )
-          )
-        }
-      </View>
-    )
-  }
+    </View>
+  )
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
-      keyboardVerticalOffset={110}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={insets.top + (width < 960 ? 58 : 0)}
     >
-      {
-        !callMade ? (
-          <View style={styles.midChatInputWrapper}>
-            <View style={styles.midChatInputContainer}>
-              {renderInputRow(true)}
-              <TouchableHighlight
-                onPress={() => chat()}
-                underlayColor={'transparent'}
-                accessibilityRole="button"
-                accessibilityLabel="Start chat"
-              >
-                <View style={styles.midButtonStyle}>
-                  <Ionicons
-                    name="chatbox-ellipses-outline"
-                    size={22} color={theme.tintTextColor}
-                  />
-                  <Text style={styles.midButtonText}>
-                    Start chat
-                  </Text>
-                </View>
-              </TouchableHighlight>
-              {renderAttachmentPreview()}
-              {
-                chatType.supportsVision && !attachment && (
-                  <TouchableOpacity
-                    onPress={attachImage}
-                    accessibilityRole="button"
-                    accessibilityLabel="Attach an image"
-                    style={styles.midAttachButton}
-                  >
-                    <Ionicons name="image-outline" size={16} color={theme.textColor} />
-                    <Text style={styles.midAttachButtonText}>Attach an image</Text>
-                  </TouchableOpacity>
-                )
-              }
-              <Text style={styles.chatDescription}>
-                Chat with a variety of different language models.
-              </Text>
-              <View style={styles.suggestionsContainer}>
-                {
-                  PROMPT_SUGGESTIONS.map(suggestion => (
-                    <TouchableOpacity
-                      key={suggestion}
-                      onPress={() => chat(suggestion)}
-                      accessibilityRole="button"
-                      style={styles.suggestionChip}
-                    >
-                      <Text style={styles.suggestionText}>{suggestion}</Text>
-                    </TouchableOpacity>
-                  ))
-                }
+      <View style={[styles.header, compact && { paddingHorizontal: 16 }]}>
+        <Pressable
+          disabled={streaming}
+          onPress={() => handlePresentModalPress()}
+          accessibilityRole="button"
+          accessibilityLabel={`Change model. Current model: ${chatType.name}`}
+          style={({ hovered }: { pressed: boolean; hovered?: boolean }) => [
+            styles.modelButton,
+            { backgroundColor: hovered ? theme.surfaceColor : 'transparent' }
+          ]}
+        >
+          <chatType.icon size={18} theme={theme} />
+          <AppText style={{ fontFamily: theme.mediumFont, fontSize: 13 }}>{chatType.name}</AppText>
+          <Ionicons name="chevron-down" size={14} color={theme.mutedForegroundColor} />
+        </Pressable>
+        <View style={styles.toolbarLeft}>
+          {!compact && <Tag>{streaming ? 'Writing' : 'Your space to think'}</Tag>}
+          {hasMessages && (
+            <IconButton
+              icon="share-outline"
+              label="Export conversation"
+              onPress={() => void exportConversation()}
+              disabled={streaming || exporting}
+            />
+          )}
+        </View>
+      </View>
+      {!hasMessages ? (
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[styles.emptyScroll, compact && { padding: 20 }]}
+        >
+          <View style={[styles.empty, compact && { gap: 24 }]}>
+            <View style={{ gap: 20 }}>
+              <Mark size={40} />
+              <View style={{ gap: 14 }}>
+                <AppText
+                  style={{
+                    fontSize: compact ? 34 : 46,
+                    lineHeight: compact ? 42 : 56,
+                    letterSpacing: -1.8,
+                    fontFamily: theme.mediumFont
+                  }}
+                >
+                  A little curiosity.{'\n'}A lot of possibility.
+                </AppText>
+                <AppText muted style={{ fontSize: compact ? 14 : 16, lineHeight: 25 }}>
+                  Think it through. Make it clearer. Start something new.
+                </AppText>
               </View>
             </View>
+            {composer}
+            <View style={styles.suggestions}>
+              {PROMPT_SUGGESTIONS.map((suggestion) => (
+                <Pressable
+                  key={suggestion.title}
+                  accessibilityRole="button"
+                  onPress={() => {
+                    setInput(suggestion.prompt)
+                    inputRef.current?.focus()
+                    if (suggestion.attach) void attach()
+                  }}
+                  style={({ hovered, pressed }: { pressed: boolean; hovered?: boolean }) => [
+                    styles.suggestion,
+                    {
+                      width: compact ? '100%' : '48.7%',
+                      borderColor: hovered ? theme.tintColor : theme.borderColor,
+                      backgroundColor: hovered || pressed ? theme.surfaceColor : 'transparent'
+                    }
+                  ]}
+                >
+                  <Ionicons name={suggestion.icon} size={19} color={theme.tintColor} />
+                  <View style={{ flex: 1, gap: 3 }}>
+                    <AppText style={{ fontSize: 13, fontFamily: theme.mediumFont }}>
+                      {suggestion.title}
+                    </AppText>
+                    <AppText muted style={{ fontSize: 11 }}>
+                      {suggestion.subtitle}
+                    </AppText>
+                  </View>
+                  <Ionicons
+                    name="arrow-up-outline"
+                    size={15}
+                    color={theme.mutedForegroundColor}
+                    style={{ transform: [{ rotate: '45deg' }] }}
+                  />
+                </Pressable>
+              ))}
+            </View>
+            {(connection !== 'connected' || chatType.available === false) && (
+              <Notice action="Settings" onAction={onSettings}>
+                {!apiUrl
+                  ? 'One small step: connect your AI server to get started.'
+                  : connection === 'offline'
+                    ? 'Your server is offline. Your saved conversations are still here.'
+                    : connection === 'checking'
+                      ? 'Checking your server connection…'
+                      : 'Add a provider key to your server, then refresh models in Settings.'}
+              </Notice>
+            )}
+            <AppText muted style={{ fontSize: 11, textAlign: 'center' }}>
+              Your conversations stay on this device. Prompts go to your chosen provider.
+            </AppText>
           </View>
-        ) : (
-          <>
-            <FlatList
-              ref={flatListRef}
-              data={messages}
-              renderItem={renderItem}
-              keyExtractor={(_, index) => `${chatType.label}-${index}`}
-              keyboardShouldPersistTaps='handled'
-              contentContainerStyle={styles.listContent}
-              onScrollBeginDrag={() => { autoScrollRef.current = false }}
-              onScroll={event => {
-                const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent
-                const distanceFromBottom = contentSize.height - layoutMeasurement.height - contentOffset.y
-                if (distanceFromBottom < 40) autoScrollRef.current = true
+        </ScrollView>
+      ) : (
+        <>
+          <FlatList
+            ref={listRef}
+            data={messages}
+            renderItem={renderMessage}
+            keyExtractor={(item) => item.id}
+            initialNumToRender={12}
+            maxToRenderPerBatch={8}
+            windowSize={7}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={[styles.messageList, compact && { paddingHorizontal: 20 }]}
+            scrollEventThrottle={100}
+            onScroll={(event) => {
+              const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent
+              atBottom.current = contentSize.height - contentOffset.y - layoutMeasurement.height < 80
+              setShowJump(!atBottom.current)
+            }}
+            onContentSizeChange={() => {
+              if (atBottom.current) listRef.current?.scrollToEnd({ animated: false })
+            }}
+          />
+          {showJump && (
+            <View style={styles.jump}>
+              <Button
+                variant="secondary"
+                icon="arrow-down"
+                onPress={() => {
+                  atBottom.current = true
+                  listRef.current?.scrollToEnd({ animated: true })
+                  setShowJump(false)
+                }}
+              >
+                Latest message
+              </Button>
+            </View>
+          )}
+          <View style={[styles.bottom, compact && { paddingHorizontal: 16 }]}>
+            <View style={styles.bottomInner}>
+              {speaking && (
+                <Button
+                  variant="ghost"
+                  icon="stop-circle-outline"
+                  onPress={() => {
+                    void Speech.stop()
+                    setSpeaking(false)
+                  }}
+                >
+                  Stop reading
+                </Button>
+              )}
+              {getContextMessages(conversation?.messages || []).trimmed && (
+                <AppText muted style={{ fontSize: 11, paddingBottom: 8 }}>
+                  Older messages are saved, but only the recent context is sent to the model.
+                </AppText>
+              )}
+              {composer}
+              <AppText muted style={styles.disclaimer}>
+                {streaming
+                  ? 'You can stop the response at any time.'
+                  : `AI can make mistakes. Check important details.${Platform.OS === 'web' && !compact ? '  ·  Shift + Enter for a new line' : ''}`}
+              </AppText>
+            </View>
+          </View>
+        </>
+      )}
+      <Sheet visible={!!viewImage} title="A closer look" onClose={() => setViewImage(null)} wide>
+        {viewImage && (
+          <View style={{ padding: 20, gap: 16 }}>
+            <MediaImage image={viewImage} contain style={{ height: compact ? 320 : 500, borderRadius: 12 }} />
+            <Button
+              variant="secondary"
+              icon="download-outline"
+              onPress={() => {
+                void saveImage(viewImage)
+                  .then(() => notify('Image saved.'))
+                  .catch((error) => notify(errorMessage(error)))
               }}
-              scrollEventThrottle={100}
-              onContentSizeChange={() => {
-                if (autoScrollRef.current) {
-                  flatListRef.current?.scrollToEnd({ animated: true })
-                }
-              }}
-            />
-            {renderAttachmentPreview()}
-            {renderInputRow(false)}
-          </>
-        )
-      }
+            >
+              Save image
+            </Button>
+          </View>
+        )}
+      </Sheet>
     </KeyboardAvoidingView>
   )
 }
 
-const getStyles = (theme: Theme) => StyleSheet.create({
-  optionsIconWrapper: {
-    padding: 10,
-    paddingTop: 9,
-    alignItems: 'flex-end'
-  },
-  listContent: {
-    paddingBottom: 10
-  },
-  typingIndicator: {
-    marginVertical: 10,
-    alignSelf: 'flex-start',
-    marginLeft: 5
-  },
-  errorContainer: {
-    marginHorizontal: 10,
-    marginTop: 10,
-    padding: 13,
-    borderRadius: 13,
-    borderWidth: 1,
-    borderColor: theme.borderColor,
-  },
-  errorText: {
-    color: theme.textColor,
-    fontFamily: theme.regularFont,
-    marginBottom: 10
-  },
-  retryButton: {
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: {
+    minHeight: 76,
+    paddingHorizontal: 32,
     flexDirection: 'row',
-    alignSelf: 'flex-start',
     alignItems: 'center',
-    backgroundColor: theme.tintColor,
-    borderRadius: 99,
-    paddingVertical: 6,
-    paddingHorizontal: 14
-  },
-  retryButtonText: {
-    color: theme.tintTextColor,
-    fontFamily: theme.mediumFont,
-    marginLeft: 6
-  },
-  suggestionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: 18,
-    paddingHorizontal: 14,
+    justifyContent: 'space-between',
     gap: 8
   },
-  suggestionChip: {
-    borderWidth: 1,
-    borderColor: theme.borderColor,
-    borderRadius: 99,
-    paddingVertical: 8,
-    paddingHorizontal: 14
-  },
-  suggestionText: {
-    color: theme.textColor,
-    fontFamily: theme.regularFont,
-    fontSize: 13
-  },
-  attachmentPreview: {
+  modelButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 10,
-    marginTop: 8,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: theme.borderColor,
-    borderRadius: 10
+    gap: 10,
+    minHeight: 44,
+    paddingHorizontal: 12,
+    borderRadius: 12
   },
-  attachmentThumbnail: {
-    width: 36,
-    height: 36,
-    borderRadius: 6,
-    marginRight: 10
-  },
-  attachmentText: {
-    flex: 1,
-    color: theme.textColor,
-    fontFamily: theme.regularFont,
-    fontSize: 13
-  },
-  attachmentRemove: {
-    padding: 6
-  },
-  attachIconButton: {
-    marginLeft: 10,
-    padding: 8,
-    borderRadius: 99,
-    borderWidth: 1,
-    borderColor: theme.borderColor
-  },
-  midAttachButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: theme.borderColor,
-    borderRadius: 99,
-    paddingVertical: 7,
-    paddingHorizontal: 14
-  },
-  midAttachButtonText: {
-    color: theme.textColor,
-    fontFamily: theme.mediumFont,
-    fontSize: 13,
-    marginLeft: 7
-  },
-  chatDescription: {
-    color: theme.textColor,
-    textAlign: 'center',
-    marginTop: 15,
-    fontSize: 13,
-    paddingHorizontal: 34,
-    opacity: .8,
-    fontFamily: theme.regularFont
-  },
-  midInput: {
-    marginBottom: 8,
-    borderWidth: 1,
-    paddingHorizontal: 25,
-    marginHorizontal: 10,
-    paddingVertical: 15,
-    borderRadius: 24,
-    color: theme.textColor,
-    borderColor: theme.borderColor,
-    fontFamily: theme.mediumFont,
-  },
-  midButtonStyle: {
-    flexDirection: 'row',
-    marginHorizontal: 14,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderRadius: 99,
-    backgroundColor: theme.tintColor,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  midButtonText: {
-    color: theme.tintTextColor,
-    marginLeft: 10,
-    fontFamily: theme.boldFont,
-    fontSize: 16
-  },
-  midChatInputWrapper: {
-    flex: 1,
+  emptyScroll: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 36,
+    paddingTop: 30,
+    paddingBottom: 48
   },
-  midChatInputContainer: {
-    width: '100%',
-    paddingTop: 5,
-    paddingBottom: 5
-  },
-  promptResponse: {
-    marginTop: 10,
-  },
-  textStyleContainer: {
+  empty: { width: '100%', maxWidth: 720, gap: 28 },
+  composer: {
     borderWidth: 1,
-    marginRight: 25,
-    borderColor: theme.borderColor,
-    padding: 15,
-    paddingBottom: 6,
-    paddingTop: 5,
-    margin: 10,
-    borderRadius: 13
-  },
-  promptTextContainer: {
-    flex: 1,
-    alignItems: 'flex-end',
-    marginRight: 15,
-    marginLeft: 24,
-  },
-  promptTextWrapper: {
-    borderRadius: 8,
-    borderTopRightRadius: 0,
-    backgroundColor: theme.tintColor,
-    overflow: 'hidden'
-  },
-  promptImage: {
-    width: 180,
-    height: 180,
-    borderRadius: 4,
-    margin: 5
-  },
-  promptText: {
-    color: theme.tintTextColor,
-    fontFamily: theme.regularFont,
-    paddingVertical: 5,
-    paddingHorizontal: 9,
-    fontSize: 16
-  },
-  chatButton: {
-    marginRight: 14,
-    padding: 5,
-    borderRadius: 99,
-    backgroundColor: theme.tintColor
-  },
-  chatInputContainer: {
-    paddingTop: 5,
-    borderColor: theme.borderColor,
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingBottom: 5
+    borderRadius: 20,
+    padding: 10,
+    ...Platform.select({ web: { boxShadow: '0 3px 16px rgba(35,45,25,0.035)' } })
   },
   input: {
-    flex: 1,
+    paddingHorizontal: 10,
+    paddingTop: 10,
+    paddingBottom: 16,
+    minHeight: 66,
+    maxHeight: 170,
+    fontSize: 16,
+    lineHeight: 25,
+    textAlignVertical: 'top'
+  },
+  composerToolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  toolbarLeft: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  send: { width: 42, height: 42, borderRadius: 13, justifyContent: 'center', alignItems: 'center' },
+  suggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  suggestion: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    minHeight: 76,
     borderWidth: 1,
-    borderRadius: 24,
-    color: theme.textColor,
-    marginHorizontal: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 21,
-    paddingRight: 39,
-    maxHeight: 110,
-    borderColor: theme.borderColor,
-    fontFamily: theme.semiBoldFont,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
   },
-  container: {
-    backgroundColor: theme.backgroundColor,
-    flex: 1
+  attachments: { gap: 12, padding: 10, paddingBottom: 0 },
+  thumbnail: { width: 72, height: 72, borderRadius: 12 },
+  messageList: {
+    paddingHorizontal: 40,
+    paddingTop: 20,
+    paddingBottom: 24,
+    width: '100%',
+    maxWidth: 840,
+    alignSelf: 'center'
   },
-  markdownStyle: {
-    body: {
-      color: theme.textColor,
-      fontFamily: theme.regularFont
-    },
-    paragraph: {
-      color: theme.textColor,
-      fontSize: 16,
-      fontFamily: theme.regularFont
-    },
-    heading1: {
-      color: theme.textColor,
-      fontFamily: theme.semiBoldFont,
-      marginVertical: 5
-    },
-    heading2: {
-      marginTop: 20,
-      color: theme.textColor,
-      fontFamily: theme.semiBoldFont,
-      marginBottom: 5
-    },
-    heading3: {
-      marginTop: 20,
-      color: theme.textColor,
-      fontFamily: theme.mediumFont,
-      marginBottom: 5
-    },
-    heading4: {
-      marginTop: 10,
-      color: theme.textColor,
-      fontFamily: theme.mediumFont,
-      marginBottom: 5
-    },
-    heading5: {
-      marginTop: 10,
-      color: theme.textColor,
-      fontFamily: theme.mediumFont,
-      marginBottom: 5
-    },
-    heading6: {
-      color: theme.textColor,
-      fontFamily: theme.mediumFont,
-      marginVertical: 5
-    },
-    list_item: {
-      marginTop: 7,
-      color: theme.textColor,
-      fontFamily: theme.regularFont,
-      fontSize: 16,
-    },
-    ordered_list_icon: {
-      color: theme.textColor,
-      fontSize: 16,
-      fontFamily: theme.regularFont
-    },
-    bullet_list: {
-      marginTop: 10
-    },
-    ordered_list: {
-      marginTop: 7
-    },
-    bullet_list_icon: {
-      color: theme.textColor,
-      fontSize: 16,
-      fontFamily: theme.regularFont
-    },
-    code_inline: {
-      color: theme.secondaryTextColor,
-      backgroundColor: theme.secondaryBackgroundColor,
-      borderWidth: 1,
-      borderColor: theme.codeBorderColor,
-      fontFamily: theme.lightFont
-    },
-    hr: {
-      backgroundColor: theme.codeBorderColor,
-      height: 1,
-    },
-    fence: {
-      marginVertical: 5,
-      padding: 10,
-      color: theme.secondaryTextColor,
-      backgroundColor: theme.secondaryBackgroundColor,
-      borderColor: theme.codeBorderColor,
-      fontFamily: theme.regularFont
-    },
-    tr: {
-      borderBottomWidth: 1,
-      borderColor: theme.borderColor,
-      flexDirection: 'row',
-    },
-    table: {
-      marginTop: 7,
-      borderWidth: 1,
-      borderColor: theme.borderColor,
-      borderRadius: 3,
-    },
-    blockquote: {
-      backgroundColor: theme.quoteBackgroundColor,
-      borderColor: theme.tintColor,
-      borderLeftWidth: 4,
-      marginLeft: 5,
-      paddingHorizontal: 5,
-      marginVertical: 5,
-    },
-  } as any,
+  message: { marginBottom: 28, width: '100%' },
+  userMessage: { alignItems: 'flex-end', marginBottom: 36 },
+  userBubble: { borderRadius: 18, paddingHorizontal: 20, paddingVertical: 14, maxWidth: '90%' },
+  messageLabel: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 14 },
+  messageImages: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
+  messageImage: { width: 140, height: 140, borderRadius: 14 },
+  thinking: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
+  messageActions: { flexDirection: 'row', alignItems: 'center', marginLeft: -10, marginTop: 4 },
+  bottom: { paddingHorizontal: 40, paddingTop: 8, alignItems: 'center' },
+  bottomInner: { width: '100%', maxWidth: 760 },
+  disclaimer: { textAlign: 'center', fontSize: 10, lineHeight: 17, paddingVertical: 12 },
+  jump: { alignSelf: 'center', padding: 8 }
 })

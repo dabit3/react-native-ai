@@ -20,11 +20,15 @@ function sseResponse(events: string[]) {
 
 describe('server', () => {
   beforeEach(() => {
-    delete process.env.API_AUTH_TOKEN
+    vi.stubEnv('API_AUTH_TOKEN', '')
+    vi.stubEnv('ANTHROPIC_API_KEY', 'test-anthropic')
+    vi.stubEnv('OPENAI_API_KEY', 'test-openai')
+    vi.spyOn(global, 'fetch').mockRejectedValue(new Error('Unexpected provider request in test'))
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
+    vi.unstubAllEnvs()
   })
 
   it('GET /health returns ok', async () => {
@@ -38,15 +42,13 @@ describe('server', () => {
     expect(res.status).toBe(200)
     expect(res.body.chatModels.length).toBeGreaterThan(0)
     expect(res.body.imageModels.length).toBeGreaterThan(0)
-    const claude = res.body.chatModels.find((m: any) => m.label === 'claudeOpus')
+    const claude = res.body.chatModels.find((m: any) => m.label === 'claudeSonnet5')
     expect(claude.provider).toBe('anthropic')
     expect(res.body.chatModels.every((m: any) => !m.modelId)).toBe(true)
   })
 
   it('rejects invalid chat request bodies', async () => {
-    const res = await request(createApp())
-      .post('/chat/claude')
-      .send({ model: 'claudeOpus' })
+    const res = await request(createApp()).post('/chat/claude').send({ model: 'claudeOpus' })
     expect(res.status).toBe(400)
     expect(res.body.error).toBe('invalid request body')
   })
@@ -79,10 +81,7 @@ describe('server', () => {
 
   it('streams openai-compatible tokens as normalized SSE events', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValue(
-      sseResponse([
-        'data: {"choices":[{"delta":{"content":"Hi"}}]}\n\n',
-        'data: [DONE]\n\n'
-      ]) as any
+      sseResponse(['data: {"choices":[{"delta":{"content":"Hi"}}]}\n\n', 'data: [DONE]\n\n']) as any
     )
     const res = await request(createApp())
       .post('/chat/gpt')
@@ -96,18 +95,16 @@ describe('server', () => {
     const res = await request(createApp())
       .post('/chat/gpt')
       .send({ model: 'not-a-model', messages: [{ role: 'user', content: 'hi' }] })
-    expect(res.text).toContain('unsupported model')
+    expect(res.text).toContain('Unsupported model')
     expect(res.text).toContain('data: [DONE]')
   })
 
   it('emits an error event when the provider fails', async () => {
-    vi.spyOn(global, 'fetch').mockResolvedValue(
-      new Response('rate limited', { status: 429 }) as any
-    )
+    vi.spyOn(global, 'fetch').mockResolvedValue(new Response('rate limited', { status: 429 }) as any)
     const res = await request(createApp())
       .post('/chat/claude')
       .send({ model: 'claudeOpus', messages: [{ role: 'user', content: 'hi' }] })
-    expect(res.text).toContain('provider error (429)')
+    expect(res.text).toContain('provider rate limit or credit limit')
     expect(res.text).toContain('data: [DONE]')
   })
 })

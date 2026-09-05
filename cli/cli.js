@@ -4,8 +4,7 @@ import chalk from 'chalk'
 import path from 'path'
 import fs from 'fs'
 import { Command } from 'commander'
-import select from '@inquirer/select'
-import { input } from '@inquirer/prompts';
+import { input, password, select } from '@inquirer/prompts';
 import {execa, execaCommand} from 'execa'
 import ora from 'ora'
 import childProcess from 'child_process'
@@ -99,30 +98,36 @@ ANTHROPIC_API_KEY=""
 
 # Gemini API Key (optional) https://makersuite.google.com
 GEMINI_API_KEY=""
+ZAI_API_KEY=""
+MOONSHOT_API_KEY=""
 `
 
     if (withEnv === 'yes') {
       console.log('Get OpenAI API Key at https://platform.openai.com')
-      const openai_api_key = await input({ message: "OpenAI API Key" })
+      const openai_api_key = await password({ message: "OpenAI API Key (optional)", mask: '*' })
 
       console.log('(optional) Get Anthropic API Key at https://console.anthropic.com')
-      const anthropic_api_key = await input({ message: "Anthropic API Key" })
+      const anthropic_api_key = await password({ message: "Anthropic API Key (optional)", mask: '*' })
 
       console.log('(optional) Get Gemini API Key at https://makersuite.google.com')
-      const gemeni_api_key = await input({ message: "Gemini API Key" })
+      const gemeni_api_key = await password({ message: "Gemini API Key (optional)", mask: '*' })
+      const zai_api_key = await password({ message: "Z.ai API Key (optional)", mask: '*' })
+      const moonshot_api_key = await password({ message: "Moonshot API Key (optional)", mask: '*' })
 
       envs = `
 # environment, either PRODUCTION or DEVELOPMENT
 ENVIRONMENT="PRODUCTION"
 
 # OpenAI
-OPENAI_API_KEY="${openai_api_key}"
+OPENAI_API_KEY=${JSON.stringify(openai_api_key)}
 
 # Anthropic
-ANTHROPIC_API_KEY="${anthropic_api_key}"
+ANTHROPIC_API_KEY=${JSON.stringify(anthropic_api_key)}
 
 # Gemini API Key
-GEMINI_API_KEY=${gemeni_api_key}
+GEMINI_API_KEY=${JSON.stringify(gemeni_api_key)}
+ZAI_API_KEY=${JSON.stringify(zai_api_key)}
+MOONSHOT_API_KEY=${JSON.stringify(moonshot_api_key)}
 `
     }
 
@@ -146,7 +151,7 @@ GEMINI_API_KEY=${gemeni_api_key}
     packageObj2.name = appName
     packageJson2 = JSON.stringify(packageObj2, null, 2)
     fs.writeFileSync(`${appName}/app/package.json`, packageJson2)
-    fs.writeFileSync(`${appName}/server/.env`, envs)
+    fs.writeFileSync(`${appName}/server/.env`, envs, { mode: 0o600 })
     fs.writeFileSync(`${appName}/app/.env`, clientEnvs)
 
     process.chdir(path.join(process.cwd(), `${appName}/server`))
